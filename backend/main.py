@@ -511,40 +511,67 @@ Be thorough about visible ingredients - this is for allergen detection."""
                     context = f" ({', '.join(detected_reasoning)})"
             
             if len(detected) == 1:
-                # Direct, practical advice with AI reasoning
-                messages = [
-                    f"Yeah, this has {allergen_list}{context}. Skip it or ask if they can leave it out.",
-                    f"This one's got {allergen_list}{context}. I'd go for something else.",
-                    f"Has {allergen_list}{context}. Not worth the risk - pick another dish.",
-                    f"Found {allergen_list}{context}. Ask your server about swapping it out or just skip it."
-                ]
+                # Dynamic, personality-driven advice with AI reasoning
                 import random
-                recommendations = random.choice(messages)
+                
+                # Vary the tone and approach
+                styles = [
+                    # Direct/casual
+                    f"nah, this has {allergen_list}{context}. skip it.",
+                    f"yeah, {allergen_list} in here{context}. pass on this one.",
+                    f"got {allergen_list}{context}. not worth it.",
+                    # Practical/helpful
+                    f"heads up - {allergen_list}{context}. ask if they can leave it out.",
+                    f"this one has {allergen_list}{context}. see if they can swap it.",
+                    f"contains {allergen_list}{context}. check with the kitchen.",
+                    # Confident/matter-of-fact
+                    f"{allergen_list} detected{context}. i'd pick something else.",
+                    f"spotted {allergen_list}{context}. better options on the menu.",
+                    f"has {allergen_list}{context}. go for another dish.",
+                    # Kenyan casual
+                    f"ati {allergen_list}{context}? skip that one.",
+                    f"sawa so this has {allergen_list}{context}. not safe."
+                ]
+                recommendations = random.choice(styles)
             else:
-                # Multiple allergens - list them with reasoning if available
-                if context:
-                    recommendations = f"This has {allergen_list}{context}. Hard pass on this one."
-                else:
-                    recommendations = f"This has {allergen_list}. Hard pass on this one."
+                # Multiple allergens - varied responses
+                import random
+                styles = [
+                    f"bruh, this has {allergen_list}{context}. hard pass.",
+                    f"nope - {allergen_list}{context}. skip entirely.",
+                    f"this one's got {allergen_list}{context}. not happening.",
+                    f"multiple issues here: {allergen_list}{context}. avoid.",
+                    f"{allergen_list}{context}. definitely skip this one.",
+                    f"way too much going on - {allergen_list}{context}. pass."
+                ]
+                recommendations = random.choice(styles)
         elif safety_score < 90:
-            # Honest about uncertainty
-            uncertain = [
-                "Can't tell from the menu. Just ask your server what's actually in it.",
-                "Menu's vague here. Quick question to the kitchen will sort it out.",
-                "Not enough detail to say for sure. Worth checking before you order.",
-                "Description doesn't help much. Better to ask than guess, you know?"
-            ]
+            # Honest about uncertainty - varied personality
             import random
+            uncertain = [
+                "can't tell from the menu. just ask your server.",
+                "description's vague. quick question to the kitchen.",
+                "not enough info here. better ask than guess.",
+                "menu doesn't say. check with staff before ordering.",
+                "unclear from this. ask what's actually in it.",
+                "description's not helping. verify with the server.",
+                "hard to say for sure. ask the kitchen directly.",
+                "menu's being cryptic. get confirmation from staff."
+            ]
             recommendations = random.choice(uncertain)
         else:
-            # Casually confident
-            safe = [
-                "Looks good. Still, double-check with your server - you know how it is.",
-                "You're good here, but yeah, verify with staff just to be safe.",
-                "Should be fine. I always ask anyway though, just in case.",
-                "Seems safe from what I can see. Quick confirm never hurts."
-            ]
+            # Casually confident - varied tone
             import random
+            safe = [
+                "looks clean. still, double-check with your server.",
+                "should be good. quick confirm won't hurt though.",
+                "seems safe from here. verify with staff just in case.",
+                "you're probably fine. i always ask anyway.",
+                "this one looks okay. run it by the server to be sure.",
+                "appears safe. but yeah, confirm with the kitchen.",
+                "should work. still worth a quick check.",
+                "looking good. ask staff to confirm."
+            ]
             recommendations = random.choice(safe)
         
         # Extract basic ingredients from description
@@ -672,24 +699,65 @@ Be concise. Only list allergens you're confident about with their source:"""
         return found[:5]  # Limit to 5
     
     async def generate_voice_summary(self, safe_count: int, unsafe_count: int, allergens: List[str]) -> str:
-        """Generate conversational voice summary with personality"""
+        """Generate conversational voice summary with Keith's personality - direct, casual, Kenyan touches"""
         allergen_text = " and ".join(allergens) if len(allergens) <= 2 else f"{', '.join(allergens[:-1])}, and {allergens[-1]}"
         
+        import random
+        
         if unsafe_count == 0:
+            # All safe - confident, casual
             messages = [
-                f"Nice! All {safe_count} dishes work for you with {allergen_text}.",
-                f"You're good - found {safe_count} safe options. No {allergen_text} here!",
-                f"All clear! {safe_count} dishes and none have {allergen_text}."
+                f"sawa! all {safe_count} dishes work for you. no {allergen_text} anywhere.",
+                f"you're good - {safe_count} safe options, zero {allergen_text}.",
+                f"nice one. got {safe_count} dishes, none have {allergen_text}.",
+                f"clean menu. all {safe_count} dishes safe for {allergen_text}.",
+                f"{safe_count} options and not a single {allergen_text} in sight. easy."
             ]
-            import random
-            return random.choice(messages) + " Still, ask your server to be sure."
+            suffix = random.choice([
+                " double-check with staff though.",
+                " still, quick confirm won't hurt.",
+                " ask your server to be sure.",
+                " verify with the kitchen just in case."
+            ])
+            return random.choice(messages) + suffix
         elif safe_count == 0:
-            return f"Hmm, nothing here works for {allergen_text}. Ask if they can modify something or check other options."
+            # Nothing safe - honest, helpful
+            messages = [
+                f"bruh, nothing here works for {allergen_text}.",
+                f"nah, this menu's not it. everything has {allergen_text}.",
+                f"tough one - zero options without {allergen_text}.",
+                f"this place and {allergen_text} don't mix. nothing safe."
+            ]
+            suffix = random.choice([
+                " ask if they can modify something.",
+                " see if the kitchen can work around it.",
+                " might wanna check other spots.",
+                " ask what they can customize."
+            ])
+            return random.choice(messages) + suffix
         else:
+            # Mixed results - practical
             if unsafe_count == 1:
-                return f"Found {safe_count} safe and 1 to skip with your {allergen_text}. Check below!"
+                messages = [
+                    f"got {safe_count} safe, 1 to skip.",
+                    f"{safe_count} good options, just 1 with {allergen_text}.",
+                    f"looking good - {safe_count} safe dishes, only 1 issue.",
+                    f"{safe_count} work, 1 doesn't. pretty solid."
+                ]
             else:
-                return f"Got {safe_count} safe options and {unsafe_count} with {allergen_text}. Details below."
+                messages = [
+                    f"found {safe_count} safe and {unsafe_count} with {allergen_text}.",
+                    f"{safe_count} good ones, {unsafe_count} to avoid.",
+                    f"got {safe_count} safe dishes. skip the {unsafe_count} with {allergen_text}.",
+                    f"{safe_count} work for you, {unsafe_count} don't."
+                ]
+            suffix = random.choice([
+                " check below.",
+                " scroll down for details.",
+                " see the list below.",
+                " details down there."
+            ])
+            return random.choice(messages) + suffix
 
 analyzer = NovaMenuAnalyzer()
 
