@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, X, Camera } from 'lucide-react';
 import Toast from './components/Toast';
 import ConsoleEasterEgg from './components/ConsoleEasterEgg';
+import CameraView from './components/CameraView';
 
 const ALLERGENS = [
   'Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy',
@@ -19,6 +20,7 @@ export default function Home() {
   const [menuFile, setMenuFile] = useState<File | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
 
   // Detect mobile on mount
   useEffect(() => {
@@ -137,31 +139,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1419] relative overflow-hidden">
+    <div className="min-h-screen bg-[#1a1f2e] relative overflow-hidden">
       {/* Subtle background illustrations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Subtle grid pattern */}
-        <div className="absolute inset-0 opacity-[0.02]" style={{
-          backgroundImage: 'linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)',
-          backgroundSize: '120px 120px'
-        }}></div>
-        
-        {/* Organic shapes - food-inspired */}
-        <svg className="absolute top-20 right-10 w-64 h-64 opacity-[0.03]" viewBox="0 0 200 200">
-          <circle cx="100" cy="100" r="80" fill="#10b981" />
-        </svg>
-        
-        <svg className="absolute bottom-20 left-10 w-48 h-48 opacity-[0.03]" viewBox="0 0 200 200">
-          <path d="M100,20 Q150,50 150,100 Q150,150 100,180 Q50,150 50,100 Q50,50 100,20 Z" 
-                fill="#10b981" />
-        </svg>
-        
-        <svg className="absolute top-1/2 left-1/4 w-32 h-32 opacity-[0.02]" viewBox="0 0 100 100">
-          <rect x="20" y="20" width="60" height="60" rx="8" fill="#475569" />
-        </svg>
+        {/* Playful gradient orbs - Discord/Snapchat vibes */}
+        <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-10 w-80 h-80 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 rounded-full blur-3xl"></div>
       </div>
       {/* Simple header */}
-      <nav className="border-b border-slate-700/50 bg-[#0f1419]/95 backdrop-blur-sm sticky top-0 z-50 relative">
+      <nav className="border-b border-slate-700/30 bg-[#1a1f2e]/95 backdrop-blur-sm sticky top-0 z-50 relative">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3">
           <Shield className="w-6 h-6 text-emerald-400" />
           <div className="flex items-center gap-1.5">
@@ -404,6 +391,17 @@ export default function Home() {
 
       {/* Console Easter Egg */}
       <ConsoleEasterEgg />
+
+      {/* Camera View Modal */}
+      {showCamera && (
+        <CameraView
+          onCapture={(file) => {
+            setMenuFile(file);
+            setShowCamera(false);
+          }}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
     </div>
   );
 }
