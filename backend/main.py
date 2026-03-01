@@ -13,6 +13,12 @@ import base64
 import json
 import io
 from PyPDF2 import PdfReader
+import boto3
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -88,6 +94,16 @@ class NovaMenuAnalyzer:
     
     def __init__(self):
         logger.info("Nova Menu Analyzer initialized")
+        # Initialize Bedrock client for Nova Pro
+        try:
+            self.bedrock = boto3.client(
+                service_name='bedrock-runtime',
+                region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
+            )
+            logger.info("Bedrock client initialized successfully")
+        except Exception as e:
+            logger.warning(f"Bedrock client initialization failed: {e}")
+            self.bedrock = None
     
     async def extract_text_from_pdf(self, pdf_data: bytes) -> str:
         """Extract text from PDF using PyPDF2"""
@@ -118,8 +134,69 @@ class NovaMenuAnalyzer:
                     "dishes": dishes if dishes else self._get_demo_dishes()
                 }
         
-        # In production: Call Nova Pro with image
-        # For demo: Return mock data
+        # Try Nova Pro for image OCR
+        if self.bedrock:
+            try:
+                logger.info("Calling Nova Pro for image analysis...")
+                
+                # Encode image to base64
+                image_base64 = base64.b64encode(image_data).decode('utf-8')
+                
+                # Nova Pro request
+                body = json.dumps({
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "image": {
+                                        "format": "png" if filename.lower().endswith('.png') else "jpeg",
+                                        "source": {"bytes": image_base64}
+                                    }
+                                },
+                                {
+                                    "text": """Analyze this restaurant menu image. Extract all dishes with their descriptions and prices. 
+                                    Return a JSON array of dishes in this exact format:
+                                    [{"name": "Dish Name", "description": "ingredients and description", "price": "$X.XX"}]
+                                    
+                                    Only return the JSON array, nothing else."""
+                                }
+                            ]
+                        }
+                    ],
+                    "inferenceConfig": {
+                        "max_new_tokens": 2000,
+                        "temperature": 0.3
+                    }
+                })
+                
+                response = self.bedrock.invoke_model(
+                    modelId='amazon.nova-pro-v1:0',
+                    body=body
+                )
+                
+                result = json.loads(response['body'].read())
+                text_response = result['output']['message']['content'][0]['text']
+                
+                logger.info(f"Nova Pro response: {text_response[:200]}...")
+                
+                # Try to parse JSON from response
+                try:
+                    # Extract JSON array from response
+                    import re
+                    json_match = re.search(r'\[.*\]', text_response, re.DOTALL)
+                    if json_match:
+                        dishes = json.loads(json_match.group(0))
+                        logger.info(f"Nova Pro extracted {len(dishes)} dishes")
+                        return {"text": text_response, "dishes": dishes}
+                except:
+                    logger.warning("Could not parse JSON from Nova Pro response")
+                
+            except Exception as e:
+                logger.error(f"Nova Pro analysis failed: {e}")
+        
+        # Fallback to demo data
+        logger.info("Using demo dishes (Nova Pro unavailable)")
         return {
             "text": "Sample menu extracted",
             "dishes": self._get_demo_dishes()
