@@ -151,25 +151,26 @@ class NovaMenuAnalyzer:
                 # Encode image to base64
                 image_base64 = base64.b64encode(image_data).decode('utf-8')
                 
-                # Determine image format
+                # Determine image format - Nova Pro treats PDFs as images
                 image_format = "jpeg"
                 if filename.lower().endswith('.png'):
                     image_format = "png"
                 elif filename.lower().endswith('.pdf'):
-                    image_format = "pdf"  # Nova Pro supports PDF
+                    # Nova Pro can analyze PDF pages as images
+                    image_format = "pdf"
                 elif filename.lower().endswith('.webp'):
                     image_format = "webp"
                 elif filename.lower().endswith('.gif'):
                     image_format = "gif"
                 
-                # Nova Pro request - improved prompt for food photos AND menus
+                # Nova Pro request - works for images AND PDFs
                 body = json.dumps({
                     "messages": [
                         {
                             "role": "user",
                             "content": [
                                 {
-                                    "document" if image_format == "pdf" else "image": {
+                                    "image": {  # Use "image" for all formats including PDF
                                         "format": image_format,
                                         "source": {"bytes": image_base64}
                                     }
