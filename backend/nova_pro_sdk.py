@@ -207,25 +207,28 @@ class SecurityAnalysisAgent:
         """
         logger.info(f"Enhancing finding with Nova Pro AI: {finding_data.get('title', 'Unknown')}")
         
-        prompt = f"""You are a security expert analyzing a vulnerability finding. Provide detailed analysis.
+        prompt = f"""You are a security expert analyzing a vulnerability finding. Provide detailed analysis in plain text format (NO MARKDOWN, NO ASTERISKS, NO SPECIAL FORMATTING).
 
 **Finding Title:** {finding_data.get('title', 'Unknown')}
 **Category:** {finding_data.get('category', 'Unknown')}
 **Description:** {finding_data.get('description', 'No description')}
 
-Provide:
-1. **Security Implications** (2-3 sentences): Explain the real-world attack scenarios and what attackers could do. Be specific and technical.
-2. **Remediation Steps** (3-5 actionable steps): Provide specific, implementable fixes with configuration examples where applicable.
-3. **CVSS Severity** (Critical/High/Medium/Low): Based on exploitability and impact.
+Provide your analysis in this exact format:
 
-Format your response as:
-IMPLICATIONS: [your implications text]
-RECOMMENDATIONS: [your recommendations text]
-SEVERITY: [severity level]
+IMPLICATIONS: Write 2-3 sentences explaining the real-world attack scenarios. Be specific about what attackers can do, what data is at risk, and the business impact. Use plain sentences without any markdown formatting or special characters.
+
+RECOMMENDATIONS: Provide 3-5 specific, actionable steps to fix this issue. Include configuration examples where helpful. Write as numbered sentences (1. 2. 3.) but use plain text only - no asterisks, no bold, no markdown.
+
+SEVERITY: State one word only - either Critical, High, Medium, or Low.
+
+Remember: Use only plain text. No markdown. No asterisks. No bold. No special formatting.
 """
         
         try:
             ai_response = await self.ai_client.analyze_with_ai(prompt)
+            
+            # Clean up any remaining markdown formatting
+            ai_response = self._clean_markdown(ai_response)
             
             # Parse AI response
             implications = "AI analysis in progress..."
@@ -271,6 +274,33 @@ SEVERITY: [severity level]
                 "severity": finding_data.get('severity', 'medium'),
                 "ai_enhanced": False
             }
+    
+    def _clean_markdown(self, text: str) -> str:
+        """Remove markdown formatting from text"""
+        import re
+        
+        # Remove bold (**text** or __text__)
+        text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
+        text = re.sub(r'__([^_]+)__', r'\1', text)
+        
+        # Remove italic (*text* or _text_)
+        text = re.sub(r'\*([^*]+)\*', r'\1', text)
+        text = re.sub(r'_([^_]+)_', r'\1', text)
+        
+        # Remove code blocks (```text```)
+        text = re.sub(r'```[^`]*```', '', text)
+        text = re.sub(r'`([^`]+)`', r'\1', text)
+        
+        # Remove markdown headers (### Header)
+        text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+        
+        # Clean up multiple spaces
+        text = re.sub(r'\s+', ' ', text)
+        
+        # Clean up multiple newlines
+        text = re.sub(r'\n\s*\n', '\n\n', text)
+        
+        return text.strip()
     
     async def analyze_ssl_tls(self, url: str) -> Dict:
         """Analyze SSL/TLS configuration"""
