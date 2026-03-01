@@ -142,7 +142,16 @@ class NovaMenuAnalyzer:
                 # Encode image to base64
                 image_base64 = base64.b64encode(image_data).decode('utf-8')
                 
-                # Nova Pro request
+                # Determine image format
+                image_format = "jpeg"
+                if filename.lower().endswith('.png'):
+                    image_format = "png"
+                elif filename.lower().endswith('.webp'):
+                    image_format = "webp"
+                elif filename.lower().endswith('.gif'):
+                    image_format = "gif"
+                
+                # Nova Pro request - improved prompt for food photos AND menus
                 body = json.dumps({
                     "messages": [
                         {
@@ -150,22 +159,34 @@ class NovaMenuAnalyzer:
                             "content": [
                                 {
                                     "image": {
-                                        "format": "png" if filename.lower().endswith('.png') else "jpeg",
+                                        "format": image_format,
                                         "source": {"bytes": image_base64}
                                     }
                                 },
                                 {
-                                    "text": """Analyze this restaurant menu image. Extract all dishes with their descriptions and prices. 
-                                    Return a JSON array of dishes in this exact format:
-                                    [{"name": "Dish Name", "description": "ingredients and description", "price": "$X.XX"}]
-                                    
-                                    Only return the JSON array, nothing else."""
+                                    "text": """Analyze this image carefully. It could be:
+1. A restaurant menu with dishes listed
+2. A photo of a single food item
+3. A photo of multiple food items on a table
+
+Your task: Extract ALL visible food items with detailed descriptions.
+
+For EACH food item you see, create a JSON object with:
+- "name": The dish/food name (if on menu) OR describe what you see (e.g., "Grilled chicken breast", "Pasta with sauce")
+- "description": Detailed ingredients and preparation you can identify from the image (be specific about visible ingredients like cheese, nuts, vegetables, sauces, etc.)
+- "price": The price if visible, otherwise "$0.00"
+
+Return ONLY a JSON array in this exact format:
+[{"name": "Item Name", "description": "detailed ingredients visible", "price": "$X.XX"}]
+
+If you see multiple items, include them all. If it's a single plate, describe everything on it.
+Be thorough about visible ingredients - this is for allergen detection."""
                                 }
                             ]
                         }
                     ],
                     "inferenceConfig": {
-                        "max_new_tokens": 2000,
+                        "max_new_tokens": 3000,
                         "temperature": 0.3
                     }
                 })
@@ -178,25 +199,38 @@ class NovaMenuAnalyzer:
                 result = json.loads(response['body'].read())
                 text_response = result['output']['message']['content'][0]['text']
                 
-                logger.info(f"Nova Pro response: {text_response[:200]}...")
+                logger.info(f"Nova Pro raw response: {text_response[:300]}...")
                 
                 # Try to parse JSON from response
                 try:
-                    # Extract JSON array from response
+                    # Extract JSON array from response (handle markdown code blocks)
                     import re
-                    json_match = re.search(r'\[.*\]', text_response, re.DOTALL)
+                    # Remove markdown code blocks if present
+                    cleaned = re.sub(r'```json\s*|\s*```', '', text_response)
+                    # Find JSON array
+                    json_match = re.search(r'\[.*\]', cleaned, re.DOTALL)
                     if json_match:
                         dishes = json.loads(json_match.group(0))
-                        logger.info(f"Nova Pro extracted {len(dishes)} dishes")
-                        return {"text": text_response, "dishes": dishes}
-                except:
-                    logger.warning("Could not parse JSON from Nova Pro response")
+                        if dishes and len(dishes) > 0:
+                            logger.info(f"✓ Nova Pro extracted {len(dishes)} items successfully")
+                            return {"text": text_response, "dishes": dishes}
+                        else:
+                            logger.warning("Nova Pro returned empty array")
+                    else:
+                        logger.warning(f"Could not find JSON array in response")
+                except Exception as e:
+                    logger.error(f"JSON parsing failed: {e}")
+                    logger.error(f"Raw response was: {text_response[:500]}")
                 
             except Exception as e:
-                logger.error(f"Nova Pro analysis failed: {e}")
+                logger.error(f"Nova Pro API call failed: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+        else:
+            logger.warning("Bedrock client not initialized")
         
         # Fallback to demo data
-        logger.info("Using demo dishes (Nova Pro unavailable)")
+        logger.warning("⚠️ Falling back to demo dishes (Nova Pro failed or returned no data)")
         return {
             "text": "Sample menu extracted",
             "dishes": self._get_demo_dishes()
