@@ -667,6 +667,10 @@ async def analyze_menu_image(
             voice_summary=voice_summary
         )
         
+    except ValueError as ve:
+        # Validation errors (not a menu, bad format, etc.)
+        logger.warning(f"Validation error: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"Analysis failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -726,6 +730,10 @@ async def analyze_menu_url(request: MenuAnalysisRequest):
             voice_summary=voice_summary
         )
         
+    except ValueError as ve:
+        # Validation errors (not a menu, bad format, etc.)
+        logger.warning(f"Validation error: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"Analysis failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
