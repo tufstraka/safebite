@@ -427,11 +427,15 @@ Be thorough about visible ingredients - this is for allergen detection."""
         
         # Generate recommendations
         if detected:
-            recommendations = f"Likely contains {', '.join(detected)} (detected via AI reasoning). Avoid this dish or verify with server."
+            allergen_list = ', '.join(detected)
+            if len(detected) == 1:
+                recommendations = f"This likely has {allergen_list} in it. Our AI spotted it based on typical recipes for this dish. I'd skip it or ask the server about alternatives."
+            else:
+                recommendations = f"Heads up - this probably contains {allergen_list}. We picked that up from analyzing what usually goes into dishes like this. Maybe choose something else?"
         elif safety_score < 90:
-            recommendations = "Description lacks detail. AI analysis suggests caution. Always verify with server."
+            recommendations = "The description doesn't give us much detail, so I can't be 100% sure. Worth asking your server exactly what's in it before ordering."
         else:
-            recommendations = "Appears safe based on AI analysis. Always verify with server for certainty."
+            recommendations = "Looks good to me based on what I can see, but definitely double-check with your server to be safe. Better safe than sorry!"
         
         # Extract basic ingredients from description
         visible_ingredients = self._extract_simple_ingredients(description)
@@ -514,9 +518,15 @@ Answer with only the ingredient list, no explanation:"""
         return found[:5]  # Limit to 5
     
     async def generate_voice_summary(self, safe_count: int, unsafe_count: int, allergens: List[str]) -> str:
-        """Use Nova 2 Sonic to generate voice summary"""
-        allergen_text = ", ".join(allergens)
-        return f"Found {safe_count} safe dishes and {unsafe_count} dishes to avoid for {allergen_text} allergies. Review the details below."
+        """Generate conversational voice summary"""
+        allergen_text = " and ".join(allergens) if len(allergens) <= 2 else f"{', '.join(allergens[:-1])}, and {allergens[-1]}"
+        
+        if unsafe_count == 0:
+            return f"Good news! All {safe_count} dishes look safe for your {allergen_text} {'allergy' if len(allergens) == 1 else 'allergies'}. Check the details below, and as always, confirm with your server."
+        elif safe_count == 0:
+            return f"Hmm, none of these dishes are safe for {allergen_text}. I'd recommend asking about modifications or checking if they have other options."
+        else:
+            return f"I found {safe_count} dishes that look safe and {unsafe_count} you should probably avoid with your {allergen_text} {'allergy' if len(allergens) == 1 else 'allergies'}. Scroll down to see which is which."
 
 analyzer = NovaMenuAnalyzer()
 
@@ -528,8 +538,7 @@ async def root():
         "name": "SafeBite AI API",
         "version": "1.0.0",
         "status": "operational",
-        "powered_by": "Amazon Nova (Pro, Lite, Act, Sonic, Embeddings)",
-        "features": ["Image OCR", "PDF Text Extraction", "Custom Allergens"]
+        "features": ["Image OCR", "PDF Text Extraction", "Custom Allergens", "AI Ingredient Inference"]
     }
 
 @app.get("/health")
@@ -537,8 +546,7 @@ async def health():
     return {
         "name": "SafeBite AI API",
         "version": "1.0.0",
-        "status": "operational",
-        "powered_by": "Amazon Nova"
+        "status": "operational"
     }
 
 @app.get("/allergens")

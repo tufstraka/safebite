@@ -134,12 +134,12 @@ export default function Home() {
                   <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300">
                     SafeBite AI
                   </h1>
-                  <p className="text-xs text-purple-300/70">Powered by Amazon Nova</p>
+                  <p className="text-xs text-purple-300/70">Menu Safety Scanner</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-full backdrop-blur-sm">
-                  <span className="text-sm font-semibold text-purple-200">Multimodal AI</span>
+                  <span className="text-sm font-semibold text-purple-200">AI-Powered</span>
                 </div>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function Home() {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-8">
                 <Sparkles className="w-4 h-4 text-purple-300" />
-                <span className="text-sm font-medium text-purple-200">AI-Powered Menu Safety Analysis</span>
+                <span className="text-sm font-medium text-purple-200">Intelligent Allergen Detection</span>
               </div>
 
               <h2 className="text-6xl font-black text-white mb-6 leading-tight">
@@ -163,7 +163,7 @@ export default function Home() {
               </h2>
 
               <p className="text-xl text-purple-200/80 max-w-3xl mx-auto leading-relaxed">
-                Upload a menu photo or PDF. Select your allergies. Get instant dish-by-dish safety analysis powered by Amazon Nova's multimodal AI.
+                Upload a menu photo or PDF. Select your allergies. Get instant analysis with plain English explanations about what's safe and what's not.
               </p>
             </div>
           )}
@@ -415,10 +415,7 @@ export default function Home() {
         <footer className="border-t border-white/10 bg-black/20 backdrop-blur-xl mt-20">
           <div className="max-w-7xl mx-auto px-6 py-8 text-center">
             <p className="text-sm text-purple-300/70">
-              Built for Amazon Nova Hackathon 2026 | Category: Multimodal Understanding
-            </p>
-            <p className="text-xs text-purple-400/50 mt-2">
-              Powered by Amazon Nova Pro, Lite, Act, Sonic, and Embeddings
+              Built for food allergy safety • Always verify with restaurant staff
             </p>
           </div>
         </footer>
