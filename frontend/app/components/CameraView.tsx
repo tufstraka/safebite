@@ -12,6 +12,7 @@ export default function CameraView({ onCapture, onClose }: CameraViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   useEffect(() => {
     startCamera();
@@ -24,17 +25,39 @@ export default function CameraView({ onCapture, onClose }: CameraViewProps) {
 
   const startCamera = async () => {
     try {
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('camera not supported on this device. use upload instead.');
+        return;
+      }
+
+      // Try to get camera access
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }, // Back camera on mobile
+        video: { 
+          facingMode: { ideal: 'environment' }, // Prefer back camera but don't require it
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
         audio: false
       });
+      
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Camera error:', err);
-      setError('camera not available. try upload instead.');
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setPermissionDenied(true);
+        setError('camera permission denied. tap allow when your browser asks, or use upload instead.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setError('no camera found on this device. use upload instead.');
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        setError('camera is being used by another app. close other apps and try again, or use upload.');
+      } else {
+        setError('camera not available. try upload instead.');
+      }
     }
   };
 
@@ -50,7 +73,7 @@ export default function CameraView({ onCapture, onClose }: CameraViewProps) {
       ctx.drawImage(videoRef.current, 0, 0);
       canvas.toBlob((blob) => {
         if (blob) {
-          const file = new File([blob], 'snap.jpg', { type: 'image/jpeg' });
+          const file = new File([blob], `snap-${Date.now()}.jpg`, { type: 'image/jpeg' });
           onCapture(file);
           if (stream) {
             stream.getTracks().forEach(track => track.stop());
@@ -62,12 +85,18 @@ export default function CameraView({ onCapture, onClose }: CameraViewProps) {
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-slate-900 flex items-center justify-center z-50 p-6">
-        <div className="text-center">
-          <p className="text-white mb-4">{error}</p>
+      <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50 p-6">
+        <div className="text-center max-w-md">
+          <Camera className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+          <p className="text-white text-lg mb-2">{error}</p>
+          {permissionDenied && (
+            <p className="text-slate-400 text-sm mb-6">
+              you might need to enable camera in your browser settings
+            </p>
+          )}
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-emerald-500 text-white rounded-full font-bold"
+            className="px-8 py-3 bg-emerald-500 text-white rounded-full font-bold hover:bg-emerald-600 transition-colors"
           >
             got it
           </button>
@@ -83,6 +112,7 @@ export default function CameraView({ onCapture, onClose }: CameraViewProps) {
         ref={videoRef}
         autoPlay
         playsInline
+        muted
         className="absolute inset-0 w-full h-full object-cover"
       />
 
@@ -106,7 +136,7 @@ export default function CameraView({ onCapture, onClose }: CameraViewProps) {
           onClick={capturePhoto}
           className="w-20 h-20 rounded-full border-4 border-white bg-white/20 backdrop-blur-sm active:scale-95 transition-transform"
         >
-          <Camera className="w-8 h-8 text-white mx-auto" />
+          <div className="w-16 h-16 rounded-full bg-white mx-auto" />
         </button>
       </div>
     </div>
