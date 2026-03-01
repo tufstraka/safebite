@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, X, Camera } from 'lucide-react';
 import Toast from './components/Toast';
 import ConsoleEasterEgg from './components/ConsoleEasterEgg';
 
@@ -18,6 +18,12 @@ export default function Home() {
   const [results, setResults] = useState<any>(null);
   const [menuFile, setMenuFile] = useState<File | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on mount
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  }, []);
 
   const toggleAllergen = (allergen: string) => {
     if (selectedAllergens.includes(allergen)) {
@@ -36,6 +42,19 @@ export default function Home() {
 
   const removeCustomAllergen = (allergen: string) => {
     setCustomAllergens(customAllergens.filter(a => a !== allergen));
+  };
+
+  const handleCameraClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // Use back camera
+    input.onchange = (e: any) => {
+      if (e.target.files?.[0]) {
+        setMenuFile(e.target.files[0]);
+      }
+    };
+    input.click();
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,8 +185,8 @@ export default function Home() {
           <>
             {/* Direct intro */}
             <div className="mb-8">
-              <h2 className="text-4xl font-bold text-white mb-3">check your menu</h2>
-              <p className="text-lg text-slate-300">scan it. we'll check the allergens.</p>
+              <h2 className="text-4xl font-bold text-white mb-3">snap your food</h2>
+              <p className="text-lg text-slate-300">take a pic. we'll check the allergens.</p>
             </div>
 
             {/* Upload */}
@@ -369,7 +388,7 @@ export default function Home() {
         <footer className="border-t border-slate-700 mt-12 pt-6">
           <div className="flex justify-between items-center text-xs text-slate-400">
             <p>always double-check with staff</p>
-            <span className="text-slate-500">made in nairobi 🎴</span>
+            <span className="text-slate-500">made in ke 🎴</span>
           </div>
         </footer>
       </div>
