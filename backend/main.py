@@ -1,6 +1,5 @@
 """
-SafeBite AI - Backend API
-Restaurant Menu Safety Scanner using Amazon Nova
+SafeBite - Restaurant Menu Safety Scanner
 """
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
@@ -25,8 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="SafeBite AI API",
-    description="AI-Powered Restaurant Menu Safety Scanner using Amazon Nova",
+    title="SafeBite API",
+    description="Menu Safety Scanner",
     version="1.0.0"
 )
 
@@ -122,7 +121,7 @@ class NovaMenuAnalyzer:
             return ""
     
     async def analyze_menu_image(self, image_data: bytes, filename: str = "") -> Dict:
-        """Use Nova Pro to OCR images OR PyPDF2 for PDFs"""
+        """OCR images OR extract text from PDFs"""
         
         # For PDFs: Use PyPDF2 text extraction (Nova Pro doesn't support PDF format)
         if filename.lower().endswith('.pdf'):
@@ -373,11 +372,11 @@ Be thorough about visible ingredients - this is for allergen detection."""
         ]
     
     async def assess_dish_safety(self, dish: Dict, allergens: List[str], custom_keywords: Dict[str, List[str]] = {}) -> DishSafety:
-        """Use Nova 2 Lite to assess safety with intelligent reasoning"""
+        """Assess safety with ingredient inference"""
         name = dish["name"]
         description = dish["description"].lower()
         
-        # Step 1: Use Nova 2 Lite to infer ALL likely ingredients
+        # Step 1: Infer ALL likely ingredients
         inferred_ingredients = await self._infer_ingredients_with_ai(name, description)
         
         # Step 2: Check for allergens in visible description + inferred ingredients
@@ -569,16 +568,16 @@ analyzer = NovaMenuAnalyzer()
 @app.get("/")
 async def root():
     return {
-        "name": "SafeBite AI API",
+        "name": "SafeBite API",
         "version": "1.0.0",
         "status": "operational",
-        "features": ["Image OCR", "PDF Text Extraction", "Custom Allergens", "AI Ingredient Inference"]
+        "features": ["Image OCR", "PDF Text Extraction", "Custom Allergens", "Ingredient Inference"]
     }
 
 @app.get("/health")
 async def health():
     return {
-        "name": "SafeBite AI API",
+        "name": "SafeBite API",
         "version": "1.0.0",
         "status": "operational"
     }
