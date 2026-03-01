@@ -653,7 +653,8 @@ async def analyze_menu_image(
             safe_dishes=safe_dishes,
             unsafe_dishes=unsafe_dishes,
             unknown_dishes=unknown_dishes,
-            analysis_timestamp=datetime.now().isoformat(),
+            analysis_timestamp=now_utc.isoformat(),
+            analysis_time_eat=now_eat.strftime("%H:%M EAT"),
             voice_summary=voice_summary
         )
         
