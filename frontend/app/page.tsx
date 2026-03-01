@@ -174,13 +174,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-pink-100 to-purple-100 relative overflow-hidden">
       {/* Kenyan-inspired illustrations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Soft gradient orbs */}
-        <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-purple-200/40 to-pink-200/40 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-10 w-80 h-80 bg-gradient-to-br from-emerald-200/40 to-cyan-200/40 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-200/30 to-orange-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-purple-300/50 to-pink-300/50 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-10 w-80 h-80 bg-gradient-to-br from-emerald-300/50 to-cyan-300/50 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-300/40 to-orange-300/40 rounded-full blur-3xl"></div>
         
         {/* Kenyan patterns - geometric African motifs */}
         <svg className="absolute top-32 left-20 w-32 h-32 opacity-5 text-orange-600" viewBox="0 0 100 100">
@@ -203,7 +203,7 @@ export default function Home() {
         </svg>
         
         {/* Maasai-inspired zigzag patterns */}
-        <svg className="absolute bottom-1/4 left-1/3 w-48 h-16 opacity-5 text-yellow-700" viewBox="0 0 200 50">
+        <svg className="absolute bottom-1/4 left-1/3 w-48 h-16 opacity-5 text-yellow-800" viewBox="0 0 200 50">
           <path d="M0,25 L20,10 L40,25 L60,10 L80,25 L100,10 L120,25 L140,10 L160,25 L180,10 L200,25" 
                 fill="none" stroke="currentColor" strokeWidth="3"/>
           <path d="M0,35 L20,20 L40,35 L60,20 L80,35 L100,20 L120,35 L140,20 L160,35 L180,20 L200,35" 
@@ -211,7 +211,7 @@ export default function Home() {
         </svg>
         
         {/* Additional Kenyan patterns */}
-        <svg className="absolute top-1/2 left-20 w-28 h-28 opacity-5 text-red-700" viewBox="0 0 100 100">
+        <svg className="absolute top-1/2 left-20 w-28 h-28 opacity-5 text-red-800" viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2"/>
           <path d="M50,10 L50,90 M10,50 L90,50 M20,20 L80,80 M80,20 L20,80" stroke="currentColor" strokeWidth="1"/>
         </svg>
@@ -234,7 +234,7 @@ export default function Home() {
         </svg>
         
         {/* More zigzag patterns */}
-        <svg className="absolute top-16 right-1/2 w-40 h-12 opacity-5 text-emerald-700" viewBox="0 0 200 50">
+        <svg className="absolute top-16 right-1/2 w-40 h-12 opacity-5 text-emerald-800" viewBox="0 0 200 50">
           <path d="M0,10 L15,25 L30,10 L45,25 L60,10 L75,25 L90,10 L105,25 L120,10 L135,25 L150,10 L165,25 L180,10 L195,25" 
                 fill="none" stroke="currentColor" strokeWidth="2"/>
         </svg>
