@@ -21,6 +21,45 @@ export default function Home() {
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [scanHistory, setScanHistory] = useState<any[]>([]);
+
+  const loadHistory = () => {
+    try {
+      const history = JSON.parse(localStorage.getItem('safebite_history') || '[]');
+      setScanHistory(history);
+      setShowHistory(true);
+    } catch (e) {
+      console.error('Failed to load history:', e);
+    }
+  };
+
+  const saveToHistory = (scanData: any) => {
+    try {
+      const history = JSON.parse(localStorage.getItem('safebite_history') || '[]');
+      const scan = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        filename: menuFile?.name || 'Unknown',
+        allergens: selectedAllergens,
+        customAllergens: customAllergens,
+        results: {
+          total: scanData.total_dishes,
+          safe: scanData.safe_count,
+          unsafe: scanData.unsafe_count,
+          unknown: scanData.unknown_count
+        }
+      };
+      
+      history.unshift(scan);
+      if (history.length > 20) history.pop();
+      
+      localStorage.setItem('safebite_history', JSON.stringify(history));
+    } catch (e) {
+      console.error('Failed to save scan history:', e);
+    }
+  };
+
   const [showPWAPrompt, setShowPWAPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -48,6 +87,30 @@ export default function Home() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+  // Load saved allergen profile on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('safebite_allergens');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setSelectedAllergens(parsed.standard || []);
+        setCustomAllergens(parsed.custom || []);
+      } catch (e) {
+        console.error('Failed to load saved allergens:', e);
+      }
+    }
+  }, []);
+
+  // Save allergen profile whenever it changes
+  useEffect(() => {
+    if (selectedAllergens.length > 0 || customAllergens.length > 0) {
+      localStorage.setItem('safebite_allergens', JSON.stringify({
+        standard: selectedAllergens,
+        custom: customAllergens
+      }));
+    }
+  }, [selectedAllergens, customAllergens]);
+
 
   const handleInstallPWA = async () => {
     if (!deferredPrompt) return;
@@ -146,6 +209,7 @@ export default function Home() {
       });
       
       setResults(data);
+        saveToHistory(data);
       setToast({ message: `sawa! found ${data.total_dishes} dishes`, type: 'success' });
     } catch (error) {
       console.error('Analysis failed:', error);
@@ -303,6 +367,13 @@ export default function Home() {
             >
               .
             </a>
+          
+            <button
+              onClick={loadHistory}
+              className="text-sm text-gray-600 hover:text-emerald-500 transition-colors font-medium"
+            >
+              📚 history
+            </button>
           </div>
         </div>
       </nav>
@@ -438,6 +509,19 @@ export default function Home() {
                   className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
                 >
                   try another
+                </button>                <button
+                  onClick={() => {
+                    const text = `SafeBite Scan: ${results.safe_count} safe, ${results.unsafe_count} unsafe, ${results.unknown_count} unknown`;
+                    if (navigator.share) {
+                      navigator.share({ text, title: 'SafeBite Results' });
+                    } else {
+                      navigator.clipboard.writeText(text);
+                      alert('Results copied!');
+                    }
+                  }}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                >
+                  📤 share
                 </button>
               </div>
 
@@ -567,6 +651,69 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      
+      {/* Scan History Modal */}
+      {showHistory && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6" onClick={() => setShowHistory(false)}>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+              <h2 className="text-2xl font-bold text-gray-900">scan history</h2>
+              <button onClick={() => setShowHistory(false)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+            <div className="p-6">
+              {scanHistory.length === 0 ? (
+                <p className="text-gray-500 text-center py-12">no scans yet. snap your first menu!</p>
+              ) : (
+                <div className="space-y-3">
+                  {scanHistory.map((scan: any) => (
+                    <div key={scan.id} className="border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-400 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-bold text-gray-900">{scan.filename}</p>
+                          <p className="text-xs text-gray-500">{new Date(scan.timestamp).toLocaleString()}</p>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-700">{scan.results.total} dishes</span>
+                      </div>
+                      <div className="flex gap-2 text-sm mb-2">
+                        <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-semibold">✓ {scan.results.safe}</span>
+                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-lg font-semibold">✗ {scan.results.unsafe}</span>
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-lg font-semibold">? {scan.results.unknown}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {scan.allergens?.map((a: string) => (
+                          <span key={a} className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">{a}</span>
+                        ))}
+                        {scan.customAllergens?.map((a: string) => (
+                          <span key={a} className="text-xs px-2 py-1 bg-pink-100 text-pink-800 rounded-full font-medium">{a}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {scanHistory.length > 0 && (
+              <div className="p-6 border-t border-gray-200 flex justify-between">
+                <button
+                  onClick={() => {
+                    if (confirm('Clear all scan history?')) {
+                      localStorage.removeItem('safebite_history');
+                      setScanHistory([]);
+                      setShowHistory(false);
+                    }
+                  }}
+                  className="text-sm text-red-600 hover:text-red-700 font-semibold"
+                >
+                  🗑️ clear all
+                </button>
+                <p className="text-xs text-gray-500">{scanHistory.length} scans saved</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {/* Camera View Modal */}
       {showCamera && (
