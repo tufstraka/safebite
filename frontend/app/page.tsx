@@ -117,31 +117,31 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0f1419] relative overflow-hidden">
       {/* Subtle background illustrations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Subtle grid pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-          backgroundSize: '100px 100px'
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: 'linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)',
+          backgroundSize: '120px 120px'
         }}></div>
         
         {/* Organic shapes - food-inspired */}
-        <svg className="absolute top-20 right-10 w-64 h-64 opacity-5" viewBox="0 0 200 200">
-          <circle cx="100" cy="100" r="80" fill="currentColor" className="text-emerald-500" />
+        <svg className="absolute top-20 right-10 w-64 h-64 opacity-[0.03]" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="80" fill="#10b981" />
         </svg>
         
-        <svg className="absolute bottom-20 left-10 w-48 h-48 opacity-5" viewBox="0 0 200 200">
+        <svg className="absolute bottom-20 left-10 w-48 h-48 opacity-[0.03]" viewBox="0 0 200 200">
           <path d="M100,20 Q150,50 150,100 Q150,150 100,180 Q50,150 50,100 Q50,50 100,20 Z" 
-                fill="currentColor" className="text-emerald-500" />
+                fill="#10b981" />
         </svg>
         
-        <svg className="absolute top-1/2 left-1/4 w-32 h-32 opacity-5" viewBox="0 0 100 100">
-          <rect x="20" y="20" width="60" height="60" rx="8" fill="currentColor" className="text-slate-700" />
+        <svg className="absolute top-1/2 left-1/4 w-32 h-32 opacity-[0.02]" viewBox="0 0 100 100">
+          <rect x="20" y="20" width="60" height="60" rx="8" fill="#475569" />
         </svg>
       </div>
       {/* Simple header */}
-      <nav className="border-b border-slate-700 bg-slate-900/95 backdrop-blur-sm sticky top-0 z-50 relative">
+      <nav className="border-b border-slate-700/50 bg-[#0f1419]/95 backdrop-blur-sm sticky top-0 z-50 relative">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3">
           <Shield className="w-6 h-6 text-emerald-400" />
           <div className="flex items-center gap-1.5">
