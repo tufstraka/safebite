@@ -6,8 +6,8 @@ import Script from 'next/script'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SafeBite | Menu Safety Scanner',
-  description: 'Check restaurant menus for food allergens',
+  title: 'SafeBite | snap your food',
+  description: 'take a pic of your menu. check for allergens instantly.',
 }
 
 export default function RootLayout({
