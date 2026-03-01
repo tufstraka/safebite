@@ -399,8 +399,8 @@ Be thorough about visible ingredients - this is for allergen detection."""
             # Check visible description
             found_in_description = False
             for keyword in keywords:
-            import re
-            # Check if keyword uses word boundary regex
+                import re
+                # Check if keyword uses word boundary regex
             if isinstance(keyword, str) and keyword.startswith(r"\b"):
                 # Use regex for word boundary
                 if re.search(keyword, description, re.IGNORECASE) or re.search(keyword, name.lower(), re.IGNORECASE):
