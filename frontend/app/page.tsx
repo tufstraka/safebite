@@ -21,11 +21,46 @@ export default function Home() {
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showPWAPrompt, setShowPWAPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // Detect mobile on mount
   useEffect(() => {
     setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
   }, []);
+  // PWA install prompt
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      
+      // Show prompt after 30 seconds if not installed
+      setTimeout(() => {
+        if (!window.matchMedia('(display-mode: standalone)').matches) {
+          setShowPWAPrompt(true);
+        }
+      }, 30000);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+    setShowPWAPrompt(false);
+  };
+
 
   const toggleAllergen = (allergen: string) => {
     if (selectedAllergens.includes(allergen)) {
@@ -140,12 +175,40 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 relative overflow-hidden">
-      {/* Playful background illustrations */}
+      {/* Kenyan-inspired illustrations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Soft gradient orbs */}
         <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-purple-200/40 to-pink-200/40 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 left-10 w-80 h-80 bg-gradient-to-br from-emerald-200/40 to-cyan-200/40 rounded-full blur-3xl"></div>
         <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-200/30 to-orange-200/30 rounded-full blur-3xl"></div>
+        
+        {/* Kenyan patterns - geometric African motifs */}
+        <svg className="absolute top-32 left-20 w-32 h-32 opacity-5 text-orange-600" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <circle cx="50" cy="50" r="15" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <line x1="50" y1="5" x2="50" y2="95" stroke="currentColor" strokeWidth="1"/>
+          <line x1="5" y1="50" x2="95" y2="50" stroke="currentColor" strokeWidth="1"/>
+        </svg>
+        
+        <svg className="absolute bottom-32 right-20 w-40 h-40 opacity-5 text-emerald-600" viewBox="0 0 100 100">
+          <polygon points="50,10 90,35 75,75 25,75 10,35" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <polygon points="50,25 75,40 65,65 35,65 25,40" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <circle cx="50" cy="50" r="10" fill="currentColor" opacity="0.3"/>
+        </svg>
+        
+        <svg className="absolute top-1/3 right-1/4 w-24 h-24 opacity-5 text-red-600" viewBox="0 0 100 100">
+          <rect x="20" y="20" width="60" height="60" fill="none" stroke="currentColor" strokeWidth="2" transform="rotate(45 50 50)"/>
+          <rect x="35" y="35" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2" transform="rotate(45 50 50)"/>
+        </svg>
+        
+        {/* Maasai-inspired zigzag patterns */}
+        <svg className="absolute bottom-1/4 left-1/3 w-48 h-16 opacity-5 text-yellow-700" viewBox="0 0 200 50">
+          <path d="M0,25 L20,10 L40,25 L60,10 L80,25 L100,10 L120,25 L140,10 L160,25 L180,10 L200,25" 
+                fill="none" stroke="currentColor" strokeWidth="3"/>
+          <path d="M0,35 L20,20 L40,35 L60,20 L80,35 L100,20 L120,35 L140,20 L160,35 L180,20 L200,35" 
+                fill="none" stroke="currentColor" strokeWidth="2"/>
+        </svg>
       </div>
       {/* Simple header */}
       <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50 relative shadow-sm">
@@ -193,7 +256,7 @@ export default function Home() {
                     <Camera className="w-12 h-12" />
                     <div>
                       <p className="font-bold text-lg">take a pic</p>
-                      <p className="text-sm text-emerald-50">quick snap of your menu</p>
+                      <p className="text-sm text-emerald-50">quick snap of menu or food</p>
                     </div>
                     <input 
                       type="file" 
@@ -407,6 +470,31 @@ export default function Home() {
 
       {/* Console Easter Egg */}
       <ConsoleEasterEgg />
+      {/* PWA Install Prompt */}
+      {showPWAPrompt && (
+        <div className="fixed bottom-6 left-6 right-6 z-50 animate-slide-up">
+          <div className="bg-white rounded-2xl p-4 shadow-2xl border border-gray-200 flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-gray-900 font-semibold text-sm mb-1">install SafeBite</p>
+              <p className="text-gray-600 text-xs">quick access from your home screen 🎴</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowPWAPrompt(false)}
+                className="px-3 py-2 text-gray-500 text-sm font-medium"
+              >
+                later
+              </button>
+              <button
+                onClick={handleInstallPWA}
+                className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold"
+              >
+                install
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Camera View Modal */}
       {showCamera && (
