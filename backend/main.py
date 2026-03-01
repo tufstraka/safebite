@@ -137,7 +137,6 @@ class NovaMenuAnalyzer:
             if text and len(text.strip()) > 50:
                 if not is_food_menu(text):
                     raise ValueError("This doesn't look like a food menu. Please upload a restaurant menu with dishes and prices.")
-            if text and len(text.strip()) > 50:
                 logger.info(f"Extracted {len(text)} characters from PDF")
                 # Parse dishes from extracted text with improved parser
                 dishes = self._parse_dishes_from_text(text)
