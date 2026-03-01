@@ -189,16 +189,20 @@ export default function Home() {
               ) : (
                 <div className="space-y-3">
                   {/* Camera button - primary on mobile */}
-                  <button
-                    onClick={() => setShowCamera(true)}
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg p-6 transition-colors flex flex-col items-center gap-3"
-                  >
+                  <label className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg p-6 transition-colors flex flex-col items-center gap-3 cursor-pointer">
                     <Camera className="w-12 h-12" />
                     <div>
                       <p className="font-bold text-lg">take a pic</p>
                       <p className="text-sm text-emerald-100">quick snap of your menu</p>
                     </div>
-                  </button>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment"
+                      onChange={handleFileUpload}
+                      className="hidden" 
+                    />
+                  </label>
 
                   {/* Upload option - secondary */}
                   <label className="block cursor-pointer">
