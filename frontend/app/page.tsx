@@ -77,7 +77,8 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ detail: 'something broke' }));
+        throw new Error(errorData.detail || 'something broke');
       }
 
       const data = await response.json();
