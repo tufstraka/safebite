@@ -117,6 +117,10 @@ class NovaActAgent:
     async def discover_endpoints(self, base_url: str) -> List[str]:
         """Discover endpoints using Nova Act automation"""
         logger.info(f"Discovering endpoints for: {base_url}")
+        
+        # Normalize base URL - remove trailing slash
+        base_url = base_url.rstrip('/')
+        
         try:
             result = await self.client.invoke_agent(
                 action="discover_endpoints",
@@ -130,11 +134,17 @@ class NovaActAgent:
             
         except Exception as e:
             logger.error(f"Endpoint discovery failed: {e}")
-            # Fallback to basic discovery
+            # Fallback to basic discovery with normalized URLs
             return [
                 f"{base_url}/api",
+                f"{base_url}/api/v1",
                 f"{base_url}/admin",
-                f"{base_url}/login"
+                f"{base_url}/login",
+                f"{base_url}/dashboard",
+                f"{base_url}/.git/config",
+                f"{base_url}/.env",
+                f"{base_url}/config",
+                f"{base_url}/graphql"
             ]
     
     async def capture_screenshot(self, url: str) -> str:

@@ -1,260 +1,320 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Shield, Search, Zap, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
-
-interface Finding {
-  title: string
-  severity: string
-  category: string
-  description: string
-  evidence?: string
-}
-
-interface ScanStatus {
-  scan_id: string
-  status: string
-  progress: number
-  findings: number
-  started_at: string
-}
-
-interface ScanResult {
-  scan_id: string
-  target: string
-  findings: Finding[]
-  statistics: {
-    total_findings: number
-    critical: number
-    high: number
-    medium: number
-    low: number
-    info: number
-  }
-  completed_at: string
-}
+import { useState } from 'react';
+import { Shield, Search, AlertTriangle, CheckCircle, XCircle, FileText, Download, Clock, Target, Activity, TrendingUp } from 'lucide-react';
 
 export default function Home() {
-  const [targetUrl, setTargetUrl] = useState('')
-  const [scanning, setScanning] = useState(false)
-  const [scanStatus, setScanStatus] = useState<ScanStatus | null>(null)
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const [url, setUrl] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const [scanId, setScanId] = useState('');
+  const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState<any>(null);
 
   const startScan = async () => {
-    if (!targetUrl) {
-      setError('Please enter a target URL')
-      return
-    }
-
+    if (!url) return;
+    
+    setScanning(true);
+    setProgress(0);
+    setResults(null);
+    
     try {
-      setError(null)
-      setScanning(true)
-      setScanResult(null)
-
-      const response = await fetch(`${API_URL}/scans`, {
+      const response = await fetch('/api/scans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          target_url: targetUrl,
-          scan_type: 'quick',
+          target_url: url,
+          scan_type: 'deep',
           include_subdomains: true,
           include_screenshots: true,
           max_depth: 3
         })
-      })
-
-      const data: ScanStatus = await response.json()
-      setScanStatus(data)
-
-      // Poll for status updates
-      pollScanStatus(data.scan_id)
-    } catch (err) {
-      setError('Failed to start scan. Make sure the backend is running.')
-      setScanning(false)
+      });
+      
+      const data = await response.json();
+      setScanId(data.scan_id);
+      
+      // Poll for results
+      pollScanStatus(data.scan_id);
+    } catch (error) {
+      console.error('Scan failed:', error);
+      setScanning(false);
     }
-  }
-
-  const pollScanStatus = async (scanId: string) => {
+  };
+  
+  const pollScanStatus = async (id: string) => {
     const interval = setInterval(async () => {
       try {
-        const statusResponse = await fetch(`${API_URL}/scans/${scanId}/status`)
-        const status: ScanStatus = await statusResponse.json()
-        setScanStatus(status)
-
+        const statusResponse = await fetch(`/api/scans/${id}/status`);
+        const status = await statusResponse.json();
+        
+        setProgress(status.progress);
+        
         if (status.status === 'completed') {
-          clearInterval(interval)
+          clearInterval(interval);
           
-          // Fetch final results
-          const resultsResponse = await fetch(`${API_URL}/scans/${scanId}/results`)
-          const results: ScanResult = await resultsResponse.json()
-          setScanResult(results)
-          setScanning(false)
+          const resultsResponse = await fetch(`/api/scans/${id}/results`);
+          const results = await resultsResponse.json();
+          
+          setResults(results);
+          setScanning(false);
         } else if (status.status === 'failed') {
-          clearInterval(interval)
-          setError('Scan failed')
-          setScanning(false)
+          clearInterval(interval);
+          setScanning(false);
         }
-      } catch (err) {
-        clearInterval(interval)
-        setError('Failed to fetch scan status')
-        setScanning(false)
+      } catch (error) {
+        console.error('Polling failed:', error);
       }
-    }, 2000)
-  }
+    }, 1000);
+  };
 
   const getSeverityColor = (severity: string) => {
-    const colors: Record<string, string> = {
-      critical: 'text-red-600 bg-red-50 border-red-200',
-      high: 'text-orange-600 bg-orange-50 border-orange-200',
-      medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-      low: 'text-blue-600 bg-blue-50 border-blue-200',
-      info: 'text-gray-600 bg-gray-50 border-gray-200'
-    }
-    return colors[severity] || colors.info
-  }
+    const colors: any = {
+      critical: 'bg-red-100 text-red-800 border-red-200',
+      high: 'bg-orange-100 text-orange-800 border-orange-200',
+      medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      low: 'bg-blue-100 text-blue-800 border-blue-200',
+      info: 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    return colors[severity] || colors.info;
+  };
+
+  const getSeverityIcon = (severity: string) => {
+    if (severity === 'critical' || severity === 'high') return <AlertTriangle className="w-5 h-5" />;
+    if (severity === 'medium') return <XCircle className="w-5 h-5" />;
+    return <CheckCircle className="w-5 h-5" />;
+  };
+
+  const exportReport = () => {
+    if (!results) return;
+    
+    const report = {
+      scan_id: results.scan_id,
+      target: results.target,
+      scan_type: results.scan_type,
+      completed_at: results.completed_at,
+      statistics: results.statistics,
+      findings: results.findings
+    };
+    
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bounty-recon-${results.scan_id}.json`;
+    a.click();
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="border-b bg-white/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-indigo-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bounty Recon AI</h1>
-              <p className="text-sm text-gray-600">Powered by Amazon Nova Act</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Navigation */}
+      <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-lg">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Bounty Recon AI
+                </h1>
+                <p className="text-xs text-gray-500">Powered by Amazon Nova Act</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-semibold rounded-full shadow-md">
+                Amazon Nova Hackathon 2026
+              </span>
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-100 rounded-full text-indigo-700 text-sm font-medium mb-4">
-            <Zap className="w-4 h-4" />
-            Amazon Nova Hackathon 2026
+      {/* Hero Section */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {!results && (
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md mb-6 border border-indigo-100">
+              <Activity className="w-4 h-4 text-indigo-600" />
+              <span className="text-sm font-medium text-gray-700">AI-Powered Security Reconnaissance</span>
+            </div>
+            
+            <h2 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              Automate Your Bug Bounty
+              <br />
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Reconnaissance Workflow
+              </span>
+            </h2>
+            
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Leverage Amazon Nova Act to intelligently crawl, analyze, and discover security vulnerabilities 
+              in your target applications. Save hours of manual reconnaissance work.
+            </p>
           </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            AI-Powered Bug Bounty Reconnaissance
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Automate the tedious initial phases of security research with intelligent recon powered by Nova Act
-          </p>
-        </div>
+        )}
 
         {/* Scan Input */}
-        <div className="max-w-2xl mx-auto mb-12">
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Target URL
-            </label>
-            <div className="flex gap-3">
-              <input
-                type="url"
-                value={targetUrl}
-                onChange={(e) => setTargetUrl(e.target.value)}
-                placeholder="https://example.com"
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                disabled={scanning}
-              />
-              <button
-                onClick={startScan}
-                disabled={scanning}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {scanning ? (
-                  <>
-                    <Clock className="w-5 h-5 animate-spin" />
-                    Scanning...
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-5 h-5" />
-                    Start Scan
-                  </>
-                )}
-              </button>
-            </div>
-            {error && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                <AlertTriangle className="w-4 h-4" />
-                {error}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Scan Progress */}
-        {scanStatus && scanning && (
-          <div className="max-w-2xl mx-auto mb-12">
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h3 className="text-lg font-semibold mb-4">Scan Progress</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Status: {scanStatus.status}</span>
-                  <span>{scanStatus.progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${scanStatus.progress}%` }}
+        {!results && (
+          <div className="max-w-3xl mx-auto mb-16">
+            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Target URL</label>
+              
+              <div className="flex gap-3">
+                <div className="flex-1 relative">
+                  <Target className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="url"
+                    placeholder="https://example.com"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    disabled={scanning}
+                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
                   />
                 </div>
-                <p className="text-sm text-gray-600">
-                  Found {scanStatus.findings} findings so far...
-                </p>
+                
+                <button
+                  onClick={startScan}
+                  disabled={!url || scanning}
+                  className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 transition-all"
+                >
+                  {scanning ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Scanning...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-5 h-5" />
+                      Start Recon
+                    </>
+                  )}
+                </button>
               </div>
+              
+              {scanning && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Scan Progress</span>
+                    <span className="text-sm font-bold text-indigo-600">{progress}%</span>
+                  </div>
+                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 transition-all duration-500 rounded-full"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Scan Results */}
-        {scanResult && (
-          <div className="space-y-6">
-            {/* Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {[
-                { label: 'Total', value: scanResult.statistics.total_findings, color: 'indigo' },
-                { label: 'Critical', value: scanResult.statistics.critical, color: 'red' },
-                { label: 'High', value: scanResult.statistics.high, color: 'orange' },
-                { label: 'Medium', value: scanResult.statistics.medium, color: 'yellow' },
-                { label: 'Low', value: scanResult.statistics.low, color: 'blue' },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-white rounded-lg shadow p-6 text-center">
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
+        {/* Results Section */}
+        {results && (
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Reconnaissance Report</h2>
+                  <p className="text-gray-600">Target: <span className="font-mono font-semibold text-indigo-600">{results.target}</span></p>
                 </div>
-              ))}
+                <div className="flex gap-3">
+                  <button
+                    onClick={exportReport}
+                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg flex items-center gap-2 transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export Report
+                  </button>
+                  <button
+                    onClick={() => { setResults(null); setUrl(''); }}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all"
+                  >
+                    New Scan
+                  </button>
+                </div>
+              </div>
+
+              {/* Statistics Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl border border-red-200">
+                  <div className="text-3xl font-bold text-red-700">{results.statistics.critical || 0}</div>
+                  <div className="text-sm font-medium text-red-600">Critical</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
+                  <div className="text-3xl font-bold text-orange-700">{results.statistics.high || 0}</div>
+                  <div className="text-sm font-medium text-orange-600">High</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl border border-yellow-200">
+                  <div className="text-3xl font-bold text-yellow-700">{results.statistics.medium || 0}</div>
+                  <div className="text-sm font-medium text-yellow-600">Medium</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                  <div className="text-3xl font-bold text-blue-700">{results.statistics.low || 0}</div>
+                  <div className="text-sm font-medium text-blue-600">Low</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+                  <div className="text-3xl font-bold text-gray-700">{results.statistics.info || 0}</div>
+                  <div className="text-sm font-medium text-gray-600">Info</div>
+                </div>
+              </div>
             </div>
 
             {/* Findings */}
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-                Scan Complete - {scanResult.findings.length} Findings
-              </h3>
+            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+              <div className="flex items-center gap-3 mb-6">
+                <FileText className="w-6 h-6 text-indigo-600" />
+                <h3 className="text-2xl font-bold text-gray-900">Detailed Findings</h3>
+                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold">
+                  {results.findings.length} issues
+                </span>
+              </div>
+
               <div className="space-y-4">
-                {scanResult.findings.map((finding, index) => (
+                {results.findings.map((finding: any, index: number) => (
                   <div
                     key={index}
-                    className={`p-4 border rounded-lg ${getSeverityColor(finding.severity)}`}
+                    className={`p-6 rounded-xl border-2 transition-all hover:shadow-md ${getSeverityColor(finding.severity)}`}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold">{finding.title}</h4>
-                      <span className="text-xs font-medium uppercase px-2 py-1 rounded">
-                        {finding.severity}
-                      </span>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 mt-1">
+                        {getSeverityIcon(finding.severity)}
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-lg font-bold">{finding.title}</h4>
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                            {finding.severity}
+                          </span>
+                        </div>
+                        
+                        <p className="text-sm mb-3 leading-relaxed">{finding.description}</p>
+                        
+                        {finding.evidence && (
+                          <div className="bg-white/50 rounded-lg p-3 font-mono text-xs border">
+                            {finding.evidence}
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-4 mt-3 text-xs">
+                          <span className="flex items-center gap-1">
+                            <Target className="w-3 h-3" />
+                            {finding.category}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(finding.discovered_at).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm mb-2">{finding.description}</p>
-                    {finding.evidence && (
-                      <pre className="text-xs bg-black/5 p-2 rounded mt-2 overflow-x-auto">
-                        {finding.evidence}
-                      </pre>
-                    )}
                   </div>
                 ))}
               </div>
@@ -262,12 +322,53 @@ export default function Home() {
           </div>
         )}
 
-        {/* Footer */}
-        <footer className="mt-16 text-center text-sm text-gray-600">
-          <p>Built for Amazon Nova Hackathon 2026 • #AmazonNova</p>
-          <p className="mt-1">Category: UI Automation</p>
-        </footer>
-      </main>
+        {/* Features */}
+        {!results && !scanning && (
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Intelligent Crawling</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Nova Act autonomously navigates and discovers endpoints, subdomains, and hidden paths with AI-powered decision making.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Security Analysis</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Automatically detect missing security headers, exposed sensitive files, and common misconfigurations.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Comprehensive Reports</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Generate detailed findings with severity ratings, evidence, and actionable recommendations for your bug bounty reports.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t bg-white/80 backdrop-blur-md mt-20">
+        <div className="max-w-7xl mx-auto px-6 py-8 text-center">
+          <p className="text-sm text-gray-600">
+            Built for Amazon Nova Hackathon 2026 | Category: UI Automation
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Powered by Amazon Nova Act Foundation Model
+          </p>
+        </div>
+      </footer>
     </div>
-  )
+  );
 }
