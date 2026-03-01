@@ -291,6 +291,39 @@ Be thorough about visible ingredients - this is for allergen detection."""
                             description = next_line
                     
                     if name_part:
+                        # Filter out menu headers, footers, legends
+                        name_lower = name_part.lower()
+                        skip_patterns = [
+                            'prices are subject to change',
+                            'prices are in',
+                            'inclusive of vat',
+                            'service charge',
+                            'catering levy',
+                            'allergen',
+                            'gluten dairy peanuts',
+                            'fish dairy peanuts',
+                            'all prices',
+                            'menu',
+                            'appetizers',
+                            'entrees',
+                            'desserts',
+                            'beverages',
+                            'starters',
+                            'mains',
+                            'sides'
+                        ]
+                        
+                        # Skip if it's a header/footer/legend
+                        if any(pattern in name_lower for pattern in skip_patterns):
+                            continue
+                        
+                        # Skip if it's just a list of allergens
+                        allergen_words = ['fish', 'dairy', 'peanuts', 'gluten', 'eggs', 'shellfish', 'soy', 'nuts']
+                        word_count = len(name_part.split())
+                        allergen_count = sum(1 for allergen in allergen_words if allergen in name_lower)
+                        if word_count <= 10 and allergen_count >= 3:
+                            continue
+                        
                         dishes.append({
                             "name": name_part[:100],  # Limit length
                             "description": description[:300] if description else name_part,
@@ -313,6 +346,21 @@ Be thorough about visible ingredients - this is for allergen detection."""
                         next_line = lines[i + 1].strip()
                         if next_line and next_line[0].islower() and len(next_line) > 10:
                             description = next_line
+                    
+                    # Filter out headers/footers
+                    line_lower = line.lower()
+                    skip_patterns = [
+                        'prices are subject to change',
+                        'prices are in',
+                        'inclusive of',
+                        'service charge',
+                        'allergen',
+                        'all prices',
+                        'menu section'
+                    ]
+                    
+                    if any(pattern in line_lower for pattern in skip_patterns):
+                        continue
                     
                     dishes.append({
                         "name": line,
