@@ -425,17 +425,42 @@ Be thorough about visible ingredients - this is for allergen detection."""
         else:
             level = "Unsafe"
         
-        # Generate recommendations
+        # Generate recommendations with variety
         if detected:
             allergen_list = ', '.join(detected)
             if len(detected) == 1:
-                recommendations = f"This likely has {allergen_list} in it. Our AI spotted it based on typical recipes for this dish. I'd skip it or ask the server about alternatives."
+                # Vary single allergen messages
+                messages = [
+                    f"This likely has {allergen_list} in it. I'd skip this one and ask about alternatives.",
+                    f"Pretty sure this contains {allergen_list}. Probably best to avoid it or check with your server.",
+                    f"Based on what I'm seeing, this has {allergen_list}. Worth asking if they can make it without.",
+                    f"This dish typically includes {allergen_list}. I'd recommend choosing something else to be safe."
+                ]
+                import random
+                recommendations = random.choice(messages)
             else:
-                recommendations = f"Heads up - this probably contains {allergen_list}. We picked that up from analyzing what usually goes into dishes like this. Maybe choose something else?"
+                # Multiple allergens - more serious tone
+                recommendations = f"This has {allergen_list} in it. Definitely skip this one."
         elif safety_score < 90:
-            recommendations = "The description doesn't give us much detail, so I can't be 100% sure. Worth asking your server exactly what's in it before ordering."
+            # Vary uncertain messages
+            uncertain = [
+                "The menu doesn't give much detail here. I'd ask what's actually in it before ordering.",
+                "Not enough info to be sure. Quick question to your server will clear it up.",
+                "Can't tell for certain from the description. Better to double-check with the kitchen.",
+                "Description's a bit vague. Worth asking about the ingredients to be safe."
+            ]
+            import random
+            recommendations = random.choice(uncertain)
         else:
-            recommendations = "Looks good to me based on what I can see, but definitely double-check with your server to be safe. Better safe than sorry!"
+            # Vary safe messages
+            safe = [
+                "Looks good to me, but always verify with your server just to be sure!",
+                "This seems safe based on what I can see. Still, quick check with staff never hurts.",
+                "Appears safe! But you know the drill - double-check with your server.",
+                "Should be fine, though I always recommend asking your server to confirm."
+            ]
+            import random
+            recommendations = random.choice(safe)
         
         # Extract basic ingredients from description
         visible_ingredients = self._extract_simple_ingredients(description)
@@ -518,15 +543,24 @@ Answer with only the ingredient list, no explanation:"""
         return found[:5]  # Limit to 5
     
     async def generate_voice_summary(self, safe_count: int, unsafe_count: int, allergens: List[str]) -> str:
-        """Generate conversational voice summary"""
+        """Generate conversational voice summary with variety"""
         allergen_text = " and ".join(allergens) if len(allergens) <= 2 else f"{', '.join(allergens[:-1])}, and {allergens[-1]}"
         
         if unsafe_count == 0:
-            return f"Good news! All {safe_count} dishes look safe for your {allergen_text} {'allergy' if len(allergens) == 1 else 'allergies'}. Check the details below, and as always, confirm with your server."
+            messages = [
+                f"Great news! All {safe_count} dishes look safe for your {allergen_text} {'allergy' if len(allergens) == 1 else 'allergies'}.",
+                f"You're in luck - found {safe_count} safe options with no {allergen_text} detected!",
+                f"Good to go! All {safe_count} dishes should work for you with your {allergen_text} restriction."
+            ]
+            import random
+            return random.choice(messages) + " Always confirm with your server though!"
         elif safe_count == 0:
-            return f"Hmm, none of these dishes are safe for {allergen_text}. I'd recommend asking about modifications or checking if they have other options."
+            return f"Unfortunately none of these work for {allergen_text}. Ask your server if they can modify something or check for other menu options."
         else:
-            return f"I found {safe_count} dishes that look safe and {unsafe_count} you should probably avoid with your {allergen_text} {'allergy' if len(allergens) == 1 else 'allergies'}. Scroll down to see which is which."
+            if unsafe_count == 1:
+                return f"Found {safe_count} safe options and 1 to avoid with your {allergen_text} {'allergy' if len(allergens) == 1 else 'allergies'}. Details below!"
+            else:
+                return f"Out of everything here, {safe_count} look safe and {unsafe_count} have {allergen_text}. Scroll down to see which is which."
 
 analyzer = NovaMenuAnalyzer()
 
