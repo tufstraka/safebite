@@ -3,7 +3,7 @@ SafeBite AI - Backend API
 Restaurant Menu Safety Scanner using Amazon Nova
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional, Dict
@@ -323,8 +323,8 @@ async def get_allergens():
 @app.post("/analyze/image", response_model=MenuAnalysisResponse)
 async def analyze_menu_image(
     file: UploadFile = File(...), 
-    allergens: str = "",
-    custom_allergens: str = ""
+    allergens: str = Form(""),
+    custom_allergens: str = Form("")
 ):
     """
     Analyze menu from uploaded image or PDF
@@ -333,11 +333,14 @@ async def analyze_menu_image(
     """
     try:
         # Parse allergens
+        logger.info(f"Received allergens='{allergens}', custom_allergens='{custom_allergens}'")
         allergen_list = [a.strip().lower() for a in allergens.split(",") if a.strip()]
         custom_list = [a.strip() for a in custom_allergens.split(",") if a.strip()]
+        logger.info(f"Parsed allergen_list={allergen_list}, custom_list={custom_list}")
         
         # Combine allergen lists
         all_allergens = allergen_list + custom_list
+        logger.info(f"Combined all_allergens={all_allergens}")
         
         if not all_allergens:
             raise HTTPException(status_code=400, detail="Please specify at least one allergen")
