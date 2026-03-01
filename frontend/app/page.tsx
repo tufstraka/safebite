@@ -115,22 +115,12 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Simple header */}
       <nav className="border-b border-slate-700 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-emerald-400" />
-            <div>
-              <h1 className="text-xl font-bold text-white">SafeBite</h1>
-              <p className="text-xs text-slate-500">by @dobynog</p>
-            </div>
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3">
+          <Shield className="w-6 h-6 text-emerald-400" />
+          <div>
+            <h1 className="text-xl font-bold text-white">SafeBite</h1>
+            <p className="text-xs text-slate-500">by @dobynog</p>
           </div>
-          <a 
-            href="https://github.com/tufstraka" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-slate-400 hover:text-slate-300 transition-colors"
-          >
-            github ↗
-          </a>
         </div>
       </nav>
 
@@ -337,25 +327,7 @@ export default function Home() {
         <footer className="border-t border-slate-700 mt-12 pt-6">
           <div className="flex justify-between items-center text-xs text-slate-400">
             <p>always double-check with staff</p>
-            <div className="flex items-center gap-4">
-              <span className="text-slate-500">nairobi 🇰🇪</span>
-              <a 
-                href="https://github.com/tufstraka/bounty-recon-ai" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-slate-300 transition-colors"
-              >
-                source
-              </a>
-              <a 
-                href="https://x.com/dobynog" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-slate-300 transition-colors"
-              >
-                @dobynog
-              </a>
-            </div>
+            <span className="text-slate-500">nairobi 🇰🇪</span>
           </div>
         </footer>
       </div>
