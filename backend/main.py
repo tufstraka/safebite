@@ -122,22 +122,31 @@ class NovaMenuAnalyzer:
             return ""
     
     async def analyze_menu_image(self, image_data: bytes, filename: str = "") -> Dict:
-        """Use Nova Pro to OCR and understand menu"""
-        # Check if PDF
+        """Use Nova Pro to OCR and understand menu - handles PDFs AND images"""
+        
+        # For PDFs: Try both PyPDF2 text extraction AND Nova Pro
         if filename.lower().endswith('.pdf'):
+            logger.info(f"Processing PDF: {filename}")
             text = await self.extract_text_from_pdf(image_data)
-            if text:
+            if text and len(text.strip()) > 50:
+                logger.info(f"Extracted {len(text)} characters from PDF")
                 # Parse dishes from extracted text
                 dishes = self._parse_dishes_from_text(text)
-                return {
-                    "text": text,
-                    "dishes": dishes if dishes else self._get_demo_dishes()
-                }
+                if dishes and len(dishes) > 0:
+                    logger.info(f"✓ Parsed {len(dishes)} dishes from PDF text")
+                    return {"text": text, "dishes": dishes}
+                else:
+                    logger.warning("PDF text extraction succeeded but no dishes found")
+            else:
+                logger.warning("PDF text extraction failed or insufficient text")
+            
+            # PDF text extraction failed - try Nova Pro on PDF as image
+            logger.info("Falling back to Nova Pro for PDF analysis...")
         
-        # Try Nova Pro for image OCR
+        # Try Nova Pro for image/PDF OCR
         if self.bedrock:
             try:
-                logger.info("Calling Nova Pro for image analysis...")
+                logger.info(f"Calling Nova Pro for image analysis (file: {filename})...")
                 
                 # Encode image to base64
                 image_base64 = base64.b64encode(image_data).decode('utf-8')
@@ -146,6 +155,8 @@ class NovaMenuAnalyzer:
                 image_format = "jpeg"
                 if filename.lower().endswith('.png'):
                     image_format = "png"
+                elif filename.lower().endswith('.pdf'):
+                    image_format = "pdf"  # Nova Pro supports PDF
                 elif filename.lower().endswith('.webp'):
                     image_format = "webp"
                 elif filename.lower().endswith('.gif'):
@@ -158,13 +169,13 @@ class NovaMenuAnalyzer:
                             "role": "user",
                             "content": [
                                 {
-                                    "image": {
+                                    "document" if image_format == "pdf" else "image": {
                                         "format": image_format,
                                         "source": {"bytes": image_base64}
                                     }
                                 },
                                 {
-                                    "text": """Analyze this image carefully. It could be:
+                                    "text": """Analyze this image/document carefully. It could be:
 1. A restaurant menu with dishes listed
 2. A photo of a single food item
 3. A photo of multiple food items on a table
