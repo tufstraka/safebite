@@ -14,6 +14,7 @@ import io
 from PyPDF2 import PdfReader
 import boto3
 import os
+from menu_validator import is_food_menu
 from dotenv import load_dotenv
 
 # Load environment variables
