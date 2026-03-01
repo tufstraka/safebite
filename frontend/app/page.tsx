@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, Volume2, Sparkles } from 'lucide-react';
+import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, Volume2, Sparkles, Plus, X } from 'lucide-react';
 
 const ALLERGENS = [
   'Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy',
@@ -10,9 +10,11 @@ const ALLERGENS = [
 
 export default function Home() {
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [customAllergens, setCustomAllergens] = useState<string[]>([]);
+  const [customInput, setCustomInput] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<any>(null);
-  const [menuImage, setMenuImage] = useState<File | null>(null);
+  const [menuFile, setMenuFile] = useState<File | null>(null);
 
   const toggleAllergen = (allergen: string) => {
     if (selectedAllergens.includes(allergen)) {
@@ -22,14 +24,27 @@ export default function Home() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const addCustomAllergen = () => {
+    if (customInput.trim() && !customAllergens.includes(customInput.trim())) {
+      setCustomAllergens([...customAllergens, customInput.trim()]);
+      setCustomInput('');
+    }
+  };
+
+  const removeCustomAllergen = (allergen: string) => {
+    setCustomAllergens(customAllergens.filter(a => a !== allergen));
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setMenuImage(e.target.files[0]);
+      setMenuFile(e.target.files[0]);
     }
   };
 
   const analyzeMenu = async () => {
-    if (!menuImage || selectedAllergens.length === 0) {
+    const allAllergens = [...selectedAllergens, ...customAllergens];
+    
+    if (!menuFile || allAllergens.length === 0) {
       alert('Please upload a menu and select at least one allergen');
       return;
     }
@@ -39,8 +54,9 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      formData.append('file', menuImage);
+      formData.append('file', menuFile);
       formData.append('allergens', selectedAllergens.map(a => a.toLowerCase()).join(','));
+      formData.append('custom_allergens', customAllergens.join(','));
 
       const response = await fetch('/api/analyze/image', {
         method: 'POST',
@@ -125,7 +141,7 @@ export default function Home() {
               </h2>
 
               <p className="text-xl text-purple-200/80 max-w-3xl mx-auto leading-relaxed">
-                Upload a menu. Select your allergies. Get instant dish-by-dish safety analysis powered by Amazon Nova's multimodal AI.
+                Upload a menu photo or PDF. Select your allergies. Get instant dish-by-dish safety analysis powered by Amazon Nova's multimodal AI.
               </p>
             </div>
           )}
@@ -142,24 +158,26 @@ export default function Home() {
 
                 <label className="block cursor-pointer">
                   <div className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-purple-400/50 hover:bg-white/5 transition-all">
-                    {menuImage ? (
+                    {menuFile ? (
                       <div className="space-y-3">
                         <CheckCircle className="w-12 h-12 text-green-400 mx-auto" />
-                        <p className="text-white font-semibold">{menuImage.name}</p>
-                        <p className="text-purple-300/70 text-sm">Click to change</p>
+                        <p className="text-white font-semibold">{menuFile.name}</p>
+                        <p className="text-purple-300/70 text-sm">
+                          {menuFile.name.toLowerCase().endsWith('.pdf') ? 'PDF Document' : 'Image File'} • Click to change
+                        </p>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         <Upload className="w-12 h-12 text-purple-300/50 mx-auto" />
-                        <p className="text-white font-semibold">Drop menu image or click to browse</p>
-                        <p className="text-purple-300/70 text-sm">Supports JPG, PNG, PDF</p>
+                        <p className="text-white font-semibold">Drop menu image or PDF, or click to browse</p>
+                        <p className="text-purple-300/70 text-sm">Supports JPG, PNG, PDF (max 50MB)</p>
                       </div>
                     )}
                   </div>
                   <input
                     type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
+                    accept="image/*,.pdf"
+                    onChange={handleFileUpload}
                     className="hidden"
                   />
                 </label>
@@ -172,7 +190,7 @@ export default function Home() {
                   Select Your Allergies
                 </h3>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
                   {ALLERGENS.map((allergen) => (
                     <button
                       key={allergen}
@@ -187,12 +205,54 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
+
+                {/* Custom Allergen Input */}
+                <div className="border-t border-white/10 pt-6">
+                  <label className="block text-sm font-semibold text-purple-200 mb-3">Add Custom Allergen</label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={customInput}
+                      onChange={(e) => setCustomInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addCustomAllergen()}
+                      placeholder="e.g., Cilantro, MSG, Nightshades..."
+                      className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-300/50 focus:border-purple-400/50 focus:outline-none"
+                    />
+                    <button
+                      onClick={addCustomAllergen}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all flex items-center gap-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add
+                    </button>
+                  </div>
+
+                  {/* Custom Allergens List */}
+                  {customAllergens.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {customAllergens.map((allergen) => (
+                        <div
+                          key={allergen}
+                          className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-pink-500/30"
+                        >
+                          {allergen}
+                          <button
+                            onClick={() => removeCustomAllergen(allergen)}
+                            className="hover:bg-white/20 rounded-full p-1 transition-all"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Analyze Button */}
               <button
                 onClick={analyzeMenu}
-                disabled={!menuImage || selectedAllergens.length === 0 || analyzing}
+                disabled={!menuFile || (selectedAllergens.length === 0 && customAllergens.length === 0) || analyzing}
                 className="w-full py-6 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-white rounded-2xl font-bold text-xl hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all flex items-center justify-center gap-3"
               >
                 {analyzing ? (
@@ -218,10 +278,10 @@ export default function Home() {
                 <div className="flex items-start justify-between mb-6">
                   <div>
                     <h2 className="text-4xl font-black text-white mb-3">{results.restaurant_name}</h2>
-                    <p className="text-purple-300/80">Found {results.total_dishes} dishes • Analyzed for {selectedAllergens.join(', ')}</p>
+                    <p className="text-purple-300/80">Found {results.total_dishes} dishes • Analyzed for {[...selectedAllergens, ...customAllergens].join(', ')}</p>
                   </div>
                   <button
-                    onClick={() => { setResults(null); setMenuImage(null); setSelectedAllergens([]); }}
+                    onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
                     className="px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20"
                   >
                     New Scan
