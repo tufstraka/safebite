@@ -86,7 +86,7 @@ ALLERGEN_KEYWORDS = {
     "eggs": ["egg", "mayo", "mayonnaise", "meringue", "custard"],
     "wheat": ["wheat", "flour", "bread", "pasta", "noodle", "couscous", "semolina"],
     "soy": ["soy", "tofu", "edamame", "miso", "tempeh"],
-    "fish": ["fish", "salmon", "tuna", "cod", "anchov", "sardine"],
+    "fish": [r"fish", "salmon", "tuna", "cod", "anchov", "sardine"],
     "shellfish": ["shrimp", "crab", "lobster", "prawn", "crawfish", "crayfish"],
     "sesame": ["sesame", "tahini"],
     "gluten": ["wheat", "barley", "rye", "flour", "bread"]
