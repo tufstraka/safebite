@@ -1,14 +1,14 @@
-# 🚀 PRODUCTION DEPLOYMENT COMPLETE
+#  PRODUCTION DEPLOYMENT COMPLETE
 
 ## Bounty Recon AI - Live on Server
 
 **Date**: 2026-03-01 14:55 UTC  
 **Server**: 10.0.1.254  
-**Status**: ✅ **PRODUCTION READY**
+**Status**:  **PRODUCTION READY**
 
 ---
 
-## 🌐 Access URLs
+##  Access URLs
 
 - **Frontend**: http://10.0.1.254/
 - **API Health**: http://10.0.1.254/health
@@ -17,7 +17,7 @@
 
 ---
 
-## ✅ What's Deployed
+##  What's Deployed
 
 ### Frontend (Nginx Static)
 - **Location**: `/var/www/html/`
@@ -43,7 +43,7 @@
 
 ---
 
-## 📊 Service Status
+##  Service Status
 
 ```bash
 # Check backend status
@@ -97,19 +97,19 @@ curl -X POST http://10.0.1.254/api/scans \
 
 ---
 
-## 📁 File Structure on Server
+##  File Structure on Server
 
 ```
 /home/ubuntu/.openclaw/workspace/bounty-recon-ai/
-├── frontend/
-│   ├── out/               # Built static files (deployed)
-│   └── ...
-├── backend/
-│   ├── venv/              # Python virtual environment
-│   ├── main.py            # FastAPI application
-│   └── bounty-recon-api.service  # SystemD service file
-├── nginx.conf             # Nginx configuration
-└── docs/                  # Documentation
+ frontend/
+    out/               # Built static files (deployed)
+    ...
+ backend/
+    venv/              # Python virtual environment
+    main.py            # FastAPI application
+    bounty-recon-api.service  # SystemD service file
+ nginx.conf             # Nginx configuration
+ docs/                  # Documentation
 
 /var/www/html/             # Nginx document root (deployed frontend)
 /etc/systemd/system/bounty-recon-api.service  # SystemD service
@@ -118,7 +118,7 @@ curl -X POST http://10.0.1.254/api/scans \
 
 ---
 
-## 🔧 Configuration Files
+##  Configuration Files
 
 ### SystemD Service
 **Location**: `/etc/systemd/system/bounty-recon-api.service`
@@ -145,7 +145,7 @@ NOVA_ACT_ENDPOINT=https://nova-act.amazonaws.com
 
 ---
 
-## 🚀 Deployment Commands Used
+##  Deployment Commands Used
 
 ```bash
 # 1. Build frontend
@@ -176,7 +176,7 @@ sudo systemctl reload nginx
 
 ---
 
-## 📈 Performance
+##  Performance
 
 - **Frontend Load Time**: <100ms (static files)
 - **API Response**: <50ms (health check)
@@ -185,7 +185,7 @@ sudo systemctl reload nginx
 
 ---
 
-## 🔄 Update Procedure
+##  Update Procedure
 
 ### Frontend Updates
 ```bash
@@ -208,7 +208,7 @@ sudo systemctl restart bounty-recon-api
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Frontend Not Loading
 ```bash
@@ -245,7 +245,7 @@ sudo kill -9 <PID>
 
 ---
 
-## 🎯 Next Steps
+##  Next Steps
 
 1. **Integrate Amazon Nova Act SDK**
    - Replace mock agent in `backend/main.py`
@@ -267,7 +267,7 @@ sudo kill -9 <PID>
 
 ---
 
-## 💰 Resource Usage
+##  Resource Usage
 
 **Current Costs (if on AWS EC2 t4g.small)**:
 - Instance: ~$13/month
@@ -281,18 +281,18 @@ sudo kill -9 <PID>
 
 ---
 
-## 🔒 Security Notes
+##  Security Notes
 
-- ✅ Backend not directly exposed (proxied via nginx)
-- ✅ Service runs as non-root user (ubuntu)
-- ✅ Auto-restart prevents downtime from crashes
-- ⚠️ Add firewall rules for production (ufw/iptables)
-- ⚠️ Rotate GitHub token shared earlier
-- ⚠️ Add HTTPS before public launch
+-  Backend not directly exposed (proxied via nginx)
+-  Service runs as non-root user (ubuntu)
+-  Auto-restart prevents downtime from crashes
+-  Add firewall rules for production (ufw/iptables)
+-  Rotate GitHub token shared earlier
+-  Add HTTPS before public launch
 
 ---
 
-## 📞 Support
+##  Support
 
 **Developer**: Keith Kadima (@tufstraka)  
 **GitHub**: https://github.com/tufstraka/bounty-recon-ai  

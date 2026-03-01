@@ -1,8 +1,8 @@
-# 🌐 LIVE URL ACCESS INFORMATION
+#  LIVE URL ACCESS INFORMATION
 
 ## Public Access URL
 
-**✅ Your application is LIVE at:**
+** Your application is LIVE at:**
 
 ### Public URL
 ```
@@ -21,27 +21,27 @@ http://44.207.1.126/api/docs
 
 ---
 
-## ✅ Server Status Verified
+##  Server Status Verified
 
 ### Services Running
-- ✅ **Nginx**: Active on port 80 (0.0.0.0:80)
-- ✅ **Backend API**: Active on port 8000 (2 workers)
-- ✅ **Health Check**: Returns 200 OK
-- ✅ **Frontend**: Serving static files correctly
+-  **Nginx**: Active on port 80 (0.0.0.0:80)
+-  **Backend API**: Active on port 8000 (2 workers)
+-  **Health Check**: Returns 200 OK
+-  **Frontend**: Serving static files correctly
 
 ### Internal Tests Passed
 ```bash
-✅ curl http://localhost/ → 200 OK (8091 bytes)
-✅ curl http://44.207.1.126/ → 200 OK (accessible)
-✅ sudo systemctl status nginx → active (running)
-✅ sudo systemctl status bounty-recon-api → active (running)
+ curl http://localhost/ → 200 OK (8091 bytes)
+ curl http://44.207.1.126/ → 200 OK (accessible)
+ sudo systemctl status nginx → active (running)
+ sudo systemctl status bounty-recon-api → active (running)
 ```
 
 ---
 
-## 🔒 AWS Security Group Configuration
+##  AWS Security Group Configuration
 
-**⚠️ IMPORTANT**: If you cannot access http://44.207.1.126/ from your browser, you need to configure AWS Security Group rules.
+** IMPORTANT**: If you cannot access http://44.207.1.126/ from your browser, you need to configure AWS Security Group rules.
 
 ### Required Security Group Rules
 
@@ -104,7 +104,7 @@ aws ec2 authorize-security-group-ingress \
 
 ---
 
-## 🔍 Verification Steps
+##  Verification Steps
 
 After adding Security Group rules:
 
@@ -139,7 +139,7 @@ curl http://44.207.1.126/
 
 ---
 
-## 📱 Access Summary
+##  Access Summary
 
 ### URLs to Share
 - **Main App**: http://44.207.1.126/
@@ -154,25 +154,25 @@ curl http://44.207.1.126/
 
 ---
 
-## 🚀 For Demo Video
+##  For Demo Video
 
 Use these URLs in your demo:
 ```
-✅ Public URL: http://44.207.1.126/
-✅ Status: Live and operational
-✅ Response Time: <100ms
-✅ Uptime: Since 2026-03-01 14:55 UTC
+ Public URL: http://44.207.1.126/
+ Status: Live and operational
+ Response Time: <100ms
+ Uptime: Since 2026-03-01 14:55 UTC
 ```
 
 ---
 
-## 🔐 Security Best Practices
+##  Security Best Practices
 
 ### Current Setup
-- ✅ Backend not directly exposed (proxied via nginx)
-- ✅ Services run as non-root user
-- ✅ Auto-restart on failure
-- ⚠️ HTTP only (no SSL yet)
+-  Backend not directly exposed (proxied via nginx)
+-  Services run as non-root user
+-  Auto-restart on failure
+-  HTTP only (no SSL yet)
 
 ### Recommended for Production
 1. **Add SSL/HTTPS**
@@ -193,7 +193,7 @@ Use these URLs in your demo:
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### "Connection Refused" or "Timeout"
 **Cause**: AWS Security Group blocking port 80  
@@ -218,7 +218,7 @@ sudo cp -r out/* /var/www/html/
 
 ---
 
-## 📞 Quick Support Commands
+##  Quick Support Commands
 
 ```bash
 # Check if site is accessible from server
@@ -241,7 +241,7 @@ sudo journalctl -u bounty-recon-api -f
 
 **Server IP**: 10.0.1.254 (internal)  
 **Public IP**: 44.207.1.126 (external)  
-**Status**: ✅ Running and accessible from server  
+**Status**:  Running and accessible from server  
 **Action Required**: Configure AWS Security Group for external access
 
 ---

@@ -1,4 +1,4 @@
-# 🔍 Bounty Recon AI
+#  Bounty Recon AI
 
 **AI-Powered Bug Bounty Reconnaissance Automation using Amazon Nova Act**
 
@@ -6,11 +6,11 @@
 [![UI Automation](https://img.shields.io/badge/Category-UI%20Automation-blue)]()
 [![Nova Act](https://img.shields.io/badge/Powered%20by-Nova%20Act-purple)]()
 
-## 🎯 Overview
+##  Overview
 
 Bounty Recon AI is an intelligent reconnaissance tool that automates the tedious initial phases of bug bounty hunting. Using **Amazon Nova Act** for UI automation and **Nova 2** for intelligent reasoning, it automatically discovers attack surfaces, tests endpoints, and generates comprehensive security reports.
 
-## 🚀 Problem
+##  Problem
 
 Bug bounty hunters spend **10-15 hours per target** on manual reconnaissance:
 - Discovering subdomains and endpoints
@@ -20,7 +20,7 @@ Bug bounty hunters spend **10-15 hours per target** on manual reconnaissance:
 
 This tedious work prevents researchers from focusing on actual exploitation and reduces their earning potential.
 
-## 💡 Solution
+##  Solution
 
 An autonomous agent powered by Amazon Nova that:
 1. **Discovers**: Automatically finds subdomains, endpoints, and attack surfaces
@@ -28,33 +28,33 @@ An autonomous agent powered by Amazon Nova that:
 3. **Documents**: Captures screenshots and generates structured reports
 4. **Learns**: Improves reconnaissance strategy based on findings
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
-┌─────────────────┐
-│   Web Frontend  │
-│   (React/Next)  │
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│   API Gateway   │
-│   (FastAPI)     │
-└────────┬────────┘
-         │
-    ┌────▼─────┐
-    │  Nova    │
-    │  Act     │
-    └────┬─────┘
-         │
-┌────────▼────────┐
-│ Recon Engine    │
-│ • Subdomain     │
-│ • Endpoint      │
-│ • Vuln Scanner  │
-└─────────────────┘
+
+   Web Frontend  
+   (React/Next)  
+
+         
+
+   API Gateway   
+   (FastAPI)     
+
+         
+    
+      Nova    
+      Act     
+    
+         
+
+ Recon Engine    
+ • Subdomain     
+ • Endpoint      
+ • Vuln Scanner  
+
 ```
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Frontend**: Next.js 14, TypeScript, Tailwind CSS
 - **Backend**: Python 3.11, FastAPI
@@ -62,7 +62,7 @@ An autonomous agent powered by Amazon Nova that:
 - **Deployment**: AWS (Lambda, S3, CloudFront)
 - **Database**: DynamoDB
 
-## ⚡ Features
+##  Features
 
 - [x] Automated subdomain discovery
 - [x] Live website crawling via Nova Act
@@ -73,11 +73,11 @@ An autonomous agent powered by Amazon Nova that:
 - [ ] Historical scan comparison
 - [ ] Integration with bug bounty platforms
 
-## 🎥 Demo Video
+##  Demo Video
 
 [3-minute demo video showcasing the tool in action]
 
-## 📦 Installation
+##  Installation
 
 ```bash
 # Clone the repository
@@ -99,7 +99,7 @@ cp .env.example .env
 npm run dev
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 Create a `.env` file:
 
@@ -110,7 +110,7 @@ AWS_SECRET_ACCESS_KEY=your_secret
 NOVA_ACT_ENDPOINT=your_nova_endpoint
 ```
 
-## 🎯 Usage
+##  Usage
 
 1. **Enter Target Domain**
    ```
@@ -127,7 +127,7 @@ NOVA_ACT_ENDPOINT=your_nova_endpoint
    - Downloadable PDF report
    - JSON export for automation
 
-## 🏆 Community Impact
+##  Community Impact
 
 **Democratizing Security Research**
 
@@ -145,7 +145,7 @@ NOVA_ACT_ENDPOINT=your_nova_endpoint
 - Freemium SaaS (free for students, paid for professionals)
 - Integration with HackerOne, Bugcrowd, Synack
 
-## 📊 Metrics
+##  Metrics
 
 - **Time Saved**: 10-15 hours → 15 minutes per target
 - **Coverage**: 300% more endpoints discovered vs. manual recon
@@ -155,17 +155,17 @@ NOVA_ACT_ENDPOINT=your_nova_endpoint
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-## 📝 License
+##  License
 
 MIT License - See [LICENSE](LICENSE)
 
-## 🔗 Links
+##  Links
 
 - [Demo Video](https://youtube.com/...)
 - [Blog Post](https://builder.aws.com/...)
 - [DevPost Submission](https://devpost.com/...)
 
-## 👥 Team
+##  Team
 
 Built by [@tufstraka](https://github.com/tufstraka) for Amazon Nova Hackathon 2026
 
