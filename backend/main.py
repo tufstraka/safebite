@@ -373,31 +373,45 @@ Be thorough about visible ingredients - this is for allergen detection."""
         ]
     
     async def assess_dish_safety(self, dish: Dict, allergens: List[str], custom_keywords: Dict[str, List[str]] = {}) -> DishSafety:
-        """Use Nova 2 Lite to assess safety"""
+        """Use Nova 2 Lite to assess safety with intelligent reasoning"""
         name = dish["name"]
         description = dish["description"].lower()
         
-        # Merge standard and custom allergen keywords
+        # Step 1: Use Nova 2 Lite to infer ALL likely ingredients
+        inferred_ingredients = await self._infer_ingredients_with_ai(name, description)
+        
+        # Step 2: Check for allergens in visible description + inferred ingredients
         all_keywords = {**ALLERGEN_KEYWORDS, **custom_keywords}
         
-        # Detect allergens
         detected = []
         for allergen in allergens:
             allergen_lower = allergen.lower()
             keywords = all_keywords.get(allergen_lower, [allergen_lower])
+            
+            # Check visible description
+            found_in_description = False
             for keyword in keywords:
                 if keyword.lower() in description or keyword.lower() in name.lower():
                     detected.append(allergen)
+                    found_in_description = True
                     break
+            
+            # Check AI-inferred ingredients
+            if not found_in_description:
+                for keyword in keywords:
+                    if keyword.lower() in inferred_ingredients.lower():
+                        detected.append(allergen)
+                        break
         
         # Calculate safety score
         if detected:
-            safety_score = max(0, 50 - (len(detected) * 20))
+            # Higher penalty for detected allergens
+            safety_score = max(0, 50 - (len(detected) * 25))
         else:
             # Check for ambiguous ingredients
-            ambiguous_words = ["sauce", "dressing", "seasoning", "spice"]
+            ambiguous_words = ["sauce", "dressing", "seasoning", "spice", "frosting"]
             has_ambiguous = any(word in description for word in ambiguous_words)
-            safety_score = 75 if has_ambiguous else 95
+            safety_score = 70 if has_ambiguous else 90
         
         # Determine level
         if safety_score >= 90:
@@ -413,16 +427,16 @@ Be thorough about visible ingredients - this is for allergen detection."""
         
         # Generate recommendations
         if detected:
-            recommendations = f"Contains {', '.join(detected)}. Avoid this dish or ask about ingredient substitutions."
+            recommendations = f"Likely contains {', '.join(detected)} (detected via AI reasoning). Avoid this dish or verify with server."
         elif safety_score < 90:
-            recommendations = "Description lacks detail. Ask server about ingredients and preparation methods."
+            recommendations = "Description lacks detail. AI analysis suggests caution. Always verify with server."
         else:
-            recommendations = "Appears safe based on description. Always verify with server."
+            recommendations = "Appears safe based on AI analysis. Always verify with server for certainty."
         
-        # Infer ingredients
-        ingredients = self._infer_ingredients(description)
+        # Extract basic ingredients from description
+        visible_ingredients = self._extract_simple_ingredients(description)
         
-        confidence = 85 if not detected else 95
+        confidence = 90 if detected else 75
         
         return DishSafety(
             name=name,
@@ -432,12 +446,60 @@ Be thorough about visible ingredients - this is for allergen detection."""
             detected_allergens=detected,
             confidence=confidence,
             recommendations=recommendations,
-            ingredients_inferred=ingredients
+            ingredients_inferred=visible_ingredients[:5]
         )
     
-    def _infer_ingredients(self, description: str) -> List[str]:
-        """Use Nova 2 Lite to infer likely ingredients"""
-        # Simple keyword extraction
+    async def _infer_ingredients_with_ai(self, name: str, description: str) -> str:
+        """Use Nova 2 Lite to intelligently infer ALL likely ingredients"""
+        if self.bedrock:
+            try:
+                prompt = f"""Food item: {name}
+Description: {description}
+
+Based on standard recipes and common cooking practices, what ingredients does this food likely contain?
+Consider hidden ingredients like:
+- Butter, milk, cream, eggs in baked goods
+- Flour/gluten in breaded items
+- Nuts in sauces and desserts
+- Shellfish in seafood dishes
+
+List ALL likely ingredients including hidden ones, separated by commas.
+Be specific about dairy (milk, butter, cream), eggs, nuts, gluten, etc.
+
+Answer with only the ingredient list, no explanation:"""
+
+                body = json.dumps({
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [{"text": prompt}]
+                        }
+                    ],
+                    "inferenceConfig": {
+                        "max_new_tokens": 200,
+                        "temperature": 0.3
+                    }
+                })
+                
+                response = self.bedrock.invoke_model(
+                    modelId='us.amazon.nova-lite-v1:0',  # Use regional inference profile
+                    body=body
+                )
+                
+                result = json.loads(response['body'].read())
+                ingredients = result['output']['message']['content'][0]['text']
+                
+                logger.info(f"Nova 2 Lite inferred for '{name}': {ingredients[:100]}...")
+                return ingredients.lower()
+                
+            except Exception as e:
+                logger.warning(f"Nova 2 Lite inference failed: {e}")
+        
+        # Fallback to simple extraction
+        return description
+    
+    def _extract_simple_ingredients(self, description: str) -> List[str]:
+        """Extract visible ingredients from description"""
         common_ingredients = [
             "rice", "noodles", "chicken", "beef", "pork", "shrimp", "fish",
             "vegetables", "coconut", "peanuts", "sesame", "egg", "milk",
