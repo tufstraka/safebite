@@ -1,174 +1,307 @@
-#  Bounty Recon AI
+# Bounty Recon AI
 
-**AI-Powered Bug Bounty Reconnaissance Automation using Amazon Nova Act**
+> AI-Powered Bug Bounty Reconnaissance Platform using Amazon Nova Act
 
-[![Amazon Nova Hackathon](https://img.shields.io/badge/Amazon%20Nova-Hackathon%202026-orange)](https://devpost.com/hackathons)
-[![UI Automation](https://img.shields.io/badge/Category-UI%20Automation-blue)]()
-[![Nova Act](https://img.shields.io/badge/Powered%20by-Nova%20Act-purple)]()
+Built for Amazon Nova Hackathon 2026 | Category: UI Automation
 
-##  Overview
+## What Makes This Different
 
-Bounty Recon AI is an intelligent reconnaissance tool that automates the tedious initial phases of bug bounty hunting. Using **Amazon Nova Act** for UI automation and **Nova 2** for intelligent reasoning, it automatically discovers attack surfaces, tests endpoints, and generates comprehensive security reports.
+This isn't just another vulnerability scanner. We provide **professional-grade reconnaissance reports** that bug bounty hunters can submit directly to programs - with unique features that existing tools don't offer.
 
-##  Problem
+### Unique Value Propositions
 
-Bug bounty hunters spend **10-15 hours per target** on manual reconnaissance:
-- Discovering subdomains and endpoints
-- Testing for common vulnerabilities
-- Capturing screenshots and evidence
-- Organizing findings into reports
+#### 1. Zero False Positives from 404s
+Most scanners report every endpoint they test. **We verify each endpoint with HTTP requests** before reporting - eliminating false positives that waste researchers' time.
 
-This tedious work prevents researchers from focusing on actual exploitation and reduces their earning potential.
+#### 2. Real-World Security Implications
+Not just "missing Content-Security-Policy header." We explain:
+- What attackers can actually do (XSS injection, data theft, session hijacking)
+- Real attack scenarios for each vulnerability
+- Business impact of exploitation
 
-##  Solution
+#### 3. Actionable Remediation Steps
+Every finding includes:
+- Specific configuration examples
+- Step-by-step implementation guide
+- Best practices from security experts
+- Code snippets when applicable
 
-An autonomous agent powered by Amazon Nova that:
-1. **Discovers**: Automatically finds subdomains, endpoints, and attack surfaces
-2. **Tests**: Runs security checks across discovered targets
-3. **Documents**: Captures screenshots and generates structured reports
-4. **Learns**: Improves reconnaissance strategy based on findings
+#### 4. Active Security Testing
+We don't just read headers - we actively test:
+- **CORS**: Send requests from malicious origins to prove misconfiguration
+- **Rate Limiting**: Send 20 rapid requests to verify absence
+- **Cookies**: Analyze individual security attributes
+- **SSL/TLS**: Validate protocols and cipher strength
 
-##  Architecture
+#### 5. Professional Bug Bounty Reports
+One-click PDF export with everything security programs require:
+- Executive summary with risk assessment
+- CVSS scores for severity
+- Detailed findings with evidence
+- Methodology documentation
+- Responsible disclosure language
 
-```
+## Comprehensive Security Analysis
 
-   Web Frontend  
-   (React/Next)  
+### 8 Advanced Vulnerability Checks
 
-         
+1. **SSL/TLS Configuration**
+   - Protocol version analysis (TLS 1.0/1.1/1.2/1.3)
+   - Cipher suite strength
+   - Certificate validation
+   - HTTPS enforcement
 
-   API Gateway   
-   (FastAPI)     
+2. **Cookie Security**
+   - Secure flag (HTTPS-only)
+   - HttpOnly flag (XSS protection)
+   - SameSite attribute (CSRF prevention)
+   - Per-cookie analysis
 
-         
-    
-      Nova    
-      Act     
-    
-         
+3. **CORS Misconfiguration**
+   - Wildcard origin detection
+   - Reflected origin testing
+   - Credentials exposure
+   - Active exploitation attempts
 
- Recon Engine    
- • Subdomain     
- • Endpoint      
- • Vuln Scanner  
+4. **Technology Fingerprinting**
+   - Server identification
+   - Framework detection
+   - CMS discovery
+   - Version information
 
-```
+5. **Information Disclosure**
+   - Error message exposure
+   - Stack trace detection
+   - Sensitive comments
+   - Directory listings
 
-##  Tech Stack
+6. **Rate Limiting**
+   - Brute force susceptibility
+   - DoS vulnerability
+   - API abuse potential
+   - Active burst testing
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Backend**: Python 3.11, FastAPI
-- **AI**: Amazon Nova Act (UI Automation), Nova 2 Sonic (Reasoning)
-- **Deployment**: AWS (Lambda, S3, CloudFront)
-- **Database**: DynamoDB
+7. **Security Headers**
+   - Content-Security-Policy
+   - Strict-Transport-Security
+   - X-Frame-Options
+   - Permissions-Policy
+   - Referrer-Policy
+   - X-Content-Type-Options
 
-##  Features
+8. **Endpoint Discovery**
+   - API endpoints (versioned)
+   - Admin panels
+   - Sensitive files (.git, .env)
+   - Configuration files
+   - robots.txt analysis
 
-- [x] Automated subdomain discovery
-- [x] Live website crawling via Nova Act
-- [x] Security header analysis
-- [x] Screenshot capture with evidence
-- [x] Structured report generation
-- [ ] Real-time progress tracking
-- [ ] Historical scan comparison
-- [ ] Integration with bug bounty platforms
+## Comparison to Existing Tools
 
-##  Demo Video
+| Feature | Bounty Recon AI | Burp Suite | OWASP ZAP | Nuclei | Qualys |
+|---------|----------------|------------|-----------|--------|--------|
+| Endpoint Verification | Yes | Manual | Manual | No | Limited |
+| Active CORS Testing | Yes | Manual | Manual | No | No |
+| Rate Limiting Test | Yes | Manual | Manual | No | No |
+| Cookie Analysis | Per-cookie | Basic | Basic | No | Basic |
+| SSL/TLS Analysis | Complete | Plugin | Plugin | No | Yes |
+| Tech Detection | Multi-source | Manual | Manual | Templates | Limited |
+| Information Disclosure | Pattern-based | Manual | Manual | Templates | Basic |
+| CVSS Scoring | Yes | Commercial | No | No | Yes |
+| Implications Explained | Detailed | No | No | No | Generic |
+| Remediation Steps | Actionable | Generic | Generic | No | Generic |
+| PDF Reports | Professional | Commercial | Manual | No | Yes |
+| No 404 False Positives | Yes | Manual | No | No | Manual |
 
-[3-minute demo video showcasing the tool in action]
+**Result:** Save hours of manual testing while improving report quality and acceptance rates.
 
-##  Installation
+## Technology Stack
+
+### Frontend
+- Next.js 14 (React)
+- TypeScript
+- Tailwind CSS
+- Modern, responsive design
+
+### Backend
+- FastAPI (Python)
+- Amazon Nova Act (AI-powered UI automation)
+- Amazon Bedrock
+- Async/await for performance
+- ReportLab (PDF generation)
+
+### Security
+- httpx for HTTP verification
+- SSL/TLS analysis
+- Pattern matching for disclosure detection
+- Security knowledge base
+
+## Quick Start
+
+### Prerequisites
+- AWS Account with Bedrock access
+- Python 3.12+
+- Node.js 18+
+
+### Installation
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/tufstraka/bounty-recon-ai.git
 cd bounty-recon-ai
 
-# Install dependencies
-npm install
+# Backend setup
+cd backend
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 
 # Configure AWS credentials
-aws configure
-
-# Set environment variables
 cp .env.example .env
-# Edit .env with your Nova Act credentials
+# Add your AWS credentials to .env
 
-# Run development server
-npm run dev
+# Frontend setup
+cd ../frontend
+npm install
+npm run build
+
+# Start services (production)
+# Backend: systemd service
+# Frontend: nginx serving static files
 ```
 
-##  Configuration
+### Configuration
 
-Create a `.env` file:
+Add your AWS credentials to `backend/.env`:
 
 ```env
-AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your_key
 AWS_SECRET_ACCESS_KEY=your_secret
-NOVA_ACT_ENDPOINT=your_nova_endpoint
+AWS_DEFAULT_REGION=us-east-1
+BEDROCK_MODEL_ID=amazon.nova-act-v1:0
 ```
 
-##  Usage
+See `docs/NOVA_ACT_SETUP.md` for detailed AWS setup instructions.
 
-1. **Enter Target Domain**
-   ```
-   https://example.com
-   ```
+## Usage
 
-2. **Select Scan Type**
-   - Quick Scan (5-10 minutes)
-   - Deep Scan (30-60 minutes)
-   - Custom Configuration
+1. Navigate to the application
+2. Enter target URL
+3. Click "Start Recon"
+4. Wait for comprehensive analysis
+5. Review findings with implications and recommendations
+6. Export professional PDF report
 
-3. **Review Results**
-   - Interactive dashboard
-   - Downloadable PDF report
-   - JSON export for automation
+## Features in Detail
 
-##  Community Impact
+### Executive Summary
+Automatic risk assessment based on findings severity. Critical vulnerabilities highlighted immediately.
 
-**Democratizing Security Research**
+### Statistics Dashboard
+Visual overview of findings by severity:
+- Critical (CVSS 9.0+)
+- High (CVSS 7.0-8.9)
+- Medium (CVSS 4.0-6.9)
+- Low (CVSS 0.1-3.9)
+- Info (no CVSS)
 
-- **For Beginners**: Automates tedious recon, letting new hunters focus on learning exploitation
-- **For Experts**: Saves 10+ hours per target, increasing earning potential
-- **For Platforms**: Reduces duplicate/low-quality submissions by improving researcher efficiency
+### Detailed Findings
+Each finding includes:
+- Title and severity
+- CVSS score
+- Description
+- Security implications (what can happen)
+- Recommendations (how to fix)
+- Evidence (proof of vulnerability)
+- Category and timestamp
 
-### Target Audience
-- 1M+ bug bounty hunters globally
-- Security researchers and penetration testers
-- Companies running vulnerability disclosure programs
+### PDF Export
+Professional report with:
+- Title page with metadata
+- Executive summary
+- Risk overview table
+- Sorted findings (Critical -> Info)
+- Conclusion and next steps
+- Methodology documentation
 
-### Adoption Strategy
-- Open-source core engine
-- Freemium SaaS (free for students, paid for professionals)
-- Integration with HackerOne, Bugcrowd, Synack
+## Architecture
 
-##  Metrics
+```
+┌─────────────────┐
+│  Next.js        │
+│  Frontend       │
+│  (Static)       │
+└────────┬────────┘
+         │ HTTPS
+         │
+┌────────▼────────┐
+│  Nginx          │
+│  Reverse Proxy  │
+└────────┬────────┘
+         │
+         │ /api/*
+         │
+┌────────▼────────┐
+│  FastAPI        │
+│  Backend API    │
+│  (2 workers)    │
+└────────┬────────┘
+         │
+         │
+┌────────▼────────┐
+│  Nova Act SDK   │
+│  Reconnaissance │
+│  Engine         │
+└────────┬────────┘
+         │
+         │
+┌────────▼────────┐
+│  Amazon Bedrock │
+│  Nova Act Model │
+└─────────────────┘
+```
 
-- **Time Saved**: 10-15 hours → 15 minutes per target
-- **Coverage**: 300% more endpoints discovered vs. manual recon
-- **Quality**: Structured reports improve submission acceptance rate
+## Documentation
 
-## 🤝 Contributing
+- `FEATURES.md` - Comprehensive feature list and comparisons
+- `docs/NOVA_ACT_SETUP.md` - AWS configuration guide
+- `docs/DEPLOYMENT_STATUS.md` - Production deployment info
+- `docs/PRODUCTION_DEPLOYMENT.md` - Deployment procedures
+- `STATUS.md` - Quick health check script
+- `FIXES_APPLIED.md` - Development history
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
+## Demo Video
 
-##  License
+[Link to 3-minute demo video - TBD]
 
-MIT License - See [LICENSE](LICENSE)
+## Blog Post
 
-##  Links
+[Link to builder.aws.com blog post - TBD]
 
-- [Demo Video](https://youtube.com/...)
-- [Blog Post](https://builder.aws.com/...)
-- [DevPost Submission](https://devpost.com/...)
+## License
 
-##  Team
+MIT License - See LICENSE file for details
 
-Built by [@tufstraka](https://github.com/tufstraka) for Amazon Nova Hackathon 2026
+## Hackathon Submission
+
+**Amazon Nova Hackathon 2026**
+- Category: UI Automation
+- Prize Pool: $40,000 cash + $55,000 AWS credits
+- Submission Date: 2026-03-01
+
+## Author
+
+Keith Kadima ([@tufstraka](https://github.com/tufstraka))
+- LinkedIn: [kadimakeith](https://linkedin.com/in/kadimakeith)
+- X: [@dobynog](https://x.com/dobynog)
+- Website: [lumora.locsafe.org](https://lumora.locsafe.org)
+
+## Acknowledgments
+
+- Amazon Web Services for the Nova Act foundation model
+- Amazon Bedrock team
+- Bug bounty community for security insights
 
 ---
 
-**#AmazonNova** | **UI Automation Category**
+**Built with Amazon Nova Act | Amazon Nova Hackathon 2026**
