@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional, Dict
 import logging
-from datetime import datetime
+from datetime import datetime, timezone, timedelta, timezone
 import base64
 import json
 import io
@@ -22,6 +22,9 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Timezone for timestamps
+NAIROBI_OFFSET = timezone(timedelta(hours=3))  # EAT = UTC+3
 
 app = FastAPI(
     title="SafeBite API",
@@ -65,6 +68,7 @@ class MenuAnalysisResponse(BaseModel):
     unsafe_dishes: List[DishSafety]
     unknown_dishes: List[DishSafety]
     analysis_timestamp: str
+    analysis_time_eat: str  # East Africa Time
     voice_summary: str
 
 # ALLERGEN DATABASE

@@ -338,6 +338,7 @@ export default function Home() {
           <div className="flex justify-between items-center text-xs text-slate-400">
             <p>always double-check with staff</p>
             <div className="flex items-center gap-4">
+              <span className="text-slate-500">nairobi 🇰🇪</span>
               <a 
                 href="https://github.com/tufstraka/bounty-recon-ai" 
                 target="_blank"
