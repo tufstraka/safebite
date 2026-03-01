@@ -1,391 +1,364 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, Search, AlertTriangle, CheckCircle, XCircle, FileText, Download, Clock, Target, Activity, TrendingUp } from 'lucide-react';
+import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, Volume2, Sparkles } from 'lucide-react';
+
+const ALLERGENS = [
+  'Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy',
+  'Fish', 'Shellfish', 'Sesame', 'Gluten', 'Mustard', 'Celery'
+];
 
 export default function Home() {
-  const [url, setUrl] = useState('');
-  const [scanning, setScanning] = useState(false);
-  const [scanId, setScanId] = useState('');
-  const [progress, setProgress] = useState(0);
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [menuImage, setMenuImage] = useState<File | null>(null);
 
-  const startScan = async () => {
-    if (!url) return;
-    
-    setScanning(true);
-    setProgress(0);
+  const toggleAllergen = (allergen: string) => {
+    if (selectedAllergens.includes(allergen)) {
+      setSelectedAllergens(selectedAllergens.filter(a => a !== allergen));
+    } else {
+      setSelectedAllergens([...selectedAllergens, allergen]);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setMenuImage(e.target.files[0]);
+    }
+  };
+
+  const analyzeMenu = async () => {
+    if (!menuImage || selectedAllergens.length === 0) {
+      alert('Please upload a menu and select at least one allergen');
+      return;
+    }
+
+    setAnalyzing(true);
     setResults(null);
-    
+
     try {
-      const response = await fetch('/api/scans', {
+      const formData = new FormData();
+      formData.append('file', menuImage);
+      formData.append('allergens', selectedAllergens.map(a => a.toLowerCase()).join(','));
+
+      const response = await fetch('/api/analyze/image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          target_url: url,
-          scan_type: 'deep',
-          include_subdomains: true,
-          include_screenshots: true,
-          max_depth: 3
-        })
+        body: formData
       });
-      
+
       const data = await response.json();
-      setScanId(data.scan_id);
-      
-      // Poll for results
-      pollScanStatus(data.scan_id);
+      setResults(data);
     } catch (error) {
-      console.error('Scan failed:', error);
-      setScanning(false);
+      console.error('Analysis failed:', error);
+    } finally {
+      setAnalyzing(false);
     }
   };
-  
-  const pollScanStatus = async (id: string) => {
-    const interval = setInterval(async () => {
-      try {
-        const statusResponse = await fetch(`/api/scans/${id}/status`);
-        const status = await statusResponse.json();
-        
-        setProgress(status.progress);
-        
-        if (status.status === 'completed') {
-          clearInterval(interval);
-          
-          const resultsResponse = await fetch(`/api/scans/${id}/results`);
-          const results = await resultsResponse.json();
-          
-          setResults(results);
-          setScanning(false);
-        } else if (status.status === 'failed') {
-          clearInterval(interval);
-          setScanning(false);
-        }
-      } catch (error) {
-        console.error('Polling failed:', error);
-      }
-    }, 1000);
-  };
 
-  const getSeverityColor = (severity: string) => {
+  const getSafetyColor = (level: string) => {
     const colors: any = {
-      critical: 'bg-red-100 text-red-800 border-red-200',
-      high: 'bg-orange-100 text-orange-800 border-orange-200',
-      medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      low: 'bg-blue-100 text-blue-800 border-blue-200',
-      info: 'bg-gray-100 text-gray-800 border-gray-200'
+      'Safe': 'from-green-400 to-emerald-500',
+      'Likely Safe': 'from-blue-400 to-cyan-500',
+      'Unknown': 'from-yellow-400 to-orange-500',
+      'Caution': 'from-orange-500 to-red-500',
+      'Unsafe': 'from-red-500 to-rose-600'
     };
-    return colors[severity] || colors.info;
+    return colors[level] || 'from-gray-400 to-gray-500';
   };
 
-  const getSeverityIcon = (severity: string) => {
-    if (severity === 'critical' || severity === 'high') return <AlertTriangle className="w-5 h-5" />;
-    if (severity === 'medium') return <XCircle className="w-5 h-5" />;
-    return <CheckCircle className="w-5 h-5" />;
-  };
-
-  const exportReport = async () => {
-    if (!results) return;
-    
-    try {
-      const response = await fetch(`/api/scans/${results.scan_id}/report/pdf`);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `bounty-recon-${results.scan_id}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('PDF export failed:', error);
-    }
+  const getSafetyIcon = (level: string) => {
+    if (level === 'Safe' || level === 'Likely Safe') return <CheckCircle className="w-6 h-6" />;
+    if (level === 'Unknown') return <HelpCircle className="w-6 h-6" />;
+    return <AlertTriangle className="w-6 h-6" />;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Navigation */}
-      <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-lg">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  Bounty Recon AI
-                </h1>
-                <p className="text-xs text-gray-500">Powered by Amazon Nova Pro</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-semibold rounded-full shadow-md">
-                Amazon Nova Hackathon 2026
-              </span>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 relative overflow-hidden">
+      {/* Abstract Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
 
-      {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        {!results && (
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md mb-6 border border-indigo-100">
-              <Activity className="w-4 h-4 text-indigo-600" />
-              <span className="text-sm font-medium text-gray-700">AI-Powered Security Reconnaissance</span>
-            </div>
-            
-            <h2 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              Automate Your Bug Bounty
-              <br />
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Reconnaissance Workflow
-              </span>
-            </h2>
-            
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Leverage Amazon Nova Pro to intelligently crawl, analyze, and discover security vulnerabilities 
-              in your target applications. Save hours of manual reconnaissance work.
-            </p>
-          </div>
-        )}
-
-        {/* Scan Input */}
-        {!results && (
-          <div className="max-w-3xl mx-auto mb-16">
-            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Target URL</label>
-              
-              <div className="flex gap-3">
-                <div className="flex-1 relative">
-                  <Target className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="url"
-                    placeholder="https://example.com"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    disabled={scanning}
-                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
-                  />
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Navigation */}
+        <nav className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-2xl shadow-purple-500/50">
+                  <Shield className="w-7 h-7 text-white" />
                 </div>
-                
-                <button
-                  onClick={startScan}
-                  disabled={!url || scanning}
-                  className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 transition-all"
-                >
-                  {scanning ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Scanning...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-5 h-5" />
-                      Start Recon
-                    </>
-                  )}
-                </button>
-              </div>
-              
-              {scanning && (
-                <div className="mt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Scan Progress</span>
-                    <span className="text-sm font-bold text-indigo-600">{progress}%</span>
-                  </div>
-                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 transition-all duration-500 rounded-full"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Results Section */}
-        {results && (
-          <div className="space-y-8">
-            {/* Header */}
-            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-              <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Reconnaissance Report</h2>
-                  <p className="text-gray-600">Target: <span className="font-mono font-semibold text-indigo-600">{results.target}</span></p>
+                  <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300">
+                    SafeBite AI
+                  </h1>
+                  <p className="text-xs text-purple-300/70">Powered by Amazon Nova</p>
                 </div>
-                <div className="flex gap-3">
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-full backdrop-blur-sm">
+                  <span className="text-sm font-semibold text-purple-200">Multimodal AI</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          {!results && (
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-8">
+                <Sparkles className="w-4 h-4 text-purple-300" />
+                <span className="text-sm font-medium text-purple-200">AI-Powered Menu Safety Analysis</span>
+              </div>
+
+              <h2 className="text-6xl font-black text-white mb-6 leading-tight">
+                Eat Safely.<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300">
+                  Every Time.
+                </span>
+              </h2>
+
+              <p className="text-xl text-purple-200/80 max-w-3xl mx-auto leading-relaxed">
+                Upload a menu. Select your allergies. Get instant dish-by-dish safety analysis powered by Amazon Nova's multimodal AI.
+              </p>
+            </div>
+          )}
+
+          {/* Analysis Interface */}
+          {!results && (
+            <div className="max-w-4xl mx-auto space-y-8">
+              {/* Menu Upload */}
+              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
+                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                  <Upload className="w-6 h-6 text-purple-300" />
+                  Upload Menu
+                </h3>
+
+                <label className="block cursor-pointer">
+                  <div className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-purple-400/50 hover:bg-white/5 transition-all">
+                    {menuImage ? (
+                      <div className="space-y-3">
+                        <CheckCircle className="w-12 h-12 text-green-400 mx-auto" />
+                        <p className="text-white font-semibold">{menuImage.name}</p>
+                        <p className="text-purple-300/70 text-sm">Click to change</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Upload className="w-12 h-12 text-purple-300/50 mx-auto" />
+                        <p className="text-white font-semibold">Drop menu image or click to browse</p>
+                        <p className="text-purple-300/70 text-sm">Supports JPG, PNG, PDF</p>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Allergen Selection */}
+              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
+                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                  <AlertTriangle className="w-6 h-6 text-purple-300" />
+                  Select Your Allergies
+                </h3>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {ALLERGENS.map((allergen) => (
+                    <button
+                      key={allergen}
+                      onClick={() => toggleAllergen(allergen)}
+                      className={`px-4 py-3 rounded-xl font-semibold transition-all ${
+                        selectedAllergens.includes(allergen)
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50 scale-105'
+                          : 'bg-white/10 text-purple-200 hover:bg-white/20 border border-white/20'
+                      }`}
+                    >
+                      {allergen}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Analyze Button */}
+              <button
+                onClick={analyzeMenu}
+                disabled={!menuImage || selectedAllergens.length === 0 || analyzing}
+                className="w-full py-6 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-white rounded-2xl font-bold text-xl hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all flex items-center justify-center gap-3"
+              >
+                {analyzing ? (
+                  <>
+                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                    Analyzing Menu...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-6 h-6" />
+                    Analyze Safety
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Results */}
+          {results && (
+            <div className="space-y-8">
+              {/* Header */}
+              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <h2 className="text-4xl font-black text-white mb-3">{results.restaurant_name}</h2>
+                    <p className="text-purple-300/80">Found {results.total_dishes} dishes • Analyzed for {selectedAllergens.join(', ')}</p>
+                  </div>
                   <button
-                    onClick={exportReport}
-                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg flex items-center gap-2 transition-all"
-                  >
-                    <Download className="w-4 h-4" />
-                    Export Report
-                  </button>
-                  <button
-                    onClick={() => { setResults(null); setUrl(''); }}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all"
+                    onClick={() => { setResults(null); setMenuImage(null); setSelectedAllergens([]); }}
+                    className="px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20"
                   >
                     New Scan
                   </button>
                 </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-6 rounded-2xl border border-green-400/30">
+                    <div className="text-4xl font-black text-green-300 mb-1">{results.safe_dishes.length}</div>
+                    <div className="text-sm font-semibold text-green-200">Safe Dishes</div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 p-6 rounded-2xl border border-yellow-400/30">
+                    <div className="text-4xl font-black text-yellow-300 mb-1">{results.unknown_dishes.length}</div>
+                    <div className="text-sm font-semibold text-yellow-200">Unknown</div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-red-500/20 to-rose-500/20 p-6 rounded-2xl border border-red-400/30">
+                    <div className="text-4xl font-black text-red-300 mb-1">{results.unsafe_dishes.length}</div>
+                    <div className="text-sm font-semibold text-red-200">Unsafe</div>
+                  </div>
+                </div>
+
+                {/* Voice Summary */}
+                <div className="mt-6 flex items-start gap-4 p-5 bg-purple-500/20 rounded-2xl border border-purple-400/30">
+                  <Volume2 className="w-6 h-6 text-purple-300 flex-shrink-0 mt-1" />
+                  <p className="text-purple-100 leading-relaxed">{results.voice_summary}</p>
+                </div>
               </div>
 
-              {/* Statistics Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl border border-red-200">
-                  <div className="text-3xl font-bold text-red-700">{results.statistics.critical || 0}</div>
-                  <div className="text-sm font-medium text-red-600">Critical</div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
-                  <div className="text-3xl font-bold text-orange-700">{results.statistics.high || 0}</div>
-                  <div className="text-sm font-medium text-orange-600">High</div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl border border-yellow-200">
-                  <div className="text-3xl font-bold text-yellow-700">{results.statistics.medium || 0}</div>
-                  <div className="text-sm font-medium text-yellow-600">Medium</div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                  <div className="text-3xl font-bold text-blue-700">{results.statistics.low || 0}</div>
-                  <div className="text-sm font-medium text-blue-600">Low</div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
-                  <div className="text-3xl font-bold text-gray-700">{results.statistics.info || 0}</div>
-                  <div className="text-sm font-medium text-gray-600">Info</div>
-                </div>
-              </div>
-            </div>
+              {/* Safe Dishes */}
+              {results.safe_dishes.length > 0 && (
+                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
+                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-green-400" />
+                    Safe Dishes
+                  </h3>
 
-            {/* Findings */}
-            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-              <div className="flex items-center gap-3 mb-6">
-                <FileText className="w-6 h-6 text-indigo-600" />
-                <h3 className="text-2xl font-bold text-gray-900">Detailed Findings</h3>
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold">
-                  {results.findings.length} issues
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                {results.findings.map((finding: any, index: number) => (
-                  <div
-                    key={index}
-                    className={`p-6 rounded-xl border-2 transition-all hover:shadow-md ${getSeverityColor(finding.severity)}`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0 mt-1">
-                        {getSeverityIcon(finding.severity)}
+                  <div className="space-y-4">
+                    {results.safe_dishes.map((dish: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="p-6 rounded-2xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-400/20 hover:border-green-400/40 transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h4 className="text-xl font-bold text-white mb-2">{dish.name}</h4>
+                            <p className="text-green-200/70 text-sm">{dish.description}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className={`px-4 py-2 bg-gradient-to-r ${getSafetyColor(dish.safety_level)} rounded-xl font-bold text-white flex items-center gap-2`}>
+                              {getSafetyIcon(dish.safety_level)}
+                              {dish.safety_score}%
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-green-300/80 text-sm italic">{dish.recommendations}</p>
                       </div>
-                      
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <h4 className="text-lg font-bold">{finding.title}</h4>
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                              {finding.severity}
-                            </span>
-                            {finding.cvss_score && (
-                              <span className="px-2 py-1 bg-white/70 rounded text-xs font-semibold">
-                                CVSS: {finding.cvss_score}
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Unsafe Dishes */}
+              {results.unsafe_dishes.length > 0 && (
+                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
+                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                    <XCircle className="w-6 h-6 text-red-400" />
+                    Dishes to Avoid
+                  </h3>
+
+                  <div className="space-y-4">
+                    {results.unsafe_dishes.map((dish: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="p-6 rounded-2xl bg-gradient-to-r from-red-500/10 to-rose-500/10 border border-red-400/20"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h4 className="text-xl font-bold text-white mb-2">{dish.name}</h4>
+                            <p className="text-red-200/70 text-sm">{dish.description}</p>
+                          </div>
+                          <div className={`px-4 py-2 bg-gradient-to-r ${getSafetyColor(dish.safety_level)} rounded-xl font-bold text-white flex items-center gap-2`}>
+                            {getSafetyIcon(dish.safety_level)}
+                            {dish.safety_score}%
+                          </div>
+                        </div>
+                        {dish.detected_allergens.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {dish.detected_allergens.map((allergen: string, i: number) => (
+                              <span key={i} className="px-3 py-1 bg-red-500/30 text-red-200 rounded-lg text-xs font-semibold border border-red-400/30">
+                                {allergen}
                               </span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <p className="text-sm leading-relaxed">{finding.description}</p>
-                          
-                          <div className="bg-white/50 rounded-lg p-3 border">
-                            <p className="text-xs font-semibold text-red-700 mb-1">Security Implications:</p>
-                            <p className="text-xs leading-relaxed">{finding.implications}</p>
-                          </div>
-                          
-                          <div className="bg-white/50 rounded-lg p-3 border">
-                            <p className="text-xs font-semibold text-green-700 mb-1">Recommendations:</p>
-                            <p className="text-xs leading-relaxed">{finding.recommendations}</p>
-                          </div>
-                        </div>
-                        
-                        {finding.evidence && (
-                          <div className="bg-white/50 rounded-lg p-3 font-mono text-xs border">
-                            <p className="font-semibold mb-1">Evidence:</p>
-                            {finding.evidence}
+                            ))}
                           </div>
                         )}
-                        
-                        <div className="flex items-center gap-4 text-xs text-gray-600">
-                          <span className="flex items-center gap-1">
-                            <Target className="w-3 h-3" />
-                            {finding.category}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(finding.discovered_at).toLocaleString()}
-                          </span>
-                        </div>
+                        <p className="text-red-300/80 text-sm italic font-semibold">{dish.recommendations}</p>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <footer className="border-t border-white/10 bg-black/20 backdrop-blur-xl mt-20">
+          <div className="max-w-7xl mx-auto px-6 py-8 text-center">
+            <p className="text-sm text-purple-300/70">
+              Built for Amazon Nova Hackathon 2026 | Category: Multimodal Understanding
+            </p>
+            <p className="text-xs text-purple-400/50 mt-2">
+              Powered by Amazon Nova Pro, Lite, Act, Sonic, and Embeddings
+            </p>
           </div>
-        )}
-
-        {/* Features */}
-        {!results && !scanning && (
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-md">
-                <Activity className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Intelligent Crawling</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Nova Pro autonomously navigates and discovers endpoints, subdomains, and hidden paths with AI-powered decision making.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-md">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Security Analysis</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Automatically detect missing security headers, exposed sensitive files, and common misconfigurations.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mb-4 shadow-md">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Comprehensive Reports</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Generate detailed findings with severity ratings, evidence, and actionable recommendations for your bug bounty reports.
-              </p>
-            </div>
-          </div>
-        )}
+        </footer>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t bg-white/80 backdrop-blur-md mt-20">
-        <div className="max-w-7xl mx-auto px-6 py-8 text-center">
-          <p className="text-sm text-gray-600">
-            Built for Amazon Nova Hackathon 2026 | Category: UI Automation
-          </p>
-          <p className="text-xs text-gray-500 mt-2">
-            Powered by Amazon Nova Pro Foundation Model
-          </p>
-        </div>
-      </footer>
+      <style jsx>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(20px, -50px) scale(1.1); }
+          50% { transform: translate(-20px, 20px) scale(0.9); }
+          75% { transform: translate(50px, 50px) scale(1.05); }
+        }
+        .animate-blob {
+          animation: blob 20s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
     </div>
   );
 }

@@ -6,8 +6,8 @@ import Script from 'next/script'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Bounty Recon AI | Amazon Nova Hackathon 2026',
-  description: 'AI-Powered Bug Bounty Reconnaissance using Amazon Nova Pro',
+  title: 'SafeBite AI | Amazon Nova Hackathon 2026',
+  description: 'AI-Powered Restaurant Menu Reconnaissance using Amazon Nova Pro',
 }
 
 export default function RootLayout({
