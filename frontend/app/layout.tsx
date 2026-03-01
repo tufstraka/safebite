@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Poppins } from 'next/font/google'
 import './globals.css'
 import Script from 'next/script'
 
-const inter = Inter({ subsets: ['latin'] })
+const poppins = Poppins({ weight: ['400', '500', '600', '700'], subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'SafeBite | snap your food',
@@ -44,7 +44,7 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={poppins.className}>{children}</body>
     </html>
   )
 }

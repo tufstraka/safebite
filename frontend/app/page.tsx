@@ -139,20 +139,20 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1f2e] relative overflow-hidden">
-      {/* Subtle background illustrations */}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 relative overflow-hidden">
+      {/* Playful background illustrations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Playful gradient orbs - Discord/Snapchat vibes */}
-        <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-10 w-80 h-80 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 rounded-full blur-3xl"></div>
+        {/* Soft gradient orbs */}
+        <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-purple-200/40 to-pink-200/40 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-10 w-80 h-80 bg-gradient-to-br from-emerald-200/40 to-cyan-200/40 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-200/30 to-orange-200/30 rounded-full blur-3xl"></div>
       </div>
       {/* Simple header */}
-      <nav className="border-b border-slate-700/30 bg-[#1a1f2e]/95 backdrop-blur-sm sticky top-0 z-50 relative">
+      <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50 relative shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3">
           <Shield className="w-6 h-6 text-emerald-400" />
           <div className="flex items-center gap-1.5">
-            <h1 className="text-xl font-bold text-white">SafeBite</h1>
+            <h1 className="text-xl font-bold text-gray-900">SafeBite</h1>
             <span className="text-xs text-slate-500">by</span>
             <a 
               href="https://github.com/tufstraka" 
@@ -172,28 +172,28 @@ export default function Home() {
           <>
             {/* Direct intro */}
             <div className="mb-8">
-              <h2 className="text-4xl font-bold text-white mb-3">snap your food</h2>
-              <p className="text-lg text-slate-300">take a pic. we'll check the allergens.</p>
+              <h2 className="text-4xl font-bold text-gray-900 mb-3">snap your food</h2>
+              <p className="text-lg text-gray-600">take a pic. we'll check the allergens.</p>
             </div>
 
             {/* Upload */}
-            <div className="bg-slate-800 rounded-xl p-6 mb-6 border border-slate-700">
-              <h3 className="text-lg font-semibold text-white mb-4">1. snap it</h3>
+            <div className="bg-white rounded-2xl p-6 mb-6 border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">1. snap it</h3>
               
               {menuFile ? (
-                <div className="border-2 border-emerald-500 bg-emerald-900/20 rounded-lg p-6 text-center">
-                  <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                  <p className="text-white font-medium">{menuFile.name}</p>
-                  <p className="text-slate-400 text-sm mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                <div className="border-2 border-emerald-500 bg-emerald-50 rounded-xl p-6 text-center">
+                  <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                  <p className="text-gray-900 font-medium">{menuFile.name}</p>
+                  <p className="text-gray-500 text-sm mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {/* Camera button - primary on mobile */}
-                  <label className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg p-6 transition-colors flex flex-col items-center gap-3 cursor-pointer">
+                  <label className="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 rounded-xl p-6 transition-colors flex flex-col items-center gap-3 cursor-pointer shadow-lg shadow-emerald-500/20">
                     <Camera className="w-12 h-12" />
                     <div>
                       <p className="font-bold text-lg">take a pic</p>
-                      <p className="text-sm text-emerald-100">quick snap of your menu</p>
+                      <p className="text-sm text-emerald-50">quick snap of your menu</p>
                     </div>
                     <input 
                       type="file" 
@@ -206,8 +206,8 @@ export default function Home() {
 
                   {/* Upload option - secondary */}
                   <label className="block cursor-pointer">
-                    <div className="border border-slate-600 rounded-lg p-4 text-center hover:border-slate-500 hover:bg-slate-700/30 transition-colors">
-                      <p className="text-slate-400 text-sm">or upload a photo/pdf</p>
+                    <div className="border border-gray-300 rounded-xl p-4 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors">
+                      <p className="text-gray-500 text-sm">or upload a photo/pdf</p>
                     </div>
                     <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
                   </label>
@@ -216,8 +216,8 @@ export default function Home() {
             </div>
 
             {/* Allergens */}
-            <div className="bg-slate-800 rounded-xl p-6 mb-6 border border-slate-700">
-              <h3 className="text-lg font-semibold text-white mb-4">2. Pick Your Allergies</h3>
+            <div className="bg-white rounded-xl p-6 mb-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">2. Pick Your Allergies</h3>
               <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mb-4">
                 {ALLERGENS.map((allergen) => (
                   <button
@@ -225,8 +225,8 @@ export default function Home() {
                     onClick={() => toggleAllergen(allergen)}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       selectedAllergens.includes(allergen)
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-emerald-500 text-gray-900'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
                     {allergen}
@@ -235,8 +235,8 @@ export default function Home() {
               </div>
 
               {/* Custom */}
-              <div className="border-t border-slate-700 pt-4">
-                <label className="block text-sm text-slate-300 mb-2">Add Custom</label>
+              <div className="border-t border-gray-200 pt-4">
+                <label className="block text-sm text-gray-600 mb-2">Add Custom</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -244,11 +244,11 @@ export default function Home() {
                     onChange={(e) => setCustomInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addCustomAllergen()}
                     placeholder="MSG, Cilantro, etc."
-                    className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 text-sm focus:border-emerald-500 focus:outline-none"
+                    className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 focus:outline-none"
                   />
                   <button
                     onClick={addCustomAllergen}
-                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
+                    className="px-4 py-2 bg-emerald-500 text-gray-900 rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
                   >
                     Add
                   </button>
@@ -256,7 +256,7 @@ export default function Home() {
                 {customAllergens.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {customAllergens.map((allergen) => (
-                      <div key={allergen} className="px-3 py-1 bg-emerald-600 text-white text-sm rounded-full flex items-center gap-1">
+                      <div key={allergen} className="px-3 py-1 bg-emerald-600 text-gray-900 text-sm rounded-full flex items-center gap-1">
                         {allergen}
                         <button onClick={() => removeCustomAllergen(allergen)} className="hover:bg-emerald-700 rounded-full">
                           <X className="w-3 h-3" />
@@ -272,7 +272,7 @@ export default function Home() {
             <button
               onClick={analyzeMenu}
               disabled={!menuFile || (selectedAllergens.length === 0 && customAllergens.length === 0) || analyzing}
-              className="w-full py-4 bg-emerald-500 text-white rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full py-4 bg-emerald-500 text-gray-900 rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {analyzing ? (
                 <>
@@ -287,15 +287,15 @@ export default function Home() {
         ) : (
           // Results
           <div className="space-y-6">
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">{results.restaurant_name}</h2>
-                  <p className="text-slate-400 text-sm">{results.total_dishes} items • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-1">{results.restaurant_name}</h2>
+                  <p className="text-gray-500 text-sm">{results.total_dishes} items • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
                 </div>
                 <button
                   onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
-                  className="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-600 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
                 >
                   try another
                 </button>
@@ -321,30 +321,30 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <p className="text-slate-300 text-sm">{results.voice_summary}</p>
+              <div className="bg-gray-100/50 rounded-lg p-4">
+                <p className="text-gray-600 text-sm">{results.voice_summary}</p>
               </div>
             </div>
 
             {/* Safe */}
             {results.safe_dishes.length > 0 && (
-              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-emerald-400" />
                   Good to Go
                 </h3>
                 <div className="space-y-3">
                   {results.safe_dishes.map((dish: any, idx: number) => (
-                    <div key={idx} className="p-4 rounded-lg bg-slate-700 border border-slate-600">
+                    <div key={idx} className="p-4 rounded-lg bg-gray-100 border border-gray-300">
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-white font-semibold">{dish.name}</h4>
-                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-white rounded-full text-xs font-bold flex items-center gap-1`}>
+                        <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
+                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-gray-900 rounded-full text-xs font-bold flex items-center gap-1`}>
                           {getSafetyIcon(dish.safety_level)}
                           {dish.safety_score}%
                         </div>
                       </div>
-                      <p className="text-slate-300 text-sm mb-2">{dish.description}</p>
-                      <p className="text-slate-400 text-sm italic">{dish.recommendations}</p>
+                      <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
+                      <p className="text-gray-500 text-sm italic">{dish.recommendations}</p>
                     </div>
                   ))}
                 </div>
@@ -353,22 +353,22 @@ export default function Home() {
 
             {/* Unsafe */}
             {results.unsafe_dishes.length > 0 && (
-              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-red-400" />
                   Skip These
                 </h3>
                 <div className="space-y-3">
                   {results.unsafe_dishes.map((dish: any, idx: number) => (
-                    <div key={idx} className="p-4 rounded-lg bg-slate-700 border border-red-900">
+                    <div key={idx} className="p-4 rounded-lg bg-gray-100 border border-red-900">
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-white font-semibold">{dish.name}</h4>
-                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-white rounded-full text-xs font-bold flex items-center gap-1`}>
+                        <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
+                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-gray-900 rounded-full text-xs font-bold flex items-center gap-1`}>
                           {getSafetyIcon(dish.safety_level)}
                           {dish.safety_score}%
                         </div>
                       </div>
-                      <p className="text-slate-300 text-sm mb-2">{dish.description}</p>
+                      <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
                       {dish.detected_allergens.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-2">
                           {dish.detected_allergens.map((allergen: string, i: number) => (
@@ -388,10 +388,10 @@ export default function Home() {
         )}
 
         {/* Footer */}
-        <footer className="border-t border-slate-700 mt-12 pt-6">
-          <div className="flex justify-between items-center text-xs text-slate-400">
+        <footer className="border-t border-gray-200 mt-12 pt-6">
+          <div className="flex justify-between items-center text-xs text-gray-500">
             <p>always double-check with staff</p>
-            <span className="text-slate-500">made in ke 🎴</span>
+            <span className="text-gray-500">made in ke 🎴</span>
           </div>
         </footer>
       </div>
