@@ -399,11 +399,18 @@ Be thorough about visible ingredients - this is for allergen detection."""
             # Check visible description
             found_in_description = False
             for keyword in keywords:
-                if keyword.lower() in description or keyword.lower() in name.lower():
+            import re
+            # Check if keyword uses word boundary regex
+            if isinstance(keyword, str) and keyword.startswith(r"\b"):
+                # Use regex for word boundary
+                if re.search(keyword, description, re.IGNORECASE) or re.search(keyword, name.lower(), re.IGNORECASE):
                     detected.append(allergen)
                     found_in_description = True
                     break
-            
+            elif keyword.lower() in description or keyword.lower() in name.lower():
+                detected.append(allergen)
+                found_in_description = True
+                break
             # Check AI-inferred ingredients
             if not found_in_description:
                 for keyword in keywords:
