@@ -242,6 +242,11 @@ export default function Home() {
                 </button>
               </div>
 
+              {/* Voice Summary */}
+              <div className="bg-emerald-900/20 border border-emerald-800 rounded-lg p-4 mb-4">
+                <p className="text-emerald-300 text-sm font-medium">{results.voice_summary}</p>
+              </div>
+
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="bg-emerald-900/30 p-4 rounded-lg border border-emerald-800">
                   <div className="text-2xl font-bold text-emerald-400">{results.safe_dishes.length}</div>

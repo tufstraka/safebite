@@ -132,6 +132,11 @@ class NovaMenuAnalyzer:
         if filename.lower().endswith('.pdf'):
             logger.info(f"Processing PDF: {filename}")
             text = await self.extract_text_from_pdf(image_data)
+            
+            # Validate it's actually a food menu
+            if text and len(text.strip()) > 50:
+                if not is_food_menu(text):
+                    raise ValueError("This doesn't look like a food menu. Please upload a restaurant menu with dishes and prices.")
             if text and len(text.strip()) > 50:
                 logger.info(f"Extracted {len(text)} characters from PDF")
                 # Parse dishes from extracted text with improved parser
