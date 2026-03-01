@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, Volume2, Sparkles, Plus, X } from 'lucide-react';
+import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, X } from 'lucide-react';
 
 const ALLERGENS = [
   'Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy',
@@ -96,348 +96,231 @@ export default function Home() {
 
   const getSafetyColor = (level: string) => {
     const colors: any = {
-      'Safe': 'from-green-400 to-emerald-500',
-      'Likely Safe': 'from-blue-400 to-cyan-500',
-      'Unknown': 'from-yellow-400 to-orange-500',
-      'Caution': 'from-orange-500 to-red-500',
-      'Unsafe': 'from-red-500 to-rose-600'
+      'Safe': 'bg-emerald-500',
+      'Likely Safe': 'bg-blue-500',
+      'Unknown': 'bg-yellow-500',
+      'Caution': 'bg-orange-500',
+      'Unsafe': 'bg-red-500'
     };
-    return colors[level] || 'from-gray-400 to-gray-500';
+    return colors[level] || 'bg-gray-500';
   };
 
   const getSafetyIcon = (level: string) => {
-    if (level === 'Safe' || level === 'Likely Safe') return <CheckCircle className="w-6 h-6" />;
-    if (level === 'Unknown') return <HelpCircle className="w-6 h-6" />;
-    return <AlertTriangle className="w-6 h-6" />;
+    if (level === 'Safe' || level === 'Likely Safe') return <CheckCircle className="w-5 h-5" />;
+    if (level === 'Unknown') return <HelpCircle className="w-5 h-5" />;
+    return <AlertTriangle className="w-5 h-5" />;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 relative overflow-hidden">
-      {/* Abstract Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10">
-        {/* Navigation */}
-        <nav className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-2xl shadow-purple-500/50">
-                  <Shield className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300">
-                    SafeBite AI
-                  </h1>
-                  <p className="text-xs text-purple-300/70">Menu Safety Scanner</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-full backdrop-blur-sm">
-                  <span className="text-sm font-semibold text-purple-200">AI-Powered</span>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Simple header */}
+      <nav className="border-b border-slate-700 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Shield className="w-6 h-6 text-emerald-400" />
+            <h1 className="text-xl font-bold text-white">SafeBite</h1>
           </div>
-        </nav>
+          <div className="text-sm text-slate-400">Allergy Scanner</div>
+        </div>
+      </nav>
 
-        {/* Hero Section */}
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          {!results && (
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-8">
-                <Sparkles className="w-4 h-4 text-purple-300" />
-                <span className="text-sm font-medium text-purple-200">Intelligent Allergen Detection</span>
-              </div>
-
-              <h2 className="text-6xl font-black text-white mb-6 leading-tight">
-                Eat Safely.<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300">
-                  Every Time.
-                </span>
-              </h2>
-
-              <p className="text-xl text-purple-200/80 max-w-3xl mx-auto leading-relaxed">
-                Upload a menu photo or PDF. Select your allergies. Get instant analysis with plain English explanations about what's safe and what's not.
-              </p>
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        {!results ? (
+          <>
+            {/* Direct intro */}
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold text-white mb-3">Check Your Menu</h2>
+              <p className="text-lg text-slate-300">Upload a photo or PDF. Pick your allergies. Get results.</p>
             </div>
-          )}
 
-          {/* Analysis Interface */}
-          {!results && (
-            <div className="max-w-4xl mx-auto space-y-8">
-              {/* Menu Upload */}
-              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                  <Upload className="w-6 h-6 text-purple-300" />
-                  Upload Menu
-                </h3>
-
-                <label className="block cursor-pointer">
-                  <div className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-purple-400/50 hover:bg-white/5 transition-all">
-                    {menuFile ? (
-                      <div className="space-y-3">
-                        <CheckCircle className="w-12 h-12 text-green-400 mx-auto" />
-                        <p className="text-white font-semibold">{menuFile.name}</p>
-                        <p className="text-purple-300/70 text-sm">
-                          {menuFile.name.toLowerCase().endsWith('.pdf') ? 'PDF Document' : 'Image File'} • Click to change
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <Upload className="w-12 h-12 text-purple-300/50 mx-auto" />
-                        <p className="text-white font-semibold">Drop menu image or PDF, or click to browse</p>
-                        <p className="text-purple-300/70 text-sm">Supports JPG, PNG, PDF (max 50MB)</p>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              {/* Allergen Selection */}
-              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                  <AlertTriangle className="w-6 h-6 text-purple-300" />
-                  Select Your Allergies
-                </h3>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
-                  {ALLERGENS.map((allergen) => (
-                    <button
-                      key={allergen}
-                      onClick={() => toggleAllergen(allergen)}
-                      className={`px-4 py-3 rounded-xl font-semibold transition-all ${
-                        selectedAllergens.includes(allergen)
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50 scale-105'
-                          : 'bg-white/10 text-purple-200 hover:bg-white/20 border border-white/20'
-                      }`}
-                    >
-                      {allergen}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Custom Allergen Input */}
-                <div className="border-t border-white/10 pt-6">
-                  <label className="block text-sm font-semibold text-purple-200 mb-3">Add Custom Allergen</label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      value={customInput}
-                      onChange={(e) => setCustomInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addCustomAllergen()}
-                      placeholder="e.g., Cilantro, MSG, Nightshades..."
-                      className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-300/50 focus:border-purple-400/50 focus:outline-none"
-                    />
-                    <button
-                      onClick={addCustomAllergen}
-                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all flex items-center gap-2"
-                    >
-                      <Plus className="w-5 h-5" />
-                      Add
-                    </button>
-                  </div>
-
-                  {/* Custom Allergens List */}
-                  {customAllergens.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {customAllergens.map((allergen) => (
-                        <div
-                          key={allergen}
-                          className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-pink-500/30"
-                        >
-                          {allergen}
-                          <button
-                            onClick={() => removeCustomAllergen(allergen)}
-                            className="hover:bg-white/20 rounded-full p-1 transition-all"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
+            {/* Upload */}
+            <div className="bg-slate-800 rounded-xl p-6 mb-6 border border-slate-700">
+              <h3 className="text-lg font-semibold text-white mb-4">1. Upload Menu</h3>
+              <label className="block cursor-pointer">
+                <div className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-emerald-500 hover:bg-slate-700/50 transition-colors">
+                  {menuFile ? (
+                    <div>
+                      <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
+                      <p className="text-white font-medium">{menuFile.name}</p>
+                      <p className="text-slate-400 text-sm mt-1">Click to change</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                      <p className="text-white font-medium">Drop file or click to browse</p>
+                      <p className="text-slate-400 text-sm mt-1">Photos or PDFs up to 50MB</p>
                     </div>
                   )}
                 </div>
+                <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
+              </label>
+            </div>
+
+            {/* Allergens */}
+            <div className="bg-slate-800 rounded-xl p-6 mb-6 border border-slate-700">
+              <h3 className="text-lg font-semibold text-white mb-4">2. Pick Your Allergies</h3>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mb-4">
+                {ALLERGENS.map((allergen) => (
+                  <button
+                    key={allergen}
+                    onClick={() => toggleAllergen(allergen)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      selectedAllergens.includes(allergen)
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    {allergen}
+                  </button>
+                ))}
               </div>
 
-              {/* Analyze Button */}
-              <button
-                onClick={analyzeMenu}
-                disabled={!menuFile || (selectedAllergens.length === 0 && customAllergens.length === 0) || analyzing}
-                className="w-full py-6 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-white rounded-2xl font-bold text-xl hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all flex items-center justify-center gap-3"
-              >
-                {analyzing ? (
-                  <>
-                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                    Analyzing Menu...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-6 h-6" />
-                    Analyze Safety
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-
-          {/* Results */}
-          {results && (
-            <div className="space-y-8">
-              {/* Header */}
-              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <h2 className="text-4xl font-black text-white mb-3">{results.restaurant_name}</h2>
-                    <p className="text-purple-300/80">Found {results.total_dishes} dishes • Analyzed for {[...selectedAllergens, ...customAllergens].join(', ')}</p>
-                  </div>
+              {/* Custom */}
+              <div className="border-t border-slate-700 pt-4">
+                <label className="block text-sm text-slate-300 mb-2">Add Custom</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addCustomAllergen()}
+                    placeholder="MSG, Cilantro, etc."
+                    className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 text-sm focus:border-emerald-500 focus:outline-none"
+                  />
                   <button
-                    onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
-                    className="px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20"
+                    onClick={addCustomAllergen}
+                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
                   >
-                    New Scan
+                    Add
                   </button>
                 </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-6 rounded-2xl border border-green-400/30">
-                    <div className="text-4xl font-black text-green-300 mb-1">{results.safe_dishes.length}</div>
-                    <div className="text-sm font-semibold text-green-200">Safe Dishes</div>
+                {customAllergens.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {customAllergens.map((allergen) => (
+                      <div key={allergen} className="px-3 py-1 bg-emerald-600 text-white text-sm rounded-full flex items-center gap-1">
+                        {allergen}
+                        <button onClick={() => removeCustomAllergen(allergen)} className="hover:bg-emerald-700 rounded-full">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
+                )}
+              </div>
+            </div>
 
-                  <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 p-6 rounded-2xl border border-yellow-400/30">
-                    <div className="text-4xl font-black text-yellow-300 mb-1">{results.unknown_dishes.length}</div>
-                    <div className="text-sm font-semibold text-yellow-200">Unknown</div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-red-500/20 to-rose-500/20 p-6 rounded-2xl border border-red-400/30">
-                    <div className="text-4xl font-black text-red-300 mb-1">{results.unsafe_dishes.length}</div>
-                    <div className="text-sm font-semibold text-red-200">Unsafe</div>
-                  </div>
+            {/* Scan button */}
+            <button
+              onClick={analyzeMenu}
+              disabled={!menuFile || (selectedAllergens.length === 0 && customAllergens.length === 0) || analyzing}
+              className="w-full py-4 bg-emerald-500 text-white rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {analyzing ? 'Scanning...' : 'Scan Menu'}
+            </button>
+          </>
+        ) : (
+          // Results
+          <div className="space-y-6">
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{results.restaurant_name}</h2>
+                  <p className="text-slate-400 mt-1">{results.total_dishes} dishes • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
                 </div>
+                <button
+                  onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-600"
+                >
+                  New Scan
+                </button>
+              </div>
 
-                {/* Voice Summary */}
-                <div className="mt-6 flex items-start gap-4 p-5 bg-purple-500/20 rounded-2xl border border-purple-400/30">
-                  <Volume2 className="w-6 h-6 text-purple-300 flex-shrink-0 mt-1" />
-                  <p className="text-purple-100 leading-relaxed">{results.voice_summary}</p>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-emerald-900/30 p-4 rounded-lg border border-emerald-800">
+                  <div className="text-2xl font-bold text-emerald-400">{results.safe_dishes.length}</div>
+                  <div className="text-sm text-emerald-300">Safe</div>
+                </div>
+                <div className="bg-yellow-900/30 p-4 rounded-lg border border-yellow-800">
+                  <div className="text-2xl font-bold text-yellow-400">{results.unknown_dishes.length}</div>
+                  <div className="text-sm text-yellow-300">Unknown</div>
+                </div>
+                <div className="bg-red-900/30 p-4 rounded-lg border border-red-800">
+                  <div className="text-2xl font-bold text-red-400">{results.unsafe_dishes.length}</div>
+                  <div className="text-sm text-red-300">Unsafe</div>
                 </div>
               </div>
 
-              {/* Safe Dishes */}
-              {results.safe_dishes.length > 0 && (
-                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                    <CheckCircle className="w-6 h-6 text-green-400" />
-                    Safe Dishes
-                  </h3>
-
-                  <div className="space-y-4">
-                    {results.safe_dishes.map((dish: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="p-6 rounded-2xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-400/20 hover:border-green-400/40 transition-all"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className="text-xl font-bold text-white mb-2">{dish.name}</h4>
-                            <p className="text-green-200/70 text-sm">{dish.description}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className={`px-4 py-2 bg-gradient-to-r ${getSafetyColor(dish.safety_level)} rounded-xl font-bold text-white flex items-center gap-2`}>
-                              {getSafetyIcon(dish.safety_level)}
-                              {dish.safety_score}%
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-green-300/80 text-sm italic">{dish.recommendations}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Unsafe Dishes */}
-              {results.unsafe_dishes.length > 0 && (
-                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                    <XCircle className="w-6 h-6 text-red-400" />
-                    Dishes to Avoid
-                  </h3>
-
-                  <div className="space-y-4">
-                    {results.unsafe_dishes.map((dish: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="p-6 rounded-2xl bg-gradient-to-r from-red-500/10 to-rose-500/10 border border-red-400/20"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className="text-xl font-bold text-white mb-2">{dish.name}</h4>
-                            <p className="text-red-200/70 text-sm">{dish.description}</p>
-                          </div>
-                          <div className={`px-4 py-2 bg-gradient-to-r ${getSafetyColor(dish.safety_level)} rounded-xl font-bold text-white flex items-center gap-2`}>
-                            {getSafetyIcon(dish.safety_level)}
-                            {dish.safety_score}%
-                          </div>
-                        </div>
-                        {dish.detected_allergens.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {dish.detected_allergens.map((allergen: string, i: number) => (
-                              <span key={i} className="px-3 py-1 bg-red-500/30 text-red-200 rounded-lg text-xs font-semibold border border-red-400/30">
-                                {allergen}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-red-300/80 text-sm italic font-semibold">{dish.recommendations}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <p className="text-slate-300">{results.voice_summary}</p>
             </div>
-          )}
-        </div>
+
+            {/* Safe */}
+            {results.safe_dishes.length > 0 && (
+              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  Safe Dishes
+                </h3>
+                <div className="space-y-3">
+                  {results.safe_dishes.map((dish: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-lg bg-slate-700 border border-slate-600">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="text-white font-semibold">{dish.name}</h4>
+                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-white rounded-full text-xs font-bold flex items-center gap-1`}>
+                          {getSafetyIcon(dish.safety_level)}
+                          {dish.safety_score}%
+                        </div>
+                      </div>
+                      <p className="text-slate-300 text-sm mb-2">{dish.description}</p>
+                      <p className="text-slate-400 text-sm italic">{dish.recommendations}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Unsafe */}
+            {results.unsafe_dishes.length > 0 && (
+              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-red-400" />
+                  Skip These
+                </h3>
+                <div className="space-y-3">
+                  {results.unsafe_dishes.map((dish: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-lg bg-slate-700 border border-red-900">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="text-white font-semibold">{dish.name}</h4>
+                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-white rounded-full text-xs font-bold flex items-center gap-1`}>
+                          {getSafetyIcon(dish.safety_level)}
+                          {dish.safety_score}%
+                        </div>
+                      </div>
+                      <p className="text-slate-300 text-sm mb-2">{dish.description}</p>
+                      {dish.detected_allergens.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {dish.detected_allergens.map((allergen: string, i: number) => (
+                            <span key={i} className="px-2 py-1 bg-red-900 text-red-200 rounded text-xs font-medium">
+                              {allergen}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-red-300 text-sm font-medium">{dish.recommendations}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer */}
-        <footer className="border-t border-white/10 bg-black/20 backdrop-blur-xl mt-20">
-          <div className="max-w-7xl mx-auto px-6 py-8 text-center">
-            <p className="text-sm text-purple-300/70">
-              Built for food allergy safety • Always verify with restaurant staff
-            </p>
-          </div>
+        <footer className="border-t border-slate-700 mt-12 pt-6">
+          <p className="text-center text-sm text-slate-400">
+            Always double-check with restaurant staff
+          </p>
         </footer>
       </div>
-
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(20px, -50px) scale(1.1); }
-          50% { transform: translate(-20px, 20px) scale(0.9); }
-          75% { transform: translate(50px, 50px) scale(1.05); }
-        }
-        .animate-blob {
-          animation: blob 20s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 }
