@@ -645,6 +645,10 @@ async def analyze_menu_image(
             len(safe_dishes), len(unsafe_dishes), all_allergens
         )
         
+        # Timestamp in EAT (Nairobi time)
+        now_utc = datetime.now(timezone.utc)
+        now_eat = now_utc.astimezone(NAIROBI_OFFSET)
+        
         file_type = "PDF" if file.filename.lower().endswith('.pdf') else "Image"
         
         return MenuAnalysisResponse(
