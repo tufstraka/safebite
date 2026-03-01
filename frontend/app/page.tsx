@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, X } from 'lucide-react';
+import Toast from './components/Toast';
 
 const ALLERGENS = [
   'Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy',
@@ -15,6 +16,7 @@ export default function Home() {
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [menuFile, setMenuFile] = useState<File | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
 
   const toggleAllergen = (allergen: string) => {
     if (selectedAllergens.includes(allergen)) {
@@ -45,7 +47,7 @@ export default function Home() {
     const allAllergens = [...selectedAllergens, ...customAllergens];
     
     if (!menuFile || allAllergens.length === 0) {
-      alert('need a menu and at least one allergen');
+      setToast({ message: 'need a menu and at least one allergen', type: 'error' });
       return;
     }
 
@@ -86,9 +88,11 @@ export default function Home() {
       });
       
       setResults(data);
+      setToast({ message: 'analysis complete!', type: 'success' });
     } catch (error) {
       console.error('Analysis failed:', error);
-      alert("hmm, that didn't work. try again?");
+      const errorMessage = error instanceof Error ? error.message : "hmm, that didn't work. try again?";
+      setToast({ message: errorMessage, type: 'error' });
     } finally {
       setAnalyzing(false);
     }
@@ -345,6 +349,15 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
