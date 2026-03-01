@@ -497,20 +497,28 @@ Be thorough about visible ingredients - this is for allergen detection."""
         """Use Nova 2 Lite to intelligently infer ALL likely ingredients"""
         if self.bedrock:
             try:
-                prompt = f"""Food item: {name}
-Description: {description}
+                prompt = f"""You are a food safety expert. Analyze this dish carefully.
 
-Based on standard recipes and common cooking practices, what ingredients does this food likely contain?
-Consider hidden ingredients like:
-- Butter, milk, cream, eggs in baked goods
-- Flour/gluten in breaded items
-- Nuts in sauces and desserts
-- Shellfish in seafood dishes
+Dish name: {name}
+Visible description: {description}
 
-List ALL likely ingredients including hidden ones, separated by commas.
-Be specific about dairy (milk, butter, cream), eggs, nuts, gluten, etc.
+Task: List ONLY the most likely core ingredients based on standard recipes.
 
-Answer with only the ingredient list, no explanation:"""
+IMPORTANT RULES:
+1. Only infer ingredients you are HIGHLY CONFIDENT about
+2. If description already mentions ingredients, don't repeat them
+3. Focus on common allergens: dairy, eggs, nuts, gluten, soy, fish, shellfish
+4. DO NOT guess or make assumptions
+5. If unsure, say "uncertain ingredients"
+6. Use standard recipes as reference, not creative variations
+
+Examples:
+- "Birthday Cake" → flour, eggs, milk, butter, sugar (standard recipe)
+- "Caesar Salad" → romaine, parmesan, egg (in dressing), anchovies (traditional)
+- "Grilled Chicken" → chicken, oil, salt, pepper (don't add sauce unless mentioned)
+- "Pasta Marinara" → pasta (wheat), tomatoes, garlic, olive oil
+
+Answer with ONLY ingredient names separated by commas. If uncertain, write "uncertain ingredients":"""
 
                 body = json.dumps({
                     "messages": [
@@ -520,8 +528,9 @@ Answer with only the ingredient list, no explanation:"""
                         }
                     ],
                     "inferenceConfig": {
-                        "max_new_tokens": 200,
-                        "temperature": 0.3
+                        "max_new_tokens": 150,
+                        "temperature": 0.1,
+                        "top_p": 0.9
                     }
                 })
                 
@@ -531,9 +540,18 @@ Answer with only the ingredient list, no explanation:"""
                 )
                 
                 result = json.loads(response['body'].read())
-                ingredients = result['output']['message']['content'][0]['text']
+                ingredients = result['output']['message']['content'][0]['text'].strip()
                 
-                logger.info(f"Nova 2 Lite inferred for '{name}': {ingredients[:100]}...")
+                # Validation: Check if AI is being too creative
+                if len(ingredients) > 200:
+                    logger.warning(f"AI response too long ({len(ingredients)} chars), possible hallucination")
+                    return ""
+                
+                if "uncertain" in ingredients.lower():
+                    logger.info(f"AI expressed uncertainty for '{name}'")
+                    return ""
+                
+                logger.info(f"Nova 2 Lite inferred for '{name}': {ingredients[:80]}...")
                 return ingredients.lower()
                 
             except Exception as e:
