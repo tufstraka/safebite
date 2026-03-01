@@ -11,7 +11,7 @@ from typing import List, Optional, Dict
 import asyncio
 import logging
 from datetime import datetime
-from nova_act_sdk import NovaActAgent
+from nova_pro_sdk import SecurityAnalysisAgent
 import httpx
 from pathlib import Path
 
@@ -135,10 +135,10 @@ async def verify_endpoint(url: str) -> Dict:
 # RECON ENGINE
 
 class ReconEngine:
-    """Core reconnaissance engine using Amazon Nova Act"""
+    """Core reconnaissance engine using Amazon Nova Pro for AI-enhanced analysis"""
     
     def __init__(self):
-        self.agent = NovaActAgent()
+        self.agent = SecurityAnalysisAgent()
     
     async def run_scan(self, scan_id: str, request: ScanRequest):
         logger.info(f"Starting scan {scan_id} for {request.target_url}")
@@ -368,6 +368,32 @@ class ReconEngine:
             active_scans[scan_id].progress = 80
             active_scans[scan_id].findings = len(findings)
             
+            # AI Enhancement with Nova Pro
+            logger.info("Enhancing findings with Nova Pro AI...")
+            for i, finding in enumerate(findings):
+                # Only enhance critical and high severity findings with AI to save costs
+                if finding.severity in ['critical', 'high'] and i < 5:  # Limit to first 5 for demo
+                    try:
+                        enhanced = await self.agent.enhance_finding_with_ai({
+                            'title': finding.title,
+                            'category': finding.category,
+                            'description': finding.description,
+                            'severity': finding.severity,
+                            'implications': finding.implications,
+                            'recommendations': finding.recommendations
+                        })
+                        
+                        if enhanced.get('ai_enhanced'):
+                            # Update finding with AI-enhanced content
+                            finding.implications = enhanced['implications']
+                            finding.recommendations = enhanced['recommendations']
+                            finding.severity = enhanced['severity']
+                            logger.info(f"Enhanced finding with Nova Pro: {finding.title}")
+                    except Exception as e:
+                        logger.error(f"Failed to enhance finding with AI: {e}")
+            
+            active_scans[scan_id].progress = 85
+            
             if request.include_screenshots:
                 screenshot_url = await self.agent.capture_screenshot(str(request.target_url))
                 active_scans[scan_id].progress = 90
@@ -439,7 +465,7 @@ async def root():
         "name": "Bounty Recon AI API",
         "version": "1.0.0",
         "status": "operational",
-        "powered_by": "Amazon Nova Act"
+        "powered_by": "Amazon Nova Pro"
     }
 
 @app.post("/scans", response_model=ScanStatus)

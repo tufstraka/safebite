@@ -4,7 +4,7 @@
 
 ###  Completed
 1. **Project Structure Created**
-   - Backend: FastAPI with Nova Act integration
+   - Backend: FastAPI with Nova Pro integration
    - Frontend: Next.js 14 with TypeScript + Tailwind CSS
    - Professional README and documentation
    - Build/deployment scripts
@@ -20,7 +20,7 @@
 
 ###  Next Steps
 1. Deploy to production (replace liminal site, preserve tracking)
-2. Integrate actual Amazon Nova Act SDK (currently using mock)
+2. Integrate actual Amazon Nova Pro SDK (currently using mock)
 3. Add AWS credentials configuration
 4. Test end-to-end functionality
 5. Create demo video
@@ -29,7 +29,7 @@
 ###  Amazon Nova Hackathon Requirements
 - [x] Core application structure
 - [x] GitHub repository created
-- [ ] Amazon Nova Act integration (mock ready for real SDK)
+- [ ] Amazon Nova Pro integration (mock ready for real SDK)
 - [ ] Demo video (3 minutes)
 - [ ] Blog post
 - [ ] DevPost submission
@@ -37,7 +37,7 @@
 ###  Technical Stack Confirmed
 - **Frontend**: Next.js 14, TypeScript, Tailwind CSS
 - **Backend**: Python 3.11, FastAPI
-- **AI**: Amazon Nova Act (UI Automation)
+- **AI**: Amazon Nova Pro (UI Automation)
 - **Deployment**: Static export ready for S3/CloudFront
 
 ###  Features Implemented (MVP)

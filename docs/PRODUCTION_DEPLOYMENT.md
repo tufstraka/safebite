@@ -77,7 +77,7 @@ curl http://10.0.1.254/health
 #   "name": "Bounty Recon AI API",
 #   "version": "1.0.0",
 #   "status": "operational",
-#   "powered_by": "Amazon Nova Act"
+#   "powered_by": "Amazon Nova Pro"
 # }
 ```
 
@@ -247,7 +247,7 @@ sudo kill -9 <PID>
 
 ##  Next Steps
 
-1. **Integrate Amazon Nova Act SDK**
+1. **Integrate Amazon Nova Pro SDK**
    - Replace mock agent in `backend/main.py`
    - Add AWS credentials to `backend/.env`
    - Test real UI automation

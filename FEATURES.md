@@ -123,7 +123,7 @@ This tool provides comprehensive security analysis beyond basic scanners:
 - **Real HTTP verification** prevents false positives
 - **Pattern matching** for intelligent detection
 - **Security knowledge base** with 10+ vulnerability types
-- **AI-powered** via Amazon Nova Act integration
+- **AI-powered** via Amazon Nova Pro integration
 - **Professional reporting** via ReportLab PDF generation
 
 ## Comparison to Existing Tools

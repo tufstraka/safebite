@@ -1,4 +1,4 @@
-# Amazon Nova Act SDK Setup
+# Amazon Nova Pro SDK Setup
 
 ## Prerequisites
 
@@ -31,7 +31,7 @@ AWS_SECRET_ACCESS_KEY=your_secret
 AWS_DEFAULT_REGION=us-east-1
 ```
 
-3. Verify Amazon Nova Act model access:
+3. Verify Amazon Nova Pro model access:
 ```bash
 aws bedrock list-foundation-models \
   --by-provider amazon \
@@ -80,7 +80,7 @@ curl http://localhost:8000/
   "name": "Bounty Recon AI API",
   "version": "1.0.0",
   "status": "operational",
-  "powered_by": "Amazon Nova Act"
+  "powered_by": "Amazon Nova Pro"
 }
 ```
 
@@ -88,7 +88,7 @@ curl http://localhost:8000/
 
 ### NovaActClient
 - Wraps boto3 bedrock-runtime client
-- Handles model invocation with Nova Act
+- Handles model invocation with Nova Pro
 - Implements prompt building for UI automation tasks
 
 ### NovaActAgent
@@ -116,7 +116,7 @@ curl http://localhost:8000/
 ## Troubleshooting
 
 ### Error: "NoSuchModel"
-- Verify Nova Act model availability in your AWS region
+- Verify Nova Pro model availability in your AWS region
 - Check IAM permissions for bedrock:InvokeModel
 
 ### Error: "AccessDenied"
@@ -139,5 +139,5 @@ curl http://localhost:8000/
 ## References
 
 - Amazon Bedrock Documentation: https://docs.aws.amazon.com/bedrock/
-- Nova Act Model Card: https://aws.amazon.com/bedrock/nova/
+- Nova Pro Model Card: https://aws.amazon.com/bedrock/nova/
 - Boto3 Bedrock Runtime: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-runtime.html

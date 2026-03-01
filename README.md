@@ -1,8 +1,8 @@
 # Bounty Recon AI
 
-> AI-Powered Bug Bounty Reconnaissance Platform using Amazon Nova Act
+> AI-Powered Bug Bounty Reconnaissance Platform using Amazon Nova Pro
 
-Built for Amazon Nova Hackathon 2026 | Category: UI Automation
+Built for Amazon Nova Hackathon 2026 | Category: AI-Powered Security Analysis
 
 ## What Makes This Different
 
@@ -125,7 +125,7 @@ One-click PDF export with everything security programs require:
 
 ### Backend
 - FastAPI (Python)
-- Amazon Nova Act (AI-powered UI automation)
+- Amazon Nova Pro (AI-powered UI automation)
 - Amazon Bedrock
 - Async/await for performance
 - ReportLab (PDF generation)
@@ -249,7 +249,7 @@ Professional report with:
          │
          │
 ┌────────▼────────┐
-│  Nova Act SDK   │
+│  Nova Pro SDK   │
 │  Reconnaissance │
 │  Engine         │
 └────────┬────────┘
@@ -257,7 +257,7 @@ Professional report with:
          │
 ┌────────▼────────┐
 │  Amazon Bedrock │
-│  Nova Act Model │
+│  Nova Pro Model │
 └─────────────────┘
 ```
 
@@ -285,7 +285,7 @@ MIT License - See LICENSE file for details
 ## Hackathon Submission
 
 **Amazon Nova Hackathon 2026**
-- Category: UI Automation
+- Category: AI-Powered Security Analysis
 - Prize Pool: $40,000 cash + $55,000 AWS credits
 - Submission Date: 2026-03-01
 
@@ -298,10 +298,10 @@ Keith Kadima ([@tufstraka](https://github.com/tufstraka))
 
 ## Acknowledgments
 
-- Amazon Web Services for the Nova Act foundation model
+- Amazon Web Services for the Nova Pro foundation model
 - Amazon Bedrock team
 - Bug bounty community for security insights
 
 ---
 
-**Built with Amazon Nova Act | Amazon Nova Hackathon 2026**
+**Built with Amazon Nova Pro | Amazon Nova Hackathon 2026**

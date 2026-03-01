@@ -115,7 +115,7 @@ export default function Home() {
                 <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   Bounty Recon AI
                 </h1>
-                <p className="text-xs text-gray-500">Powered by Amazon Nova Act</p>
+                <p className="text-xs text-gray-500">Powered by Amazon Nova Pro</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -145,7 +145,7 @@ export default function Home() {
             </h2>
             
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Leverage Amazon Nova Act to intelligently crawl, analyze, and discover security vulnerabilities 
+              Leverage Amazon Nova Pro to intelligently crawl, analyze, and discover security vulnerabilities 
               in your target applications. Save hours of manual reconnaissance work.
             </p>
           </div>
@@ -348,7 +348,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Intelligent Crawling</h3>
               <p className="text-gray-600 leading-relaxed">
-                Nova Act autonomously navigates and discovers endpoints, subdomains, and hidden paths with AI-powered decision making.
+                Nova Pro autonomously navigates and discovers endpoints, subdomains, and hidden paths with AI-powered decision making.
               </p>
             </div>
 
@@ -382,7 +382,7 @@ export default function Home() {
             Built for Amazon Nova Hackathon 2026 | Category: UI Automation
           </p>
           <p className="text-xs text-gray-500 mt-2">
-            Powered by Amazon Nova Act Foundation Model
+            Powered by Amazon Nova Pro Foundation Model
           </p>
         </div>
       </footer>

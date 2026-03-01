@@ -124,7 +124,7 @@ Should return:
   "name": "Bounty Recon AI API",
   "version": "1.0.0",
   "status": "operational",
-  "powered_by": "Amazon Nova Act"
+  "powered_by": "Amazon Nova Pro"
 }
 ```
 

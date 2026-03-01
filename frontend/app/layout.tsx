@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Bounty Recon AI | Amazon Nova Hackathon 2026',
-  description: 'AI-Powered Bug Bounty Reconnaissance using Amazon Nova Act',
+  description: 'AI-Powered Bug Bounty Reconnaissance using Amazon Nova Pro',
 }
 
 export default function RootLayout({

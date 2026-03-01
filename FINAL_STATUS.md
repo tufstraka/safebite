@@ -120,7 +120,7 @@ Every finding includes:
 ### Architecture
 - **Frontend**: Next.js 14 with TypeScript and Tailwind CSS
 - **Backend**: FastAPI with async/await for performance
-- **AI**: Amazon Nova Act for UI automation
+- **AI**: Amazon Nova Pro for UI automation
 - **Reporting**: ReportLab for professional PDFs
 - **Security**: httpx with SSL/TLS verification
 
@@ -159,7 +159,7 @@ Clear demonstration of:
 - [x] Comprehensive vulnerability scanning
 - [x] Professional PDF reports
 - [x] Modern, responsive UI
-- [x] Real Nova Act integration
+- [x] Real Nova Pro integration
 - [x] Endpoint verification (no false positives)
 - [x] Security implications for all findings
 - [x] Actionable recommendations
@@ -189,7 +189,7 @@ Clear demonstration of:
    - Professional bug bounty reports (PDF export)
    - Detailed implications (not generic findings)
 
-3. **Nova Act Integration**
+3. **Nova Pro Integration**
    - Real UI automation for endpoint discovery
    - Active testing capabilities
    - Professional screenshot capture
@@ -253,7 +253,7 @@ Clear demonstration of:
 ---
 
 **Built for Amazon Nova Hackathon 2026**
-**Category**: UI Automation
+**Category**: AI-Powered Security Analysis
 **Prize**: $40,000 cash + $55,000 AWS credits
 
 **This tool provides unique value that existing security tools don't offer.**

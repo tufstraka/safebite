@@ -1,8 +1,8 @@
-# Amazon Nova Act Integration - Current Status
+# Amazon Nova Pro Integration - Current Status
 
-## How Nova Act SHOULD Be Used
+## How Nova Pro SHOULD Be Used
 
-Amazon Nova Act is a **foundation model for UI automation** - it can control browsers, interact with web applications, and automate complex workflows through visual understanding.
+Amazon Nova Pro is a **foundation model for UI automation** - it can control browsers, interact with web applications, and automate complex workflows through visual understanding.
 
 ### Ideal Use Cases for Bug Bounty Recon:
 
@@ -42,8 +42,8 @@ Amazon Nova Act is a **foundation model for UI automation** - it can control bro
 
 **Current Behavior:**
 The code has try/except blocks that:
-1. **Attempt** to call Nova Act via `invoke_agent()`
-2. **Fall back** to standard Python libraries when Nova Act isn't available
+1. **Attempt** to call Nova Pro via `invoke_agent()`
+2. **Fall back** to standard Python libraries when Nova Pro isn't available
 
 **Fallback Implementations:**
 - **Endpoint Discovery**: Returns static list of common endpoints
@@ -57,12 +57,12 @@ The code has try/except blocks that:
 
 ### Why Fallbacks Are Used:
 
-1. **Nova Act Model Availability**: The model may not be publicly available yet or requires special access
+1. **Nova Pro Model Availability**: The model may not be publicly available yet or requires special access
 2. **Development Speed**: Standard tools allowed rapid prototyping
-3. **Reliability**: Ensures the tool works even if Nova Act API fails
+3. **Reliability**: Ensures the tool works even if Nova Pro API fails
 4. **Cost Efficiency**: Development without burning Bedrock API credits
 
-## How to Integrate Real Nova Act
+## How to Integrate Real Nova Pro
 
 ### Step 1: Verify Model Access
 
@@ -85,9 +85,9 @@ response = bedrock.invoke_model(
 
 ```python
 async def discover_endpoints(self, base_url: str) -> List[str]:
-    """Discover endpoints using Nova Act browser automation"""
+    """Discover endpoints using Nova Pro browser automation"""
     
-    # Real Nova Act implementation
+    # Real Nova Pro implementation
     result = await self.client.invoke_agent(
         action="discover_endpoints",
         parameters={
@@ -109,7 +109,7 @@ async def discover_endpoints(self, base_url: str) -> List[str]:
 
 ```python
 async def capture_screenshot(self, url: str) -> str:
-    """Capture screenshot using Nova Act"""
+    """Capture screenshot using Nova Pro"""
     
     result = await self.client.invoke_agent(
         action="screenshot",
@@ -119,7 +119,7 @@ async def capture_screenshot(self, url: str) -> str:
         }
     )
     
-    # Nova Act returns base64 image or S3 URL
+    # Nova Pro returns base64 image or S3 URL
     screenshot_data = result.get("screenshot")
     
     # Save to S3 or return data URL
@@ -131,7 +131,7 @@ async def capture_screenshot(self, url: str) -> str:
 
 ```python
 async def test_login_endpoint(self, url: str) -> Dict:
-    """Test login functionality using Nova Act"""
+    """Test login functionality using Nova Pro"""
     
     result = await self.client.invoke_agent(
         action="test_form",
@@ -152,7 +152,7 @@ async def test_login_endpoint(self, url: str) -> Dict:
 
 ## Hybrid Approach (Recommended)
 
-For a production tool, use **both Nova Act AND standard tools**:
+For a production tool, use **both Nova Pro AND standard tools**:
 
 ```python
 async def discover_endpoints(self, base_url: str) -> List[str]:
@@ -160,7 +160,7 @@ async def discover_endpoints(self, base_url: str) -> List[str]:
     
     endpoints = set()
     
-    # 1. Nova Act for dynamic discovery
+    # 1. Nova Pro for dynamic discovery
     try:
         nova_result = await self.client.invoke_agent(
             action="discover_endpoints",
@@ -168,7 +168,7 @@ async def discover_endpoints(self, base_url: str) -> List[str]:
         )
         endpoints.update(nova_result.get("endpoints", []))
     except Exception as e:
-        logger.warning(f"Nova Act discovery failed: {e}")
+        logger.warning(f"Nova Pro discovery failed: {e}")
     
     # 2. Static common endpoints
     static_endpoints = [
@@ -191,35 +191,35 @@ async def discover_endpoints(self, base_url: str) -> List[str]:
 
 ### What to Emphasize:
 
-1. **Architecture**: Show how Nova Act is integrated via Bedrock SDK
+1. **Architecture**: Show how Nova Pro is integrated via Bedrock SDK
 2. **Fallback Strategy**: Explain graceful degradation to standard tools
-3. **Future Potential**: Demonstrate what Nova Act COULD do with proper integration
-4. **Practical Value**: The tool works NOW with standard libraries, Nova Act makes it better
+3. **Future Potential**: Demonstrate what Nova Pro COULD do with proper integration
+4. **Practical Value**: The tool works NOW with standard libraries, Nova Pro makes it better
 
 ### Demo Script:
 
-"Our tool uses Amazon Nova Act for UI automation when available, with intelligent fallbacks to ensure reliability. The architecture is designed for Nova Act's browser automation capabilities - navigating sites, interacting with JavaScript, and discovering endpoints dynamically. Currently, we use standard Python libraries as fallbacks, but the structure is ready for full Nova Act integration once model access is available."
+"Our tool uses Amazon Nova Pro for UI automation when available, with intelligent fallbacks to ensure reliability. The architecture is designed for Nova Pro's browser automation capabilities - navigating sites, interacting with JavaScript, and discovering endpoints dynamically. Currently, we use standard Python libraries as fallbacks, but the structure is ready for full Nova Pro integration once model access is available."
 
 ## Truth for Judges:
 
 **Be honest in submission:**
-- "Designed for Amazon Nova Act integration"
+- "Designed for Amazon Nova Pro integration"
 - "Currently using fallback implementations for development"
-- "Full Nova Act integration pending model availability"
-- "Architecture demonstrates understanding of Nova Act capabilities"
+- "Full Nova Pro integration pending model availability"
+- "Architecture demonstrates understanding of Nova Pro capabilities"
 
 **This is actually common in hackathons** - building the architecture and demonstrating understanding of the target API, even if final integration isn't complete due to API access limitations.
 
 ## Next Steps for Full Integration:
 
-1. **Get Nova Act API access** (may require special approval)
-2. **Study Nova Act documentation** for proper prompt format
+1. **Get Nova Pro API access** (may require special approval)
+2. **Study Nova Pro documentation** for proper prompt format
 3. **Test with simple navigation** (just visiting URLs)
 4. **Gradually add complexity** (clicking, form filling)
 5. **Add screenshot capture**
 6. **Implement dynamic endpoint discovery**
-7. **Remove fallbacks** once Nova Act is reliable
+7. **Remove fallbacks** once Nova Pro is reliable
 
 ---
 
-**Bottom Line**: The tool works NOW with standard libraries. Nova Act integration is architecturally ready but uses fallbacks. This is a honest, practical approach for a hackathon project.
+**Bottom Line**: The tool works NOW with standard libraries. Nova Pro integration is architecturally ready but uses fallbacks. This is a honest, practical approach for a hackathon project.

@@ -68,7 +68,7 @@ git remote -v
 
 ##  Next Steps for Hackathon Submission
 
-1. **Integrate Nova Act SDK**
+1. **Integrate Nova Pro SDK**
    - File: backend/main.py (lines 70-135)
    - Replace NovaActAgent mock methods
    - Add AWS credentials
@@ -79,7 +79,7 @@ git remote -v
    - Impact: Saves time, democratizes research
 
 3. **Write Blog Post**
-   - Title: "Automating Bug Bounty Recon with Amazon Nova Act"
+   - Title: "Automating Bug Bounty Recon with Amazon Nova Pro"
    - Platform: builder.aws.com
    - Include: Architecture, learnings, open-source
 
