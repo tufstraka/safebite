@@ -58,15 +58,37 @@ export default function Home() {
       formData.append('allergens', selectedAllergens.map(a => a.toLowerCase()).join(','));
       formData.append('custom_allergens', customAllergens.join(','));
 
-      const response = await fetch('/api/analyze/image', {
-        method: 'POST',
-        body: formData
+      console.log('Sending to API:', {
+        file: menuFile.name,
+        allergens: selectedAllergens.map(a => a.toLowerCase()).join(','),
+        custom_allergens: customAllergens.join(',')
       });
 
+      const response = await fetch('/api/analyze/image', {
+        method: 'POST',
+        body: formData,
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log('API Response:', {
+        restaurant: data.restaurant_name,
+        total_dishes: data.total_dishes,
+        first_dish: data.safe_dishes[0]?.name || data.unsafe_dishes[0]?.name
+      });
+      
       setResults(data);
     } catch (error) {
       console.error('Analysis failed:', error);
+      alert('Analysis failed. Please try again.');
     } finally {
       setAnalyzing(false);
     }
