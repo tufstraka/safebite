@@ -117,9 +117,31 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-slate-900 relative overflow-hidden">
+      {/* Subtle background illustrations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+          backgroundSize: '100px 100px'
+        }}></div>
+        
+        {/* Organic shapes - food-inspired */}
+        <svg className="absolute top-20 right-10 w-64 h-64 opacity-5" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="80" fill="currentColor" className="text-emerald-500" />
+        </svg>
+        
+        <svg className="absolute bottom-20 left-10 w-48 h-48 opacity-5" viewBox="0 0 200 200">
+          <path d="M100,20 Q150,50 150,100 Q150,150 100,180 Q50,150 50,100 Q50,50 100,20 Z" 
+                fill="currentColor" className="text-emerald-500" />
+        </svg>
+        
+        <svg className="absolute top-1/2 left-1/4 w-32 h-32 opacity-5" viewBox="0 0 100 100">
+          <rect x="20" y="20" width="60" height="60" rx="8" fill="currentColor" className="text-slate-700" />
+        </svg>
+      </div>
       {/* Simple header */}
-      <nav className="border-b border-slate-700 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="border-b border-slate-700 bg-slate-900/95 backdrop-blur-sm sticky top-0 z-50 relative">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3">
           <Shield className="w-6 h-6 text-emerald-400" />
           <div className="flex items-center gap-1.5">
@@ -138,7 +160,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-6 py-12 relative z-10">
         {!results ? (
           <>
             {/* Direct intro */}
