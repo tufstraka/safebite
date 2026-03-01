@@ -122,28 +122,30 @@ class NovaMenuAnalyzer:
             return ""
     
     async def analyze_menu_image(self, image_data: bytes, filename: str = "") -> Dict:
-        """Use Nova Pro to OCR and understand menu - handles PDFs AND images"""
+        """Use Nova Pro to OCR images OR PyPDF2 for PDFs"""
         
-        # For PDFs: Try both PyPDF2 text extraction AND Nova Pro
+        # For PDFs: Use PyPDF2 text extraction (Nova Pro doesn't support PDF format)
         if filename.lower().endswith('.pdf'):
             logger.info(f"Processing PDF: {filename}")
             text = await self.extract_text_from_pdf(image_data)
             if text and len(text.strip()) > 50:
                 logger.info(f"Extracted {len(text)} characters from PDF")
-                # Parse dishes from extracted text
+                # Parse dishes from extracted text with improved parser
                 dishes = self._parse_dishes_from_text(text)
                 if dishes and len(dishes) > 0:
                     logger.info(f"✓ Parsed {len(dishes)} dishes from PDF text")
                     return {"text": text, "dishes": dishes}
                 else:
-                    logger.warning("PDF text extraction succeeded but no dishes found")
+                    logger.warning(f"PDF text extraction succeeded but parser found no dishes")
+                    logger.warning(f"First 500 chars of PDF text: {text[:500]}")
             else:
                 logger.warning("PDF text extraction failed or insufficient text")
             
-            # PDF text extraction failed - try Nova Pro on PDF as image
-            logger.info("Falling back to Nova Pro for PDF analysis...")
+            # PDF parsing completely failed - return demo with warning
+            logger.error("⚠️ PDF processing failed - using demo data")
+            return {"text": "PDF processing failed", "dishes": self._get_demo_dishes()}
         
-        # Try Nova Pro for image/PDF OCR
+        # For images: Use Nova Pro
         if self.bedrock:
             try:
                 logger.info(f"Calling Nova Pro for image analysis (file: {filename})...")
@@ -151,32 +153,29 @@ class NovaMenuAnalyzer:
                 # Encode image to base64
                 image_base64 = base64.b64encode(image_data).decode('utf-8')
                 
-                # Determine image format - Nova Pro treats PDFs as images
+                # Determine image format (Nova Pro: jpeg, png, gif, webp only)
                 image_format = "jpeg"
                 if filename.lower().endswith('.png'):
                     image_format = "png"
-                elif filename.lower().endswith('.pdf'):
-                    # Nova Pro can analyze PDF pages as images
-                    image_format = "pdf"
                 elif filename.lower().endswith('.webp'):
                     image_format = "webp"
                 elif filename.lower().endswith('.gif'):
                     image_format = "gif"
                 
-                # Nova Pro request - works for images AND PDFs
+                # Nova Pro request for images
                 body = json.dumps({
                     "messages": [
                         {
                             "role": "user",
                             "content": [
                                 {
-                                    "image": {  # Use "image" for all formats including PDF
+                                    "image": {
                                         "format": image_format,
                                         "source": {"bytes": image_base64}
                                     }
                                 },
                                 {
-                                    "text": """Analyze this image/document carefully. It could be:
+                                    "text": """Analyze this image carefully. It could be:
 1. A restaurant menu with dishes listed
 2. A photo of a single food item
 3. A photo of multiple food items on a table
@@ -242,38 +241,83 @@ Be thorough about visible ingredients - this is for allergen detection."""
             logger.warning("Bedrock client not initialized")
         
         # Fallback to demo data
-        logger.warning("⚠️ Falling back to demo dishes (Nova Pro failed or returned no data)")
+        logger.warning("⚠️ Falling back to demo dishes (analysis failed)")
         return {
             "text": "Sample menu extracted",
             "dishes": self._get_demo_dishes()
         }
     
     def _parse_dishes_from_text(self, text: str) -> List[Dict]:
-        """Parse dish names and descriptions from extracted text"""
+        """Parse dish names and descriptions from extracted PDF text - IMPROVED"""
         dishes = []
         lines = text.split('\n')
         
-        current_dish = None
-        for line in lines:
+        # Try multiple parsing strategies
+        
+        # Strategy 1: Look for lines with prices ($)
+        for i, line in enumerate(lines):
             line = line.strip()
-            if not line:
+            if not line or len(line) < 3:
                 continue
             
-            # Simple heuristic: lines with $ are likely dishes
-            if '$' in line:
+            # Check if line contains a price
+            if '$' in line or '€' in line or '£' in line:
+                # Split on price
                 parts = line.split('$')
                 if len(parts) >= 2:
                     name_part = parts[0].strip()
-                    price_part = '$' + parts[1].split()[0]
+                    # Price is first number after $
+                    price_match = parts[1].split()[0] if parts[1].split() else "0.00"
+                    price = f"${price_match}"
                     
-                    # Next line might be description
-                    dishes.append({
-                        "name": name_part,
-                        "description": "",
-                        "price": price_part
-                    })
+                    # Description might be on next line or same line
+                    description = ""
+                    # Check if there's more text after price on same line
+                    after_price = '$'.join(parts[1:])
+                    if len(after_price) > 10:
+                        description = after_price[len(price_match):].strip()
+                    # Check next line for description
+                    elif i + 1 < len(lines):
+                        next_line = lines[i + 1].strip()
+                        if next_line and '$' not in next_line and len(next_line) > 10:
+                            description = next_line
+                    
+                    if name_part:
+                        dishes.append({
+                            "name": name_part[:100],  # Limit length
+                            "description": description[:300] if description else name_part,
+                            "price": price
+                        })
         
-        return dishes
+        # Strategy 2: If no prices found, look for numbered items or capitalized lines
+        if not dishes:
+            for i, line in enumerate(lines):
+                line = line.strip()
+                # Skip short lines, numbers, headers
+                if len(line) < 5 or line.isnumeric():
+                    continue
+                
+                # Check if it looks like a dish name (starts with capital, not too long)
+                if line[0].isupper() and len(line) < 100 and not line.endswith(':'):
+                    # Get description from next line if available
+                    description = ""
+                    if i + 1 < len(lines):
+                        next_line = lines[i + 1].strip()
+                        if next_line and next_line[0].islower() and len(next_line) > 10:
+                            description = next_line
+                    
+                    dishes.append({
+                        "name": line,
+                        "description": description if description else line,
+                        "price": "$0.00"
+                    })
+                    
+                    # Limit to prevent spam
+                    if len(dishes) >= 20:
+                        break
+        
+        logger.info(f"Text parser found {len(dishes)} dishes")
+        return dishes[:20]  # Max 20 dishes
     
     async def analyze_menu_url(self, url: str) -> Dict:
         """Use Nova Act to scrape menu from URL"""
