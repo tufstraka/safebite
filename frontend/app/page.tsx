@@ -45,7 +45,7 @@ export default function Home() {
     const allAllergens = [...selectedAllergens, ...customAllergens];
     
     if (!menuFile || allAllergens.length === 0) {
-      alert('Please upload a menu and select at least one allergen');
+      alert('need a menu and at least one allergen');
       return;
     }
 
@@ -88,7 +88,7 @@ export default function Home() {
       setResults(data);
     } catch (error) {
       console.error('Analysis failed:', error);
-      alert('Analysis failed. Please try again.');
+      alert("hmm, that didn't work. try again?");
     } finally {
       setAnalyzing(false);
     }
@@ -118,9 +118,19 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-emerald-400" />
-            <h1 className="text-xl font-bold text-white">SafeBite</h1>
+            <div>
+              <h1 className="text-xl font-bold text-white">SafeBite</h1>
+              <p className="text-xs text-slate-500">by @dobynog</p>
+            </div>
           </div>
-          <div className="text-sm text-slate-400">Allergy Scanner</div>
+          <a 
+            href="https://github.com/tufstraka" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-slate-400 hover:text-slate-300 transition-colors"
+          >
+            github ↗
+          </a>
         </div>
       </nav>
 
@@ -130,7 +140,7 @@ export default function Home() {
             {/* Direct intro */}
             <div className="mb-8">
               <h2 className="text-4xl font-bold text-white mb-3">Check Your Menu</h2>
-              <p className="text-lg text-slate-300">Upload a photo or PDF. Pick your allergies. Get results.</p>
+              <p className="text-lg text-slate-300">Upload. Pick. Done.</p>
             </div>
 
             {/* Upload */}
@@ -213,9 +223,16 @@ export default function Home() {
             <button
               onClick={analyzeMenu}
               disabled={!menuFile || (selectedAllergens.length === 0 && customAllergens.length === 0) || analyzing}
-              className="w-full py-4 bg-emerald-500 text-white rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-4 bg-emerald-500 text-white rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
-              {analyzing ? 'Scanning...' : 'Scan Menu'}
+              {analyzing ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  hold up, scanning...
+                </>
+              ) : (
+                'Check It'
+              )}
             </button>
           </>
         ) : (
@@ -224,33 +241,35 @@ export default function Home() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{results.restaurant_name}</h2>
-                  <p className="text-slate-400 mt-1">{results.total_dishes} dishes • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
+                  <h2 className="text-2xl font-bold text-white mb-1">{results.restaurant_name}</h2>
+                  <p className="text-slate-400 text-sm">{results.total_dishes} items • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
                 </div>
                 <button
                   onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
-                  className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-600"
+                  className="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-600 transition-colors"
                 >
-                  New Scan
+                  Try Another
                 </button>
               </div>
 
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="bg-emerald-900/30 p-4 rounded-lg border border-emerald-800">
                   <div className="text-2xl font-bold text-emerald-400">{results.safe_dishes.length}</div>
-                  <div className="text-sm text-emerald-300">Safe</div>
+                  <div className="text-xs text-emerald-300">safe ✓</div>
                 </div>
                 <div className="bg-yellow-900/30 p-4 rounded-lg border border-yellow-800">
                   <div className="text-2xl font-bold text-yellow-400">{results.unknown_dishes.length}</div>
-                  <div className="text-sm text-yellow-300">Unknown</div>
+                  <div className="text-xs text-yellow-300">check these</div>
                 </div>
                 <div className="bg-red-900/30 p-4 rounded-lg border border-red-800">
                   <div className="text-2xl font-bold text-red-400">{results.unsafe_dishes.length}</div>
-                  <div className="text-sm text-red-300">Unsafe</div>
+                  <div className="text-xs text-red-300">skip ✗</div>
                 </div>
               </div>
 
-              <p className="text-slate-300">{results.voice_summary}</p>
+              <div className="bg-slate-700/50 rounded-lg p-4">
+                <p className="text-slate-300 text-sm">{results.voice_summary}</p>
+              </div>
             </div>
 
             {/* Safe */}
@@ -258,7 +277,7 @@ export default function Home() {
               <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-emerald-400" />
-                  Safe Dishes
+                  Good to Go
                 </h3>
                 <div className="space-y-3">
                   {results.safe_dishes.map((dish: any, idx: number) => (
@@ -316,9 +335,27 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="border-t border-slate-700 mt-12 pt-6">
-          <p className="text-center text-sm text-slate-400">
-            Always double-check with restaurant staff
-          </p>
+          <div className="flex justify-between items-center text-xs text-slate-400">
+            <p>always double-check with staff</p>
+            <div className="flex items-center gap-4">
+              <a 
+                href="https://github.com/tufstraka/bounty-recon-ai" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-slate-300 transition-colors"
+              >
+                source
+              </a>
+              <a 
+                href="https://x.com/dobynog" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-slate-300 transition-colors"
+              >
+                @dobynog
+              </a>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
