@@ -123,7 +123,7 @@ class NovaMenuAnalyzer:
             return text
         except Exception as e:
             logger.error(f"PDF extraction failed: {e}")
-            return ""
+            return {"allergens": "", "reasoning": ""}
     
     async def analyze_menu_image(self, image_data: bytes, filename: str = "") -> Dict:
         """OCR images OR extract text from PDFs"""
@@ -433,8 +433,10 @@ Be thorough about visible ingredients - this is for allergen detection."""
         name = dish["name"]
         description = dish["description"].lower()
         
-        # Step 1: Infer ALL likely ingredients
-        inferred_ingredients = await self._infer_ingredients_with_ai(name, description)
+        # Step 1: Infer allergens with reasoning
+        ai_result = await self._infer_ingredients_with_ai(name, description)
+        inferred_allergens = ai_result.get("allergens", "")
+        ai_reasoning = ai_result.get("reasoning", "")
         
         # Step 2: Check for allergens in visible description + inferred ingredients
         all_keywords = {**ALLERGEN_KEYWORDS, **custom_keywords}
@@ -459,10 +461,10 @@ Be thorough about visible ingredients - this is for allergen detection."""
                 detected.append(allergen)
                 found_in_description = True
                 break
-            # Check AI-inferred ingredients
+            # Check AI-inferred allergens
             if not found_in_description:
                 for keyword in keywords:
-                    if keyword.lower() in inferred_ingredients.lower():
+                    if keyword.lower() in inferred_allergens.lower():
                         detected.append(allergen)
                         break
         
@@ -491,30 +493,39 @@ Be thorough about visible ingredients - this is for allergen detection."""
         # Generate recommendations with Keith's personality - direct, practical, honest
         if detected:
             allergen_list = ', '.join(detected)
-            if len(detected) == 1:
-                # Add context for hidden allergens
-                context = ""
-                if "fish" in allergen_list.lower() and "caesar" in name.lower():
-                    context = " (Caesar dressing has anchovies)"
-                elif "fish" in allergen_list.lower() and "pad thai" in name.lower():
-                    context = " (traditional recipe uses fish sauce)"
-                elif "milk" in allergen_list.lower() and any(word in name.lower() for word in ["cake", "cookie", "muffin", "bread"]):
-                    context = " (baked goods typically have butter/milk)"
-                elif "egg" in allergen_list.lower() and "caesar" in name.lower():
-                    context = " (Caesar dressing contains egg)"
+            
+            # Use AI reasoning if available, otherwise generic message
+            context = ""
+            if ai_reasoning:
+                # Extract reasoning for detected allergens only
+                detected_reasoning = []
+                for allergen in detected:
+                    for reason_part in ai_reasoning.split(';'):
+                        if allergen.lower() in reason_part.lower():
+                            # Clean up the reasoning
+                            reason = reason_part.split(':', 1)[1].strip() if ':' in reason_part else reason_part.strip()
+                            detected_reasoning.append(reason)
+                            break
                 
-                # Direct, practical advice
+                if detected_reasoning:
+                    context = f" ({', '.join(detected_reasoning)})"
+            
+            if len(detected) == 1:
+                # Direct, practical advice with AI reasoning
                 messages = [
                     f"Yeah, this has {allergen_list}{context}. Skip it or ask if they can leave it out.",
                     f"This one's got {allergen_list}{context}. I'd go for something else.",
                     f"Has {allergen_list}{context}. Not worth the risk - pick another dish.",
-                    f"Can see {allergen_list}{context}. Ask your server about swapping it out or just skip it."
+                    f"Found {allergen_list}{context}. Ask your server about swapping it out or just skip it."
                 ]
                 import random
                 recommendations = random.choice(messages)
             else:
-                # Multiple allergens - straight talk
-                recommendations = f"This has {allergen_list}. Hard pass on this one."
+                # Multiple allergens - list them with reasoning if available
+                if context:
+                    recommendations = f"This has {allergen_list}{context}. Hard pass on this one."
+                else:
+                    recommendations = f"This has {allergen_list}. Hard pass on this one."
         elif safety_score < 90:
             # Honest about uncertainty
             uncertain = [
@@ -556,30 +567,30 @@ Be thorough about visible ingredients - this is for allergen detection."""
         """Use Nova 2 Lite to intelligently infer ALL likely ingredients"""
         if self.bedrock:
             try:
-                prompt = f"""You are a food safety expert. Analyze this dish carefully.
+                prompt = f"""You are a food safety expert. Analyze this dish for allergens.
 
 Dish name: {name}
-Visible description: {description}
+Description: {description}
 
-Task: List ONLY the most likely core ingredients based on standard recipes.
+Task: If this dish likely contains common allergens, explain WHY.
 
 IMPORTANT RULES:
-1. Only infer ingredients you are HIGHLY CONFIDENT about
-2. If description already mentions ingredients, don't repeat them
-3. Focus on common allergens: dairy, eggs, nuts, gluten, soy, fish, shellfish
-4. DO NOT guess or make assumptions
-5. If unsure, say "uncertain ingredients"
-6. Use standard recipes as reference, not creative variations
+1. Only mention allergens if HIGHLY CONFIDENT they're present
+2. Explain WHERE the allergen comes from (which component/ingredient)
+3. Focus on: dairy, eggs, nuts, gluten, soy, fish, shellfish
+4. If unsure, write "no clear allergens detected"
+5. Be specific about the SOURCE of the allergen
+
+Format your response as:
+ALLERGEN: source/reason
 
 Examples:
-- "Birthday Cake" → flour, eggs, milk, butter, sugar (standard recipe)
-- "Caesar Salad" → romaine, parmesan, egg, anchovies (Caesar dressing traditionally has anchovies - fish)
-- "Grilled Chicken" → chicken, oil, salt, pepper (don't add sauce unless mentioned)
-- "Pasta Marinara" → pasta (wheat), tomatoes, garlic, olive oil
-- "Pad Thai" → rice noodles, peanuts, fish sauce, egg (traditional recipe)
+- "Caesar Salad" → FISH: anchovies in Caesar dressing; EGG: raw egg in dressing; DAIRY: parmesan cheese
+- "Pad Thai" → FISH: fish sauce (traditional recipe); PEANUTS: crushed peanuts topping; EGG: scrambled egg
+- "Birthday Cake" → DAIRY: butter in cake + cream in frosting; EGGS: in cake batter; GLUTEN: wheat flour
+- "Grilled Chicken" → no clear allergens detected (unless sauce specified)
 
-FORMAT: ingredient1, ingredient2, ingredient3
-If uncertain, write "uncertain ingredients":"""
+Be concise. Only list allergens you're confident about with their source:"""
 
                 body = json.dumps({
                     "messages": [
@@ -606,14 +617,38 @@ If uncertain, write "uncertain ingredients":"""
                 # Validation: Check if AI is being too creative
                 if len(ingredients) > 200:
                     logger.warning(f"AI response too long ({len(ingredients)} chars), possible hallucination")
-                    return ""
+                    return {"allergens": "", "reasoning": ""}
                 
                 if "uncertain" in ingredients.lower():
                     logger.info(f"AI expressed uncertainty for '{name}'")
-                    return ""
+                    return {"allergens": "", "reasoning": ""}
                 
-                logger.info(f"Nova 2 Lite inferred for '{name}': {ingredients[:80]}...")
-                return ingredients.lower()
+                logger.info(f"Nova 2 Lite response for '{name}': {ingredients[:100]}...")
+                
+                # Parse the response - format: "ALLERGEN: reason; ALLERGEN: reason"
+                if "no clear allergens" in ingredients.lower():
+                    return {"allergens": "", "reasoning": ""}
+                
+                # Extract allergens and reasoning
+                allergen_list = []
+                reasoning_parts = []
+                
+                for line in ingredients.split(';'):
+                    if ':' in line:
+                        parts = line.split(':', 1)
+                        if len(parts) == 2:
+                            allergen = parts[0].strip().upper()
+                            reason = parts[1].strip()
+                            allergen_list.append(allergen.lower())
+                            reasoning_parts.append(f"{allergen.lower()}: {reason}")
+                
+                result = {
+                    "allergens": ", ".join(allergen_list),
+                    "reasoning": "; ".join(reasoning_parts)
+                }
+                
+                logger.info(f"Parsed: allergens={result['allergens']}, reasoning={result['reasoning'][:80]}...")
+                return result
                 
             except Exception as e:
                 logger.warning(f"Nova 2 Lite inference failed: {e}")
