@@ -209,6 +209,35 @@ export default function Home() {
           <path d="M0,35 L20,20 L40,35 L60,20 L80,35 L100,20 L120,35 L140,20 L160,35 L180,20 L200,35" 
                 fill="none" stroke="currentColor" strokeWidth="2"/>
         </svg>
+        
+        {/* Additional Kenyan patterns */}
+        <svg className="absolute top-1/2 left-20 w-28 h-28 opacity-5 text-red-700" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <path d="M50,10 L50,90 M10,50 L90,50 M20,20 L80,80 M80,20 L20,80" stroke="currentColor" strokeWidth="1"/>
+        </svg>
+        
+        <svg className="absolute top-3/4 right-1/3 w-36 h-36 opacity-5 text-green-700" viewBox="0 0 100 100">
+          <polygon points="50,5 95,35 80,85 20,85 5,35" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <polygon points="50,20 80,40 70,75 30,75 20,40" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <circle cx="50" cy="55" r="8" fill="currentColor" opacity="0.4"/>
+        </svg>
+        
+        <svg className="absolute bottom-1/3 right-10 w-32 h-32 opacity-5 text-purple-700" viewBox="0 0 100 100">
+          <rect x="10" y="10" width="80" height="80" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <rect x="25" y="25" width="50" height="50" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <rect x="40" y="40" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"/>
+        </svg>
+        
+        <svg className="absolute top-1/4 left-1/2 w-24 h-40 opacity-5 text-orange-700" viewBox="0 0 100 150">
+          <path d="M10,10 L50,30 L90,10 L90,50 L50,70 L10,50 Z" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <path d="M30,30 L50,40 L70,30 L70,60 L50,70 L30,60 Z" fill="none" stroke="currentColor" strokeWidth="2"/>
+        </svg>
+        
+        {/* More zigzag patterns */}
+        <svg className="absolute top-16 right-1/2 w-40 h-12 opacity-5 text-emerald-700" viewBox="0 0 200 50">
+          <path d="M0,10 L15,25 L30,10 L45,25 L60,10 L75,25 L90,10 L105,25 L120,10 L135,25 L150,10 L165,25 L180,10 L195,25" 
+                fill="none" stroke="currentColor" strokeWidth="2"/>
+        </svg>
       </div>
       {/* Simple header */}
       <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50 relative shadow-sm">
@@ -364,10 +393,7 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Voice Summary */}
-              <div className="bg-emerald-900/20 border border-emerald-800 rounded-lg p-4 mb-4">
-                <p className="text-emerald-300 text-sm font-medium">{results.voice_summary}</p>
-              </div>
+
 
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="bg-emerald-900/30 p-4 rounded-lg border border-emerald-800">
@@ -384,9 +410,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="bg-gray-100/50 rounded-lg p-4">
-                <p className="text-gray-600 text-sm">{results.voice_summary}</p>
-              </div>
+
             </div>
 
             {/* Safe */}
