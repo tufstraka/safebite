@@ -178,25 +178,37 @@ export default function Home() {
 
             {/* Upload */}
             <div className="bg-slate-800 rounded-xl p-6 mb-6 border border-slate-700">
-              <h3 className="text-lg font-semibold text-white mb-4">1. Upload Menu</h3>
-              <label className="block cursor-pointer">
-                <div className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-emerald-500 hover:bg-slate-700/50 transition-colors">
-                  {menuFile ? (
-                    <div>
-                      <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                      <p className="text-white font-medium">{menuFile.name}</p>
-                      <p className="text-slate-400 text-sm mt-1">Click to change</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <Upload className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-                      <p className="text-white font-medium">drop a menu here</p>
-                      <p className="text-slate-400 text-sm mt-1">or click if you're fancy</p>
-                    </div>
-                  )}
+              <h3 className="text-lg font-semibold text-white mb-4">1. snap it</h3>
+              
+              {menuFile ? (
+                <div className="border-2 border-emerald-500 bg-emerald-900/20 rounded-lg p-6 text-center">
+                  <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
+                  <p className="text-white font-medium">{menuFile.name}</p>
+                  <p className="text-slate-400 text-sm mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
-                <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
-              </label>
+              ) : (
+                <div className="space-y-3">
+                  {/* Camera button - primary on mobile */}
+                  <button
+                    onClick={() => setShowCamera(true)}
+                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg p-6 transition-colors flex flex-col items-center gap-3"
+                  >
+                    <Camera className="w-12 h-12" />
+                    <div>
+                      <p className="font-bold text-lg">take a pic</p>
+                      <p className="text-sm text-emerald-100">quick snap of your menu</p>
+                    </div>
+                  </button>
+
+                  {/* Upload option - secondary */}
+                  <label className="block cursor-pointer">
+                    <div className="border border-slate-600 rounded-lg p-4 text-center hover:border-slate-500 hover:bg-slate-700/30 transition-colors">
+                      <p className="text-slate-400 text-sm">or upload a photo/pdf</p>
+                    </div>
+                    <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Allergens */}
