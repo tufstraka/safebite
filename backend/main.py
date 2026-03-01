@@ -5,12 +5,15 @@ Amazon Nova Hackathon 2026
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional, Dict
 import asyncio
 import logging
 from datetime import datetime
-from nova_act_sdk import NovaActAgent  # Real Nova SDK
+from nova_act_sdk import NovaActAgent
+import httpx
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -53,9 +56,12 @@ class Finding(BaseModel):
     severity: str
     category: str
     description: str
+    implications: str  # Security impact
+    recommendations: str  # How to fix
     evidence: Optional[str] = None
     screenshot_url: Optional[str] = None
     discovered_at: datetime
+    cvss_score: Optional[float] = None  # CVSS score if applicable
 
 class ScanResult(BaseModel):
     scan_id: str
@@ -66,10 +72,65 @@ class ScanResult(BaseModel):
     statistics: Dict[str, int]
     report_url: Optional[str] = None
     completed_at: datetime
+    summary: str  # Executive summary
 
 # IN-MEMORY STORAGE
 scans: Dict[str, ScanResult] = {}
 active_scans: Dict[str, ScanStatus] = {}
+
+# Security knowledge base for implications and recommendations
+SECURITY_KB = {
+    "Content-Security-Policy": {
+        "implications": "Without CSP, the application is vulnerable to XSS attacks. Attackers can inject malicious scripts that steal user data, session tokens, or perform actions on behalf of users.",
+        "recommendations": "Implement a Content-Security-Policy header with strict directives. Start with 'default-src self' and gradually allow necessary resources. Use nonces or hashes for inline scripts.",
+        "severity": "high",
+        "cvss": 7.5
+    },
+    "X-Frame-Options": {
+        "implications": "Missing X-Frame-Options allows clickjacking attacks where attackers can embed your site in an iframe and trick users into clicking malicious elements by overlaying them on legitimate UI.",
+        "recommendations": "Set X-Frame-Options to 'DENY' or 'SAMEORIGIN'. For modern browsers, also implement Content-Security-Policy with frame-ancestors directive.",
+        "severity": "medium",
+        "cvss": 4.3
+    },
+    "Strict-Transport-Security": {
+        "implications": "Without HSTS, users can be vulnerable to SSL stripping attacks where attackers downgrade HTTPS connections to HTTP, exposing sensitive data in transit.",
+        "recommendations": "Set Strict-Transport-Security header with 'max-age=31536000; includeSubDomains; preload'. Consider submitting domain to HSTS preload list.",
+        "severity": "high",
+        "cvss": 6.5
+    },
+    "X-Content-Type-Options": {
+        "implications": "Allows MIME-sniffing attacks where browsers can execute files as different content types, potentially leading to XSS or code execution vulnerabilities.",
+        "recommendations": "Set X-Content-Type-Options to 'nosniff' to prevent browsers from MIME-sniffing responses away from declared content type.",
+        "severity": "medium",
+        "cvss": 5.3
+    },
+    ".git/config": {
+        "implications": "Exposed .git directory allows attackers to download entire source code, revealing API keys, database credentials, business logic vulnerabilities, and internal architecture.",
+        "recommendations": "Block access to .git directory in web server configuration. Add deny rules in .htaccess or nginx.conf. Never deploy .git folders to production.",
+        "severity": "critical",
+        "cvss": 9.1
+    },
+    ".env": {
+        "implications": "Exposed .env file contains database credentials, API keys, secrets, and other sensitive configuration data. Full system compromise is likely.",
+        "recommendations": "Immediately rotate all exposed credentials. Block access to .env files in web server config. Use environment variables or secure vaults for sensitive data.",
+        "severity": "critical",
+        "cvss": 9.8
+    }
+}
+
+async def verify_endpoint(url: str) -> Dict:
+    """Verify if endpoint exists and get status code"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
+            response = await client.head(url, follow_redirects=False)
+            return {
+                "exists": response.status_code < 404,
+                "status_code": response.status_code,
+                "accessible": response.status_code == 200
+            }
+    except Exception as e:
+        logger.error(f"Error verifying {url}: {e}")
+        return {"exists": False, "status_code": 0, "accessible": False}
 
 # RECON ENGINE
 
@@ -94,32 +155,71 @@ class ReconEngine:
             
             findings = []
             
+            # Endpoint discovery with verification
             if request.include_subdomains:
-                logger.info("Discovering endpoints...")
+                logger.info("Discovering and verifying endpoints...")
                 endpoints = await self.agent.discover_endpoints(str(request.target_url))
                 
                 for endpoint in endpoints:
-                    finding = Finding(
-                        title=f"Endpoint Discovered: {endpoint}",
-                        severity="info",
-                        category="endpoint",
-                        description=f"Found accessible endpoint: {endpoint}",
-                        discovered_at=datetime.now()
-                    )
-                    findings.append(finding)
+                    verification = await verify_endpoint(endpoint)
+                    
+                    # Only report accessible or sensitive endpoints
+                    if verification["accessible"]:
+                        finding = Finding(
+                            title=f"Accessible Endpoint: {endpoint}",
+                            severity="info",
+                            category="endpoint",
+                            description=f"Endpoint is publicly accessible (HTTP {verification['status_code']})",
+                            implications="Publicly accessible endpoints should be reviewed for proper authentication and authorization. Unauthenticated access to sensitive endpoints can lead to data exposure.",
+                            recommendations="Review endpoint for sensitive data exposure. Implement authentication and authorization. Apply rate limiting to prevent abuse.",
+                            discovered_at=datetime.now()
+                        )
+                        findings.append(finding)
+                    elif endpoint.endswith(('.git/config', '.env', 'config.php', 'wp-config.php')):
+                        # Report sensitive files even if not accessible (important to verify they're blocked)
+                        if verification["status_code"] == 403:
+                            finding = Finding(
+                                title=f"Sensitive File Protected: {endpoint}",
+                                severity="info",
+                                category="security",
+                                description=f"Sensitive file is properly blocked (HTTP {verification['status_code']})",
+                                implications="File is protected but presence indicates technology stack. Ensure protection is consistent across all environments.",
+                                recommendations="Verify this protection applies to all sensitive files. Monitor for configuration changes.",
+                                discovered_at=datetime.now()
+                            )
+                            findings.append(finding)
+                        elif verification["status_code"] == 200:
+                            kb_entry = SECURITY_KB.get(endpoint.split('/')[-1], {})
+                            finding = Finding(
+                                title=f"CRITICAL: Exposed Sensitive File - {endpoint}",
+                                severity="critical",
+                                category="exposure",
+                                description=f"Sensitive file is publicly accessible (HTTP {verification['status_code']})",
+                                implications=kb_entry.get("implications", "Exposure of sensitive configuration files can lead to full system compromise."),
+                                recommendations=kb_entry.get("recommendations", "Immediately block access and rotate all credentials."),
+                                evidence=f"HTTP {verification['status_code']} - File is downloadable",
+                                discovered_at=datetime.now(),
+                                cvss_score=kb_entry.get("cvss", 9.0)
+                            )
+                            findings.append(finding)
                 
                 active_scans[scan_id].progress = 50
                 active_scans[scan_id].findings = len(findings)
             
+            # Security headers analysis
             headers_result = await self.agent.check_security_headers(str(request.target_url))
             
             for missing_header in headers_result["missing_headers"]:
+                kb_entry = SECURITY_KB.get(missing_header, {})
                 finding = Finding(
                     title=f"Missing Security Header: {missing_header}",
-                    severity="medium",
+                    severity=kb_entry.get("severity", "medium"),
                     category="header",
-                    description=f"The {missing_header} header is not set.",
-                    discovered_at=datetime.now()
+                    description=f"The {missing_header} header is not set, leaving the application vulnerable to related attacks.",
+                    implications=kb_entry.get("implications", f"Missing {missing_header} can expose users to security risks."),
+                    recommendations=kb_entry.get("recommendations", f"Implement {missing_header} header with appropriate values."),
+                    discovered_at=datetime.now(),
+                    cvss_score=kb_entry.get("cvss")
                 )
                 findings.append(finding)
             
@@ -129,8 +229,11 @@ class ReconEngine:
                     severity="high",
                     category="header",
                     description=weak_header['issue'],
-                    evidence=f"Value: {weak_header['value']}",
-                    discovered_at=datetime.now()
+                    implications="Weak or disabled security headers leave users vulnerable to XSS and injection attacks. Modern browsers will not apply protection.",
+                    recommendations=f"Update {weak_header['header']} to recommended value. For XSS protection, remove header and implement CSP instead.",
+                    evidence=f"Current value: {weak_header['value']}",
+                    discovered_at=datetime.now(),
+                    cvss_score=6.5
                 )
                 findings.append(finding)
             
@@ -143,6 +246,7 @@ class ReconEngine:
             
             await self.agent.end_session()
             
+            # Calculate statistics
             stats = {
                 "total_findings": len(findings),
                 "critical": sum(1 for f in findings if f.severity == "critical"),
@@ -152,6 +256,9 @@ class ReconEngine:
                 "info": sum(1 for f in findings if f.severity == "info")
             }
             
+            # Generate executive summary
+            summary = self._generate_summary(findings, stats, str(request.target_url))
+            
             result = ScanResult(
                 scan_id=scan_id,
                 target=str(request.target_url),
@@ -159,6 +266,7 @@ class ReconEngine:
                 status="completed",
                 findings=findings,
                 statistics=stats,
+                summary=summary,
                 completed_at=datetime.now()
             )
             
@@ -172,6 +280,26 @@ class ReconEngine:
             logger.error(f"Scan {scan_id} failed: {str(e)}")
             active_scans[scan_id].status = "failed"
             raise
+    
+    def _generate_summary(self, findings: List[Finding], stats: Dict, target: str) -> str:
+        """Generate executive summary"""
+        critical_count = stats.get("critical", 0)
+        high_count = stats.get("high", 0)
+        
+        if critical_count > 0:
+            risk_level = "CRITICAL"
+            summary = f"Security assessment of {target} revealed {critical_count} critical vulnerabilities requiring immediate attention. "
+        elif high_count > 0:
+            risk_level = "HIGH"
+            summary = f"Security assessment of {target} identified {high_count} high-severity issues that should be addressed promptly. "
+        else:
+            risk_level = "MODERATE"
+            summary = f"Security assessment of {target} found {stats['total_findings']} findings for review. "
+        
+        summary += f"The scan detected {stats['total_findings']} total findings across endpoint discovery and security header analysis. "
+        summary += "Immediate remediation is recommended for critical and high-severity findings to prevent potential exploitation."
+        
+        return summary
 
 recon_engine = ReconEngine()
 
@@ -215,6 +343,23 @@ async def get_scan_results(scan_id: str):
     if scan_id not in scans:
         raise HTTPException(status_code=404, detail="Scan results not found")
     return scans[scan_id]
+
+@app.get("/scans/{scan_id}/report/pdf")
+async def download_pdf_report(scan_id: str):
+    """Generate and download professional PDF report"""
+    if scan_id not in scans:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    
+    from report_generator import generate_pdf_report
+    
+    result = scans[scan_id]
+    pdf_path = generate_pdf_report(result)
+    
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        filename=f"bounty-recon-{scan_id}.pdf"
+    )
 
 @app.get("/scans", response_model=List[ScanStatus])
 async def list_scans(limit: int = 10):

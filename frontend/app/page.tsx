@@ -84,24 +84,21 @@ export default function Home() {
     return <CheckCircle className="w-5 h-5" />;
   };
 
-  const exportReport = () => {
+  const exportReport = async () => {
     if (!results) return;
     
-    const report = {
-      scan_id: results.scan_id,
-      target: results.target,
-      scan_type: results.scan_type,
-      completed_at: results.completed_at,
-      statistics: results.statistics,
-      findings: results.findings
-    };
-    
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bounty-recon-${results.scan_id}.json`;
-    a.click();
+    try {
+      const response = await fetch(`/api/scans/${results.scan_id}/report/pdf`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bounty-recon-${results.scan_id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF export failed:', error);
+    }
   };
 
   return (
@@ -287,23 +284,43 @@ export default function Home() {
                         {getSeverityIcon(finding.severity)}
                       </div>
                       
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-start justify-between">
                           <h4 className="text-lg font-bold">{finding.title}</h4>
-                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                            {finding.severity}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                              {finding.severity}
+                            </span>
+                            {finding.cvss_score && (
+                              <span className="px-2 py-1 bg-white/70 rounded text-xs font-semibold">
+                                CVSS: {finding.cvss_score}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         
-                        <p className="text-sm mb-3 leading-relaxed">{finding.description}</p>
+                        <div className="space-y-2">
+                          <p className="text-sm leading-relaxed">{finding.description}</p>
+                          
+                          <div className="bg-white/50 rounded-lg p-3 border">
+                            <p className="text-xs font-semibold text-red-700 mb-1">Security Implications:</p>
+                            <p className="text-xs leading-relaxed">{finding.implications}</p>
+                          </div>
+                          
+                          <div className="bg-white/50 rounded-lg p-3 border">
+                            <p className="text-xs font-semibold text-green-700 mb-1">Recommendations:</p>
+                            <p className="text-xs leading-relaxed">{finding.recommendations}</p>
+                          </div>
+                        </div>
                         
                         {finding.evidence && (
                           <div className="bg-white/50 rounded-lg p-3 font-mono text-xs border">
+                            <p className="font-semibold mb-1">Evidence:</p>
                             {finding.evidence}
                           </div>
                         )}
                         
-                        <div className="flex items-center gap-4 mt-3 text-xs">
+                        <div className="flex items-center gap-4 text-xs text-gray-600">
                           <span className="flex items-center gap-1">
                             <Target className="w-3 h-3" />
                             {finding.category}
