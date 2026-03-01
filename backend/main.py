@@ -701,13 +701,18 @@ async def analyze_menu_url(request: MenuAnalysisRequest):
             len(safe_dishes), len(unsafe_dishes), all_allergens
         )
         
+        # Timestamp in EAT (Nairobi time)
+        now_utc = datetime.now(timezone.utc)
+        now_eat = now_utc.astimezone(NAIROBI_OFFSET)
+        
         return MenuAnalysisResponse(
             restaurant_name=menu_data.get("restaurant", "Restaurant"),
             total_dishes=len(menu_data["dishes"]),
             safe_dishes=safe_dishes,
             unsafe_dishes=unsafe_dishes,
             unknown_dishes=unknown_dishes,
-            analysis_timestamp=datetime.now().isoformat(),
+            analysis_timestamp=now_utc.isoformat(),
+            analysis_time_eat=now_eat.strftime('%H:%M EAT'),
             voice_summary=voice_summary
         )
         
