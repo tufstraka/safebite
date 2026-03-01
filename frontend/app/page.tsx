@@ -175,69 +175,117 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 via-pink-100 to-purple-100 relative overflow-hidden">
-      {/* Kenyan-inspired illustrations */}
+      {/* Food illustrations - caricature style */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Soft gradient orbs */}
         <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-purple-300/50 to-pink-300/50 rounded-full blur-3xl"></div>
+
+        {/* Pizza slice */}
+        <svg className="absolute top-32 left-20 w-24 h-24 opacity-20" viewBox="0 0 100 100">
+          <path d="M50,10 L90,90 L10,90 Z" fill="#FFA500" stroke="#FF8C00" strokeWidth="2"/>
+          <circle cx="40" cy="70" r="5" fill="#FF0000"/>
+          <circle cx="60" cy="65" r="4" fill="#FF0000"/>
+          <circle cx="50" cy="50" r="4" fill="#FFFF00"/>
+          <path d="M30,80 Q35,75 40,80" fill="#FFE4B5" stroke="#FFD700" strokeWidth="1"/>
+        </svg>
+        
+        {/* Burger */}
+        <svg className="absolute bottom-32 right-20 w-28 h-28 opacity-20" viewBox="0 0 100 100">
+          <ellipse cx="50" cy="30" rx="35" ry="8" fill="#D2691E"/>
+          <rect x="15" y="35" width="70" height="10" fill="#90EE90" rx="2"/>
+          <rect x="15" y="45" width="70" height="15" fill="#8B4513" rx="2"/>
+          <rect x="15" y="60" width="70" height="8" fill="#FFD700" rx="2"/>
+          <ellipse cx="50" cy="73" rx="35" ry="8" fill="#F4A460"/>
+        </svg>
+        
+        {/* Ice cream cone */}
+        <svg className="absolute top-1/3 right-1/4 w-20 h-20 opacity-20" viewBox="0 0 100 100">
+          <path d="M35,50 L50,90 L65,50 Z" fill="#D2691E" stroke="#8B4513" strokeWidth="2"/>
+          <circle cx="50" cy="45" r="20" fill="#FFB6C1"/>
+          <circle cx="45" cy="35" r="15" fill="#FF69B4"/>
+          <circle cx="55" cy="35" r="12" fill="#FFE4E1"/>
+        </svg>
+        
+        {/* Donut */}
+        <svg className="absolute bottom-1/4 left-1/3 w-24 h-24 opacity-20" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="30" fill="#FFB6D9" stroke="#FF69B4" strokeWidth="3"/>
+          <circle cx="50" cy="50" r="12" fill="#FFF5EE"/>
+          <circle cx="40" cy="35" r="3" fill="#FF1493"/>
+          <circle cx="60" cy="40" r="3" fill="#00CED1"/>
+          <circle cx="55" cy="60" r="3" fill="#FFD700"/>
+          <circle cx="35" cy="55" r="3" fill="#9370DB"/>
+        </svg>
+        
+        {/* Apple */}
+        <svg className="absolute top-1/2 left-20 w-20 h-20 opacity-20" viewBox="0 0 100 100">
+          <ellipse cx="50" cy="55" rx="25" ry="28" fill="#FF0000"/>
+          <ellipse cx="48" cy="52" rx="8" ry="10" fill="#FF6B6B" opacity="0.5"/>
+          <path d="M50,25 Q48,20 50,15" stroke="#8B4513" strokeWidth="3" fill="none"/>
+          <path d="M55,20 Q60,18 58,15" fill="#228B22"/>
+        </svg>
+        
+        {/* Coffee cup */}
+        <svg className="absolute top-3/4 right-1/3 w-22 h-22 opacity-20" viewBox="0 0 100 100">
+          <rect x="25" y="40" width="40" height="35" rx="5" fill="#8B4513" stroke="#654321" strokeWidth="2"/>
+          <ellipse cx="45" cy="40" rx="20" ry="5" fill="#6F4E37"/>
+          <path d="M65,50 Q75,50 75,60 Q75,70 65,70" stroke="#654321" strokeWidth="2" fill="none"/>
+          <path d="M35,30 Q35,25 40,25 Q45,25 45,30" stroke="#D3D3D3" strokeWidth="1.5" fill="none"/>
+        </svg>
+        
+        {/* Taco */}
+        <svg className="absolute bottom-1/3 right-10 w-26 h-26 opacity-20" viewBox="0 0 100 100">
+          <path d="M20,60 Q50,30 80,60 L75,70 Q50,50 25,70 Z" fill="#F4A460" stroke="#D2691E" strokeWidth="2"/>
+          <rect x="30" y="58" width="40" height="5" fill="#90EE90"/>
+          <rect x="35" y="53" width="30" height="5" fill="#8B4513"/>
+          <rect x="32" y="63" width="36" height="4" fill="#FFD700"/>
+        </svg>
+        
+        {/* Sushi */}
+        <svg className="absolute top-1/4 left-1/2 w-24 h-24 opacity-20" viewBox="0 0 100 100">
+          <ellipse cx="50" cy="50" rx="30" ry="12" fill="#FFFFFF" stroke="#000000" strokeWidth="1.5"/>
+          <rect x="30" y="45" width="40" height="10" fill="#FF6347"/>
+          <ellipse cx="50" cy="45" rx="30" ry="3" fill="#2F4F4F" opacity="0.7"/>
+        </svg>
+        
+        {/* Banana */}
+        <svg className="absolute top-16 right-1/2 w-28 h-16 opacity-20" viewBox="0 0 120 60">
+          <path d="M10,30 Q20,10 40,15 Q60,20 80,25 Q100,30 110,40" stroke="#FFD700" strokeWidth="12" fill="none" strokeLinecap="round"/>
+          <path d="M15,30 Q25,15 40,18 Q60,22 80,27 Q95,32 105,40" stroke="#FFA500" strokeWidth="2" fill="none" opacity="0.6"/>
+        </svg>
+        
+        {/* Watermelon slice */}
+        <svg className="absolute bottom-16 left-1/4 w-24 h-24 opacity-20" viewBox="0 0 100 100">
+          <path d="M20,70 Q50,20 80,70 Z" fill="#FF6B6B"/>
+          <path d="M25,70 Q50,30 75,70 Z" fill="#FF4444"/>
+          <path d="M20,70 Q50,20 80,70" stroke="#228B22" strokeWidth="6" fill="none"/>
+          <circle cx="35" cy="60" r="2" fill="#000000"/>
+          <circle cx="50" cy="50" r="2" fill="#000000"/>
+          <circle cx="65" cy="58" r="2" fill="#000000"/>
+        </svg>
         <div className="absolute bottom-20 left-10 w-80 h-80 bg-gradient-to-br from-emerald-300/50 to-cyan-300/50 rounded-full blur-3xl"></div>
         <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-yellow-300/40 to-orange-300/40 rounded-full blur-3xl"></div>
         
         {/* Kenyan patterns - geometric African motifs */}
-        <svg className="absolute top-32 left-20 w-32 h-32 opacity-5 text-orange-600" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <circle cx="50" cy="50" r="15" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <line x1="50" y1="5" x2="50" y2="95" stroke="currentColor" strokeWidth="1"/>
-          <line x1="5" y1="50" x2="95" y2="50" stroke="currentColor" strokeWidth="1"/>
-        </svg>
         
-        <svg className="absolute bottom-32 right-20 w-40 h-40 opacity-5 text-emerald-600" viewBox="0 0 100 100">
-          <polygon points="50,10 90,35 75,75 25,75 10,35" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <polygon points="50,25 75,40 65,65 35,65 25,40" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <circle cx="50" cy="50" r="10" fill="currentColor" opacity="0.3"/>
-        </svg>
         
-        <svg className="absolute top-1/3 right-1/4 w-24 h-24 opacity-5 text-red-600" viewBox="0 0 100 100">
-          <rect x="20" y="20" width="60" height="60" fill="none" stroke="currentColor" strokeWidth="2" transform="rotate(45 50 50)"/>
-          <rect x="35" y="35" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2" transform="rotate(45 50 50)"/>
-        </svg>
+        
+        
+        
         
         {/* Maasai-inspired zigzag patterns */}
-        <svg className="absolute bottom-1/4 left-1/3 w-48 h-16 opacity-5 text-yellow-800" viewBox="0 0 200 50">
-          <path d="M0,25 L20,10 L40,25 L60,10 L80,25 L100,10 L120,25 L140,10 L160,25 L180,10 L200,25" 
-                fill="none" stroke="currentColor" strokeWidth="3"/>
-          <path d="M0,35 L20,20 L40,35 L60,20 L80,35 L100,20 L120,35 L140,20 L160,35 L180,20 L200,35" 
-                fill="none" stroke="currentColor" strokeWidth="2"/>
-        </svg>
+        
         
         {/* Additional Kenyan patterns */}
-        <svg className="absolute top-1/2 left-20 w-28 h-28 opacity-5 text-red-800" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <path d="M50,10 L50,90 M10,50 L90,50 M20,20 L80,80 M80,20 L20,80" stroke="currentColor" strokeWidth="1"/>
-        </svg>
         
-        <svg className="absolute top-3/4 right-1/3 w-36 h-36 opacity-5 text-green-700" viewBox="0 0 100 100">
-          <polygon points="50,5 95,35 80,85 20,85 5,35" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <polygon points="50,20 80,40 70,75 30,75 20,40" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <circle cx="50" cy="55" r="8" fill="currentColor" opacity="0.4"/>
-        </svg>
         
-        <svg className="absolute bottom-1/3 right-10 w-32 h-32 opacity-5 text-purple-700" viewBox="0 0 100 100">
-          <rect x="10" y="10" width="80" height="80" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <rect x="25" y="25" width="50" height="50" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <rect x="40" y="40" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"/>
-        </svg>
         
-        <svg className="absolute top-1/4 left-1/2 w-24 h-40 opacity-5 text-orange-700" viewBox="0 0 100 150">
-          <path d="M10,10 L50,30 L90,10 L90,50 L50,70 L10,50 Z" fill="none" stroke="currentColor" strokeWidth="2"/>
-          <path d="M30,30 L50,40 L70,30 L70,60 L50,70 L30,60 Z" fill="none" stroke="currentColor" strokeWidth="2"/>
-        </svg>
+        
+        
+        
+        
         
         {/* More zigzag patterns */}
-        <svg className="absolute top-16 right-1/2 w-40 h-12 opacity-5 text-emerald-800" viewBox="0 0 200 50">
-          <path d="M0,10 L15,25 L30,10 L45,25 L60,10 L75,25 L90,10 L105,25 L120,10 L135,25 L150,10 L165,25 L180,10 L195,25" 
-                fill="none" stroke="currentColor" strokeWidth="2"/>
-        </svg>
+        
       </div>
       {/* Simple header */}
       <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50 relative shadow-sm">
