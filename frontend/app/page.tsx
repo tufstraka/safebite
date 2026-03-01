@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, X } from 'lucide-react';
 import Toast from './components/Toast';
+import ConsoleEasterEgg from './components/ConsoleEasterEgg';
 
 const ALLERGENS = [
   'Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy',
@@ -47,7 +48,7 @@ export default function Home() {
     const allAllergens = [...selectedAllergens, ...customAllergens];
     
     if (!menuFile || allAllergens.length === 0) {
-      setToast({ message: 'need a menu and at least one allergen', type: 'error' });
+      setToast({ message: 'bruh, need a menu & allergen first', type: 'error' });
       return;
     }
 
@@ -89,7 +90,7 @@ export default function Home() {
       });
       
       setResults(data);
-      setToast({ message: 'analysis complete!', type: 'success' });
+      setToast({ message: `sawa! found ${data.total_dishes} dishes`, type: 'success' });
     } catch (error) {
       console.error('Analysis failed:', error);
       const errorMessage = error instanceof Error ? error.message : "hmm, that didn't work. try again?";
@@ -165,8 +166,8 @@ export default function Home() {
           <>
             {/* Direct intro */}
             <div className="mb-8">
-              <h2 className="text-4xl font-bold text-white mb-3">Check Your Menu</h2>
-              <p className="text-lg text-slate-300">Upload. Pick. Done.</p>
+              <h2 className="text-4xl font-bold text-white mb-3">check your menu</h2>
+              <p className="text-lg text-slate-300">scan it. we'll check the allergens.</p>
             </div>
 
             {/* Upload */}
@@ -183,8 +184,8 @@ export default function Home() {
                   ) : (
                     <div>
                       <Upload className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-                      <p className="text-white font-medium">Drop file or click to browse</p>
-                      <p className="text-slate-400 text-sm mt-1">Photos or PDFs up to 50MB</p>
+                      <p className="text-white font-medium">drop a menu here</p>
+                      <p className="text-slate-400 text-sm mt-1">or click if you're fancy</p>
                     </div>
                   )}
                 </div>
@@ -254,10 +255,10 @@ export default function Home() {
               {analyzing ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  hold up, scanning...
+                  reading menu...
                 </>
               ) : (
-                'Check It'
+                'scan'
               )}
             </button>
           </>
@@ -274,7 +275,7 @@ export default function Home() {
                   onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
                   className="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-600 transition-colors"
                 >
-                  Try Another
+                  try another
                 </button>
               </div>
 
@@ -368,7 +369,7 @@ export default function Home() {
         <footer className="border-t border-slate-700 mt-12 pt-6">
           <div className="flex justify-between items-center text-xs text-slate-400">
             <p>always double-check with staff</p>
-            <span className="text-slate-500">nairobi 🇰🇪</span>
+            <span className="text-slate-500">made in nairobi 🎴</span>
           </div>
         </footer>
       </div>
@@ -381,6 +382,9 @@ export default function Home() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Console Easter Egg */}
+      <ConsoleEasterEgg />
     </div>
   );
 }
