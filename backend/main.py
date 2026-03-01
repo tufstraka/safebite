@@ -444,12 +444,23 @@ Be thorough about visible ingredients - this is for allergen detection."""
         if detected:
             allergen_list = ', '.join(detected)
             if len(detected) == 1:
+                # Add context for hidden allergens
+                context = ""
+                if "fish" in allergen_list.lower() and "caesar" in name.lower():
+                    context = " (Caesar dressing has anchovies)"
+                elif "fish" in allergen_list.lower() and "pad thai" in name.lower():
+                    context = " (traditional recipe uses fish sauce)"
+                elif "milk" in allergen_list.lower() and any(word in name.lower() for word in ["cake", "cookie", "muffin", "bread"]):
+                    context = " (baked goods typically have butter/milk)"
+                elif "egg" in allergen_list.lower() and "caesar" in name.lower():
+                    context = " (Caesar dressing contains egg)"
+                
                 # Direct, practical advice
                 messages = [
-                    f"Yeah, this has {allergen_list}. Skip it or ask if they can leave it out.",
-                    f"This one's got {allergen_list} in it. I'd go for something else.",
-                    f"Definitely has {allergen_list}. Not worth the risk - pick another dish.",
-                    f"Can see {allergen_list} here. Ask your server about swapping it out or just skip it."
+                    f"Yeah, this has {allergen_list}{context}. Skip it or ask if they can leave it out.",
+                    f"This one's got {allergen_list}{context}. I'd go for something else.",
+                    f"Has {allergen_list}{context}. Not worth the risk - pick another dish.",
+                    f"Can see {allergen_list}{context}. Ask your server about swapping it out or just skip it."
                 ]
                 import random
                 recommendations = random.choice(messages)
@@ -514,11 +525,13 @@ IMPORTANT RULES:
 
 Examples:
 - "Birthday Cake" → flour, eggs, milk, butter, sugar (standard recipe)
-- "Caesar Salad" → romaine, parmesan, egg (in dressing), anchovies (traditional)
+- "Caesar Salad" → romaine, parmesan, egg, anchovies (Caesar dressing traditionally has anchovies - fish)
 - "Grilled Chicken" → chicken, oil, salt, pepper (don't add sauce unless mentioned)
 - "Pasta Marinara" → pasta (wheat), tomatoes, garlic, olive oil
+- "Pad Thai" → rice noodles, peanuts, fish sauce, egg (traditional recipe)
 
-Answer with ONLY ingredient names separated by commas. If uncertain, write "uncertain ingredients":"""
+FORMAT: ingredient1, ingredient2, ingredient3
+If uncertain, write "uncertain ingredients":"""
 
                 body = json.dumps({
                     "messages": [
