@@ -23,10 +23,11 @@ Menu text:
 {text}
 
 Rules:
-1. Include ONLY actual food/drink items (dishes, meals, beverages)
-2. Skip headers, footers, restaurant info, "prices subject to change", etc.
-3. Include the dish name and brief description if available
-4. If price is visible, include it
+1. Extract ONLY food/drink items that are EXPLICITLY listed in the text
+2. DO NOT invent or hallucinate dish names or descriptions
+3. Skip headers, footers, restaurant info, "prices subject to change", etc.
+4. Use ONLY the exact description from the menu text - do not embellish or assume ingredients
+5. If price is visible, include it exactly as written
 
 Format (valid JSON array):
 [

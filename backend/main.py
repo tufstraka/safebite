@@ -225,7 +225,9 @@ Return ONLY a JSON array in this exact format:
 
 If you see multiple items, include them all. If it's a single plate, describe everything on it.
 Be thorough about visible ingredients - this is for allergen detection.
-DO NOT hallucinate ingredients that aren't clearly visible or typical for the dish."""
+ONLY describe ingredients you can ACTUALLY SEE in the image.
+DO NOT assume, infer, or hallucinate ingredients based on what's "typical" for the dish.
+If you're unsure about an ingredient, DO NOT include it."""
                                 }
                             ]
                         }
@@ -714,7 +716,7 @@ Your response (be creative, reference what they uploaded):"""
                 # Only check for allergens the user cares about
                 allergen_focus = ", ".join(user_allergens) if user_allergens else "dairy, eggs, nuts, gluten, soy, fish, shellfish"
                 
-                prompt = f"""You are a food safety expert. Analyze this dish for SPECIFIC allergens.
+                prompt = f"""You are a CONSERVATIVE food safety expert. Only flag allergens you are HIGHLY CONFIDENT about.
 
 Dish name: {name}
 Description: {description}
