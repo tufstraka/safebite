@@ -824,9 +824,14 @@ Be concise. Only list allergens from the user's list that you're confident about
                         parts = line.split(':', 1)
                         if len(parts) == 2:
                             allergen = parts[0].strip().upper()
-                            reason = parts[1].strip()
+                            reason = parts[1].strip().lower()
+                            
+                            # Skip if reason says "none detected" or "no allergens"
+                            skip_phrases = ['none detected', 'no allergens', 'not detected', 'not found', 'none found']
+                            should_skip = any(phrase in reason for phrase in skip_phrases)
+                            
                             # Skip if allergen name is too long (probably not an allergen)
-                            if len(allergen) < 20 and allergen:
+                            if len(allergen) < 20 and allergen and not should_skip:
                                 allergen_list.append(allergen.lower())
                                 reasoning_parts.append(f"{allergen.lower()}: {reason}")
                 
