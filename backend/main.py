@@ -582,14 +582,14 @@ Be thorough about visible ingredients - this is for allergen detection."""
             # Casually confident - varied tone
             import random
             safe = [
-                "looks clean. still, double-check with your server.",
-                "should be good. quick confirm won't hurt though.",
-                "seems safe from here. verify with staff just in case.",
-                "you're probably fine. i always ask anyway.",
+                "looks clean.",
+                "should be fine.",
+                "seems safe.",
+                "you're good.",
                 "this one looks okay. run it by the server to be sure.",
-                "appears safe. but yeah, confirm with the kitchen.",
-                "should work. still worth a quick check.",
-                "looking good. ask staff to confirm."
+                "appears safe.",
+                "should work.",
+                "looking good."
             ]
             recommendations = random.choice(safe)
         
