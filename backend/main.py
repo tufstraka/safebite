@@ -2,7 +2,7 @@
 SafeBite - Restaurant Menu Safety Scanner
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional, Dict
@@ -1006,6 +1006,7 @@ def save_scan_to_db(
 
 @app.post("/analyze/image", response_model=MenuAnalysisResponse)
 async def analyze_menu_image(
+    request: Request,
     file: UploadFile = File(...), 
     allergens: str = Form(""),
     custom_allergens: str = Form("")
@@ -1067,6 +1068,9 @@ async def analyze_menu_image(
         file_type = "PDF" if file.filename.lower().endswith('.pdf') else "Image"
         
         # Save to database
+        user_ip = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent", "Unknown")
+        
         save_scan_to_db(
             filename=file.filename,
             file_type=file_type,
@@ -1081,8 +1085,8 @@ async def analyze_menu_image(
                 'voice_summary': voice_summary,
                 'recommendation': recommendation
             },
-            user_ip=None,  # Can add request.client.host if needed
-            user_agent=None
+            user_ip=user_ip,
+            user_agent=user_agent
         )
         
         return MenuAnalysisResponse(
