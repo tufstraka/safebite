@@ -912,6 +912,7 @@ async def analyze_menu_image(
             unknown_dishes=unknown_dishes,
             analysis_timestamp=now_utc.isoformat(),
             analysis_time_eat=now_eat.strftime("%H:%M EAT"),
+            recommendation=recommendation
             voice_summary=voice_summary
         )
         
