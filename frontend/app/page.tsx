@@ -778,7 +778,7 @@ export default function Home() {
       <ConsoleEasterEgg />
       {/* PWA Install Prompt */}
       {showPWAPrompt && (
-        <div className="fixed bottom-6 left-6 right-6 z-[60] animate-slide-up">
+        <div className="fixed bottom-6 left-6 right-6 z-60 animate-slide-up">
           <div className="bg-white rounded-2xl p-4 shadow-2xl border border-gray-200 flex items-center gap-3">
             <div className="flex-1">
               <p className="text-gray-900 font-semibold text-sm mb-1">install SafeBite</p>
