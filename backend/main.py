@@ -148,7 +148,7 @@ class NovaMenuAnalyzer:
             import io
             
             # Convert first page to image (most menus are 1-2 pages)
-            images = convert_from_bytes(pdf_data, first_page=1, last_page=1)
+            images = convert_from_bytes(pdf_data, first_page=1, last_page=1, poppler_path="/usr/bin")
             
             if not images:
                 raise ValueError("PDF conversion produced no images")
