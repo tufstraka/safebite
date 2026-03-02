@@ -182,6 +182,12 @@ class NovaMenuAnalyzer:
                 raise  # Re-raise conversion errors
             except Exception as e:
                 logger.error(f"PDF conversion failed: {e}")
+                # OLD FALLBACK LOGIC REMOVED - just fail gracefully
+                if False:  # Disabled text extraction path
+                    # Generate humorous rejection message with Nova 2 Lite
+                    try:
+                        prompt = f"""The user uploaded something that's not a restaurant menu. Based on the text content, create a SHORT (1-2 sentences), humorous, casual rejection message in Keith's voice (Nairobi dev, lowercase, direct, funny). Tell them what they uploaded and ask for an actual menu.
+
 Text preview: {text[:200]}
 
 Reply in lowercase, be funny but helpful:"""
@@ -214,6 +220,10 @@ Reply in lowercase, be funny but helpful:"""
                     logger.warning(f"PDF text extraction succeeded but parser found no dishes")
                     logger.warning(f"First 500 chars of PDF text: {text[:500]}")
             else:
+                logger.warning("PDF text extraction failed or insufficient text")
+            
+            # PDF conversion failed - re-raise the error
+            logger.error("⚠️ PDF to image conversion failed")
             raise ValueError("couldn't convert PDF to image. try uploading a photo instead 📸")
         
         # For images: Use Nova Pro
