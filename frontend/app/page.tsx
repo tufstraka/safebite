@@ -727,6 +727,9 @@ export default function Home() {
           onClose={() => setShowCamera(false)}
         />
       )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      <ConsoleEasterEgg />
+      <FeedbackForm />
     </div>
   );
 }
