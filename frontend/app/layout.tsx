@@ -20,6 +20,7 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <link rel="canonical" href="https://safebite.locsafe.org" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
         
         {/* Structured Data for SEO */}
         <script
@@ -29,7 +30,7 @@ export default function RootLayout({
               '@context': 'https://schema.org',
               '@type': 'WebApplication',
               name: 'SafeBite',
-              description: 'AI-powered food allergen scanner for restaurant menus',
+              description: 'Scan restaurant menus for allergens. Instant safety check for gluten, dairy, nuts, shellfish, and more.',
               url: 'https://safebite.locsafe.org',
               applicationCategory: 'HealthApplication',
               operatingSystem: 'Web, iOS, Android',
