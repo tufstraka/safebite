@@ -222,9 +222,9 @@ Reply in lowercase, be funny but helpful:"""
             else:
                 logger.warning("PDF text extraction failed or insufficient text")
             
-            # PDF parsing completely failed - return demo with warning
-            logger.error("⚠️ PDF processing failed - using demo data")
-            return {"text": "PDF processing failed", "dishes": self._get_demo_dishes()}
+            # PDF conversion failed - re-raise the error
+            logger.error("⚠️ PDF to image conversion failed")
+            raise ValueError("couldn't convert PDF to image. try uploading a photo instead 📸")
         
         # For images: Use Nova Pro
         if self.bedrock:
