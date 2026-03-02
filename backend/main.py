@@ -996,19 +996,8 @@ FEEDBACK_DIR = Path("feedback_data")
 FEEDBACK_DIR.mkdir(exist_ok=True)
 
 @app.post("/feedback")
-async def submit_feedback(
-    name: str = Form("Anonymous"),
-    email: str = Form(""),
-    message: str = Form(...),
-    timestamp: str = Form(...)
-):
+async def submit_feedback(feedback: dict):
     """Save user feedback"""
-    feedback = {
-        "name": name,
-        "email": email,
-        "message": message,
-        "timestamp": timestamp
-    }
     
     # Save to file
     filename = FEEDBACK_DIR / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
