@@ -1,7 +1,7 @@
 {
-  "name": "SafeBite",
+  "name": "SafeBite - Food Allergen Scanner",
   "short_name": "SafeBite",
-  "description": "snap your food. check for allergens instantly.",
+  "description": "AI-powered food allergen scanner. Scan menus to detect gluten, dairy, nuts, and more.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1f2e",
@@ -9,26 +9,30 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["food", "health", "lifestyle"],
+  "categories": [
+    "food",
+    "health",
+    "lifestyle"
+  ],
   "shortcuts": [
     {
       "name": "snap menu",
       "short_name": "snap",
       "description": "take a quick pic of your menu",
       "url": "/?action=camera",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
-  ]
+  ],
+  "scope": "/"
 }

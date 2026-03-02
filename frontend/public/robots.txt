@@ -1,0 +1,11 @@
+# https://safebite.locsafe.org/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Crawl-delay for polite bots
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://safebite.locsafe.org/sitemap.xml
