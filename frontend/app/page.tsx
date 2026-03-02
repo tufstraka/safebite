@@ -228,7 +228,11 @@ export default function Home() {
       });
       
       setResults(data);
-        saveToHistory(data);
+      // Reset pagination when new results come in
+      setSafePage(1);
+      setUnsafePage(1);
+      setUnknownPage(1);
+      saveToHistory(data);
       setToast({ message: `sawa! found ${data.total_dishes} dishes`, type: 'success' });
     } catch (error) {
       console.error('Analysis failed:', error);
@@ -596,10 +600,10 @@ export default function Home() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
-                      {dish.safe_explanation && (
+                      {dish.ai_reasoning && (
                         <div className="bg-emerald-100 rounded-lg p-3 mb-2 border border-emerald-300">
                           <p className="text-emerald-800 text-sm font-medium">
-                            <span className="font-bold">why it works:</span> {dish.safe_explanation}
+                            <span className="font-bold">why it's safe:</span> {dish.ai_reasoning}
                           </p>
                         </div>
                       )}
@@ -607,6 +611,82 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+                {/* Safe Pagination */}
+                {paginate(results.safe_dishes, safePage).totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => setSafePage(p => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-200 transition-colors"
+                    >
+                      ← prev
+                    </button>
+                    <span className="text-sm text-gray-600 font-medium">
+                      {safePage} / {paginate(results.safe_dishes, safePage).totalPages}
+                    </span>
+                    <button
+                      onClick={() => setSafePage(p => Math.min(paginate(results.safe_dishes, safePage).totalPages, p + 1))}
+                      disabled={safePage === paginate(results.safe_dishes, safePage).totalPages}
+                      className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-200 transition-colors"
+                    >
+                      next →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Unknown - Check These */}
+            {results.unknown_dishes.length > 0 && (
+              <div className="bg-white rounded-xl p-6 border border-gray-200 mt-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-amber-600" />
+                  Check These
+                </h3>
+                <div className="space-y-3">
+                  {paginate(results.unknown_dishes, unknownPage).items.map((dish: any, idx: number) => (
+                    <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-amber-400">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
+                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-gray-900 rounded-full text-xs font-bold flex items-center gap-1`}>
+                          {getSafetyIcon(dish.safety_level)}
+                          {dish.safety_score}%
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
+                      {dish.ai_reasoning && (
+                        <div className="bg-amber-100 rounded-lg p-3 mb-2 border border-amber-300">
+                          <p className="text-amber-800 text-sm font-medium">
+                            <span className="font-bold">why uncertain:</span> {dish.ai_reasoning}
+                          </p>
+                        </div>
+                      )}
+                      <p className="text-amber-700 text-sm font-semibold">{dish.recommendations}</p>
+                    </div>
+                  ))}
+                </div>
+                {/* Unknown Pagination */}
+                {paginate(results.unknown_dishes, unknownPage).totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => setUnknownPage(p => Math.max(1, p - 1))}
+                      disabled={unknownPage === 1}
+                      className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-200 transition-colors"
+                    >
+                      ← prev
+                    </button>
+                    <span className="text-sm text-gray-600 font-medium">
+                      {unknownPage} / {paginate(results.unknown_dishes, unknownPage).totalPages}
+                    </span>
+                    <button
+                      onClick={() => setUnknownPage(p => Math.min(paginate(results.unknown_dishes, unknownPage).totalPages, p + 1))}
+                      disabled={unknownPage === paginate(results.unknown_dishes, unknownPage).totalPages}
+                      className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-200 transition-colors"
+                    >
+                      next →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -637,10 +717,10 @@ export default function Home() {
                           ))}
                         </div>
                       )}
-                      {dish.reasoning && (
+                      {dish.ai_reasoning && (
                         <div className="bg-red-100 rounded-lg p-3 mb-2 border border-red-300">
                           <p className="text-red-800 text-sm font-medium">
-                            <span className="font-bold">why to skip:</span> {dish.reasoning}
+                            <span className="font-bold">why to skip:</span> {dish.ai_reasoning}
                           </p>
                         </div>
                       )}
@@ -648,6 +728,28 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+                {/* Unsafe Pagination */}
+                {paginate(results.unsafe_dishes, unsafePage).totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => setUnsafePage(p => Math.max(1, p - 1))}
+                      disabled={unsafePage === 1}
+                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-200 transition-colors"
+                    >
+                      ← prev
+                    </button>
+                    <span className="text-sm text-gray-600 font-medium">
+                      {unsafePage} / {paginate(results.unsafe_dishes, unsafePage).totalPages}
+                    </span>
+                    <button
+                      onClick={() => setUnsafePage(p => Math.min(paginate(results.unsafe_dishes, unsafePage).totalPages, p + 1))}
+                      disabled={unsafePage === paginate(results.unsafe_dishes, unsafePage).totalPages}
+                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-200 transition-colors"
+                    >
+                      next →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

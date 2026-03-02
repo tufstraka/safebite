@@ -71,6 +71,7 @@ class DishSafety(BaseModel):
     confidence: int  # 0-100
     recommendations: str
     ingredients_inferred: List[str]
+    ai_reasoning: Optional[str] = None  # AI explanation for safety assessment
 
 class MenuAnalysisResponse(BaseModel):
     restaurant_name: str
@@ -200,7 +201,7 @@ Reply in lowercase, be funny but helpful:"""
                 elif filename.lower().endswith('.gif'):
                     image_format = "gif"
                 
-                # Nova Pro request for images
+                # Nova Pro request for images - with validation
                 body = json.dumps({
                     "messages": [
                         {
@@ -213,12 +214,12 @@ Reply in lowercase, be funny but helpful:"""
                                     }
                                 },
                                 {
-                                    "text": """Analyze this image carefully. It could be:
-1. A restaurant menu with dishes listed
-2. A photo of a single food item
-3. A photo of multiple food items on a table
+                                    "text": """FIRST: Determine if this image contains food or a menu.
 
-Your task: Extract ALL visible food items with detailed descriptions.
+If this is NOT food or a menu (e.g., a cat, car, person, document, screenshot, meme, etc.), respond with EXACTLY:
+{"not_food": true, "what_it_is": "brief description of what you see"}
+
+If this IS food or a menu, analyze it carefully and extract ALL visible food items.
 
 For EACH food item you see, create a JSON object with:
 - "name": The dish/food name (if on menu) OR describe what you see (e.g., "Grilled chicken breast", "Pasta with sauce")
@@ -229,7 +230,8 @@ Return ONLY a JSON array in this exact format:
 [{"name": "Item Name", "description": "detailed ingredients visible", "price": "$X.XX"}]
 
 If you see multiple items, include them all. If it's a single plate, describe everything on it.
-Be thorough about visible ingredients - this is for allergen detection."""
+Be thorough about visible ingredients - this is for allergen detection.
+DO NOT hallucinate ingredients that aren't clearly visible or typical for the dish."""
                                 }
                             ]
                         }
@@ -252,11 +254,45 @@ Be thorough about visible ingredients - this is for allergen detection."""
                 
                 # Try to parse JSON from response
                 try:
-                    # Extract JSON array from response (handle markdown code blocks)
+                    # Extract JSON from response (handle markdown code blocks)
                     import re
                     # Remove markdown code blocks if present
                     cleaned = re.sub(r'```json\s*|\s*```', '', text_response)
-                    # Find JSON array
+                    
+                    # Check if it's a "not food" response
+                    not_food_match = re.search(r'\{[^}]*"not_food"\s*:\s*true[^}]*\}', cleaned, re.DOTALL)
+                    if not_food_match:
+                        try:
+                            not_food_data = json.loads(not_food_match.group(0))
+                            what_it_is = not_food_data.get("what_it_is", "something that's not food")
+                            
+                            # Generate humorous rejection with Keith's personality
+                            humor_prompt = f"""The user uploaded an image of: {what_it_is}
+
+Create a SHORT (1-2 sentences), funny, casual rejection message. Be specific about what they uploaded and ask for a menu or food photo. Use lowercase, be witty but helpful.
+
+Examples:
+- "that's a lovely cat, but i'm here to analyze menus, not adorable pets! 🐱 snap a menu instead"
+- "nice car! but unless it's edible, i can't help. upload a menu or food pic 🚗"
+- "cool selfie! but i need to see food, not faces. try again with a menu 📸"
+
+Your response (be creative, reference what they uploaded):"""
+                            
+                            humor_resp = self.bedrock.invoke_model(
+                                modelId="us.amazon.nova-lite-v1:0",
+                                body=json.dumps({
+                                    "messages": [{"role": "user", "content": [{"text": humor_prompt}]}],
+                                    "inferenceConfig": {"max_new_tokens": 100, "temperature": 0.9}
+                                })
+                            )
+                            funny_msg = json.loads(humor_resp["body"].read())["output"]["message"]["content"][0]["text"].strip()
+                            raise ValueError(funny_msg)
+                        except ValueError:
+                            raise
+                        except Exception:
+                            raise ValueError(f"that's {what_it_is}, not food! upload a menu or food photo 📸")
+                    
+                    # Find JSON array for food items
                     json_match = re.search(r'\[.*\]', cleaned, re.DOTALL)
                     if json_match:
                         dishes = json.loads(json_match.group(0))
@@ -267,6 +303,8 @@ Be thorough about visible ingredients - this is for allergen detection."""
                             logger.warning("Nova Pro returned empty array")
                     else:
                         logger.warning(f"Could not find JSON array in response")
+                except ValueError:
+                    raise  # Re-raise validation errors
                 except Exception as e:
                     logger.error(f"JSON parsing failed: {e}")
                     logger.error(f"Raw response was: {text_response[:500]}")
@@ -656,7 +694,8 @@ Be thorough about visible ingredients - this is for allergen detection."""
             detected_allergens=detected,
             confidence=confidence,
             recommendations=recommendations,
-            ingredients_inferred=visible_ingredients[:5]
+            ingredients_inferred=visible_ingredients[:5],
+            ai_reasoning=ai_reasoning if ai_reasoning else None
         )
     
 
