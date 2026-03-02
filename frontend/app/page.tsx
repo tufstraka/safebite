@@ -465,7 +465,7 @@ export default function Home() {
 
             {/* Allergens */}
             <div className="bg-white rounded-xl p-6 mb-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">2. Pick Your Allergies</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">2. what can't you eat?</h3>
               <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mb-4">
                 {ALLERGENS.map((allergen) => (
                   <button
