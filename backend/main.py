@@ -476,7 +476,6 @@ Your response (be creative, reference what they uploaded):"""
                     })
                     
                     # Limit to prevent spam
-                    if len(dishes) >= 20:
                         break
         
         logger.info(f"Text parser found {len(dishes)} dishes")
