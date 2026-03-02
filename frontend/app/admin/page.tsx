@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AuthGuard from '../components/AuthGuard';
 
 interface AdminStats {
   total_scans: number;
@@ -49,11 +50,17 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Get passcode from storage
+    const passcode = localStorage.getItem('safebite_auth') || sessionStorage.getItem('safebite_auth');
+    const headers = {
+      'X-Admin-Passcode': passcode || ''
+    };
+
     // Fetch all data
     Promise.all([
-      fetch('/api/admin/stats').then(res => res.json()),
-      fetch('/api/admin/users/stats').then(res => res.json()),
-      fetch('/api/admin/users/list?limit=10').then(res => res.json())
+      fetch('/api/admin/stats', { headers }).then(res => res.json()),
+      fetch('/api/admin/users/stats', { headers }).then(res => res.json()),
+      fetch('/api/admin/users/list?limit=10', { headers }).then(res => res.json())
     ])
       .then(([scanStats, userStatsData, usersData]) => {
         setStats(scanStats);
@@ -89,7 +96,8 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <a className="text-emerald-500 hover:text-emerald-600 font-semibold mb-4 inline-block" href="/">
@@ -293,5 +301,6 @@ export default function AdminPage() {
         )}
       </div>
     </div>
+    </AuthGuard>
   );
 }

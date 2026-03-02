@@ -2,13 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import AuthGuard from '../components/AuthGuard';
 
 export default function FeedbacksPage() {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/feedback/all')
+    const passcode = localStorage.getItem('safebite_auth') || sessionStorage.getItem('safebite_auth');
+    const headers = {
+      'X-Admin-Passcode': passcode || ''
+    };
+
+    fetch('/api/feedback/all', { headers })
       .then(r => r.json())
       .then(data => {
         setFeedbacks(data.feedbacks || []);
@@ -18,8 +24,9 @@ export default function FeedbacksPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <Link href="/" className="text-emerald-500 hover:text-emerald-600 font-semibold mb-4 inline-block">
             ← back to app
@@ -67,7 +74,8 @@ export default function FeedbacksPage() {
             total feedback: {feedbacks.length}
           </p>
         </div>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

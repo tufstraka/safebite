@@ -1,7 +1,7 @@
 """
 Admin analytics endpoints for SafeBite
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Header, Depends
 from sqlalchemy import func, desc
 from database import Scan, User, SessionLocal, get_user_stats
 from datetime import datetime, timedelta
@@ -9,8 +9,16 @@ from collections import Counter
 
 router = APIRouter()
 
+ADMIN_PASSCODE = "8992"
+
+def verify_admin(x_admin_passcode: str = Header(None)):
+    """Verify admin passcode from header"""
+    if x_admin_passcode != ADMIN_PASSCODE:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return True
+
 @router.get("/admin/stats")
-async def get_admin_stats():
+async def get_admin_stats(authorized: bool = Depends(verify_admin)):
     """Get comprehensive admin statistics"""
     db = SessionLocal()
     
@@ -90,7 +98,7 @@ async def get_admin_stats():
         db.close()
 
 @router.get("/admin/scans")
-async def get_all_scans(limit: int = 100, offset: int = 0):
+async def get_all_scans(limit: int = 100, offset: int = 0, authorized: bool = Depends(verify_admin)):
     """Get all scans with pagination"""
     db = SessionLocal()
     
@@ -126,7 +134,7 @@ async def get_all_scans(limit: int = 100, offset: int = 0):
         db.close()
 
 @router.get("/admin/users/stats")
-async def get_user_statistics():
+async def get_user_statistics(authorized: bool = Depends(verify_admin)):
     """Get aggregated user statistics"""
     db = SessionLocal()
     try:
@@ -136,7 +144,7 @@ async def get_user_statistics():
         db.close()
 
 @router.get("/admin/users/list")
-async def get_users_list(limit: int = 50, offset: int = 0):
+async def get_users_list(limit: int = 50, offset: int = 0, authorized: bool = Depends(verify_admin)):
     """Get list of users with their details"""
     db = SessionLocal()
     try:

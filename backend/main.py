@@ -2,7 +2,7 @@
 SafeBite - Restaurant Menu Safety Scanner
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional, Dict
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 # Timezone for timestamps
 NAIROBI_OFFSET = timezone(timedelta(hours=3))  # EAT = UTC+3
+ADMIN_PASSCODE = "8992"
 
 app = FastAPI(
     title="SafeBite API",
@@ -1198,8 +1199,11 @@ async def submit_feedback(feedback: dict):
     return {"status": "success"}
 
 @app.get("/feedback/all")
-async def get_all_feedback():
+async def get_all_feedback(x_admin_passcode: str = Header(None)):
     """Get all feedback"""
+    if x_admin_passcode != ADMIN_PASSCODE:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
     feedbacks = []
     
     if FEEDBACK_DIR.exists():
