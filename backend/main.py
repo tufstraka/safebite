@@ -169,8 +169,7 @@ Reply in lowercase, be funny but helpful:"""
                 logger.warning("PDF text extraction failed or insufficient text")
             
             # PDF parsing completely failed - return demo with warning
-            logger.error("⚠️ PDF processing failed - using demo data")
-            return {"text": "PDF processing failed", "dishes": self._get_demo_dishes()}
+                raise ValueError("Could not extract menu items. Please upload a clear photo of a restaurant menu or food.")
         
         # For images: Use Nova Pro
         if self.bedrock:
@@ -267,7 +266,6 @@ Be thorough about visible ingredients - this is for allergen detection."""
         else:
             logger.warning("Bedrock client not initialized")
         
-        # Fallback to demo data
                 # Use Nova Pro to identify what was uploaded
                 try:
                     prompt = "Describe what you see in this image in 1-2 sentences. Be specific and direct."
