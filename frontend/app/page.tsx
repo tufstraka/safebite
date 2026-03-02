@@ -879,24 +879,6 @@ export default function Home() {
       )}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       <ConsoleEasterEgg />
-      {/* Dismissable Feedback Widget */}
-      {showFeedbackWidget && (
-        <div className="fixed bottom-6 right-6 flex items-center gap-2 z-50">
-          <button
-            onClick={() => setShowFeedbackWidget(false)}
-            className="bg-gray-700 hover:bg-gray-800 text-white p-2 rounded-full shadow-lg transition-all"
-            title="Dismiss"
-          >
-            ✕
-          </button>
-          <button
-            onClick={() => setShowFeedbackForm(true)}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg font-semibold transition-all"
-          >
-            💬 feedback
-          </button>
-        </div>
-      )}
       <FeedbackForm />
     </div>
   );
