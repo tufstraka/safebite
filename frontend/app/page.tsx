@@ -448,7 +448,7 @@ export default function Home() {
               {/* Custom */}
               <div className="border-t border-gray-200 pt-4">
                 <label className="block text-sm text-gray-600 mb-2">Add Custom</label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={customInput}
@@ -634,7 +634,7 @@ export default function Home() {
               <p className="text-gray-900 font-semibold text-sm mb-1">install SafeBite</p>
               <p className="text-gray-600 text-xs">quick access from your home screen 🎴</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => setShowPWAPrompt(false)}
                 className="px-3 py-2 text-gray-500 text-sm font-medium"
