@@ -225,9 +225,9 @@ export default function Home() {
     const colors: any = {
       'Safe': 'bg-emerald-500',
       'Likely Safe': 'bg-blue-500',
-      'Unknown': 'bg-yellow-1000',
+      'Unknown': 'bg-yellow-500',
       'Caution': 'bg-orange-500',
-      'Unsafe': 'bg-red-1000'
+      'Unsafe': 'bg-red-500'
     };
     return colors[level] || 'bg-gray-500';
   };
@@ -355,7 +355,7 @@ export default function Home() {
       {/* Simple header */}
       <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50 relative shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3">
-          <Shield className="w-6 h-6 text-5xl font-black text-emerald-700" />
+          <Shield className="w-6 h-6 text-emerald-600" />
           
           <div className="flex flex-col items-start gap-0.5">
             <h1 className="text-xl font-bold text-gray-900">SafeBite</h1>
@@ -363,7 +363,7 @@ export default function Home() {
               href="https://github.com/tufstraka" 
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-5xl font-black text-emerald-700 transition-colors font-medium text-xs"
+              className="text-slate-400 hover:text-emerald-600 transition-colors font-medium text-xs"
               title="by @dobynog"
             >
               by .
@@ -529,17 +529,17 @@ export default function Home() {
 
 
               <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-emerald-50 p-6 rounded-2xl shadow-sm border border-2 border-emerald-400">
-                  <div className="text-2xl font-bold text-5xl font-black text-emerald-700">{results.safe_dishes.length}</div>
-                  <div className="text-xs text-emerald-800 font-bold text-sm">safe ✓</div>
+                <div className="bg-emerald-50 p-6 rounded-2xl shadow-sm border-2 border-emerald-400">
+                  <div className="text-4xl font-black text-emerald-700">{results.safe_dishes.length}</div>
+                  <div className="text-sm font-bold text-emerald-800">safe ✓</div>
                 </div>
-                <div className="bg-yellow-50 p-6 rounded-2xl shadow-sm border border-2 border-yellow-400">
-                  <div className="text-2xl font-bold text-5xl font-black text-yellow-700">{results.unknown_dishes.length}</div>
-                  <div className="text-xs text-yellow-800 font-bold text-sm">check these</div>
+                <div className="bg-amber-50 p-6 rounded-2xl shadow-sm border-2 border-amber-400">
+                  <div className="text-4xl font-black text-amber-700">{results.unknown_dishes.length}</div>
+                  <div className="text-sm font-bold text-amber-800">check these</div>
                 </div>
-                <div className="bg-red-50 p-6 rounded-2xl shadow-sm border border-2 border-red-400">
-                  <div className="text-2xl font-bold text-5xl font-black text-red-700">{results.unsafe_dishes.length}</div>
-                  <div className="text-xs text-red-800 font-bold text-sm">skip ✗</div>
+                <div className="bg-red-50 p-6 rounded-2xl shadow-sm border-2 border-red-400">
+                  <div className="text-4xl font-black text-red-700">{results.unsafe_dishes.length}</div>
+                  <div className="text-sm font-bold text-red-800">skip ✗</div>
                 </div>
               </div>
 
@@ -550,7 +550,7 @@ export default function Home() {
             {results.safe_dishes.length > 0 && (
               <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-5xl font-black text-emerald-700" />
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
                   Good to Go
                 </h3>
                 <div className="space-y-3">
@@ -575,7 +575,7 @@ export default function Home() {
             {results.unsafe_dishes.length > 0 && (
               <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <XCircle className="w-5 h-5 text-5xl font-black text-red-700" />
+                  <XCircle className="w-5 h-5 text-red-600" />
                   Skip These
                 </h3>
                 <div className="space-y-3">
@@ -592,13 +592,13 @@ export default function Home() {
                       {dish.detected_allergens.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-2">
                           {dish.detected_allergens.map((allergen: string, i: number) => (
-                            <span key={i} className="px-2 py-1 bg-red-900 text-red-200 rounded text-xs font-medium">
+                            <span key={i} className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
                               {allergen}
                             </span>
                           ))}
                         </div>
                       )}
-                      <p className="text-red-800 font-bold text-sm text-base font-semibold">{dish.recommendations}</p>
+                      <p className="text-red-700 text-sm font-semibold">{dish.recommendations}</p>
                     </div>
                   ))}
                 </div>
