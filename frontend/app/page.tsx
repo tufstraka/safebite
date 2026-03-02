@@ -358,15 +358,14 @@ export default function Home() {
           <Shield className="w-6 h-6 text-emerald-400" />
           <div className="flex flex-col items-start gap-0.5">
             <h1 className="text-xl font-bold text-gray-900">SafeBite</h1>
-            <span className="text-xs text-slate-400 hover:text-emerald-400 transition-colors font-medium">by</span>
             <a 
               href="https://github.com/tufstraka" 
               target="_blank"
               rel="noopener noreferrer"
-              className="text-emerald-400 hover:text-emerald-300 transition-colors font-bold text-sm"
+              className="text-slate-400 hover:text-emerald-400 transition-colors font-medium text-xs"
               title="by @dobynog"
             >
-              .
+              by .
             </a>
           
             <button
