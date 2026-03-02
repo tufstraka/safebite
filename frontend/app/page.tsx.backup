@@ -25,24 +25,6 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
   const [scanHistory, setScanHistory] = useState<any[]>([]);
 
-  // Pagination state
-  const [safePage, setSafePage] = useState(1);
-  const [unsafePage, setUnsafePage] = useState(1);
-  const [unknownPage, setUnknownPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
-
-
-  // Pagination helper
-  const paginate = (items: any[], page: number) => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return {
-      items: items.slice(start, end),
-      totalPages: Math.ceil(items.length / ITEMS_PER_PAGE),
-      currentPage: page
-    };
-  };
-
   const loadHistory = () => {
     try {
       const history = JSON.parse(localStorage.getItem('safebite_history') || '[]');
@@ -564,20 +546,6 @@ export default function Home() {
 
             </div>
 
-
-            {/* AI Recommendation */}
-            {results.recommendation && (
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 mb-6 border-2 border-purple-400 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">✨</span>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-black text-purple-900 mb-2">recommended for you</h3>
-                    <p className="text-purple-800 font-medium">{results.recommendation}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Safe */}
             {results.safe_dishes.length > 0 && (
               <div className="bg-white rounded-xl p-6 border border-gray-200">
@@ -586,7 +554,7 @@ export default function Home() {
                   Good to Go
                 </h3>
                 <div className="space-y-3">
-                  {paginate(results.safe_dishes, safePage).items.map((dish: any, idx: number) => (
+                  {results.safe_dishes.map((dish: any, idx: number) => (
                     <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-gray-300">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
@@ -596,13 +564,6 @@ export default function Home() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
-                      {dish.safe_explanation && (
-                        <div className="bg-emerald-100 rounded-lg p-3 mb-2 border border-emerald-300">
-                          <p className="text-emerald-800 text-sm font-medium">
-                            <span className="font-bold">why it works:</span> {dish.safe_explanation}
-                          </p>
-                        </div>
-                      )}
                       <p className="text-gray-700 text-sm font-medium italic">{dish.recommendations}</p>
                     </div>
                   ))}
@@ -618,7 +579,7 @@ export default function Home() {
                   Skip These
                 </h3>
                 <div className="space-y-3">
-                  {paginate(results.unsafe_dishes, unsafePage).items.map((dish: any, idx: number) => (
+                  {results.unsafe_dishes.map((dish: any, idx: number) => (
                     <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-red-900">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
@@ -635,13 +596,6 @@ export default function Home() {
                               {allergen}
                             </span>
                           ))}
-                        </div>
-                      )}
-                      {dish.reasoning && (
-                        <div className="bg-red-100 rounded-lg p-3 mb-2 border border-red-300">
-                          <p className="text-red-800 text-sm font-medium">
-                            <span className="font-bold">why to skip:</span> {dish.reasoning}
-                          </p>
                         </div>
                       )}
                       <p className="text-red-700 text-sm font-semibold">{dish.recommendations}</p>
