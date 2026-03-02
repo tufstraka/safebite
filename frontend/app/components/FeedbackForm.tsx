@@ -31,11 +31,20 @@ export default function FeedbackForm() {
         setName('');
         setEmail('');
         setShow(false);
-        alert('thanks for the feedback! 🎴');
+        // Show toast instead of alert
+        const toast = document.createElement('div');
+        toast.textContent = 'thanks for the feedback';
+        toast.className = 'fixed top-6 right-6 bg-emerald-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
       }
     } catch (e) {
       console.error('Feedback failed:', e);
-      alert('hmm, that didn\'t work. try again?');
+      const toast = document.createElement('div');
+      toast.textContent = 'hmm, that didn\'t work. try again?';
+      toast.className = 'fixed top-6 right-6 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     } finally {
       setSending(false);
     }
