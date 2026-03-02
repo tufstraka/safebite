@@ -378,7 +378,7 @@ export default function Home() {
               href="https://github.com/tufstraka" 
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-emerald-600 transition-colors font-medium text-xs"
+              className="text-slate-400   font-medium text-xs"
               title="by @dobynog"
             >
               by .
@@ -387,7 +387,7 @@ export default function Home() {
           
           <button
             onClick={loadHistory}
-            className="text-sm text-gray-600 hover:text-emerald-500 transition-colors font-medium"
+            className="text-sm text-gray-600 hover:text-emerald-500  font-medium"
           >
             📚 history
           </button>
@@ -416,7 +416,7 @@ export default function Home() {
               ) : (
                 <div className="space-y-3">
                   {/* Camera button - primary on mobile */}
-                  <label className="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 rounded-xl p-6 transition-colors flex flex-col items-center gap-3 cursor-pointer shadow-lg shadow-emerald-500/20">
+                  <label className="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 rounded-xl p-6  flex flex-col items-center gap-3 cursor-pointer shadow-lg shadow-emerald-500/20">
                     <Camera className="w-12 h-12" />
                     <div>
                       <p className="font-bold text-lg">take a pic</p>
@@ -433,7 +433,7 @@ export default function Home() {
 
                   {/* Upload option - secondary */}
                   <label className="block cursor-pointer">
-                    <div className="border border-gray-300 rounded-xl p-4 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors">
+                    <div className="border border-gray-300 rounded-xl p-4 text-center hover:border-gray-400 hover:bg-gray-50 ">
                       <p className="text-gray-700 text-sm font-medium">or upload a photo/pdf</p>
                     </div>
                     <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
@@ -475,7 +475,7 @@ export default function Home() {
                   />
                   <button
                     onClick={addCustomAllergen}
-                    className="px-4 py-2 bg-emerald-500 text-gray-900 rounded-lg text-base font-semibold hover:bg-emerald-600 transition-colors"
+                    className="px-4 py-2 bg-emerald-500 text-gray-900 rounded-lg text-base font-semibold hover:bg-emerald-600 "
                   >
                     Add
                   </button>
@@ -499,7 +499,7 @@ export default function Home() {
             <button
               onClick={analyzeMenu}
               disabled={!menuFile || (selectedAllergens.length === 0 && customAllergens.length === 0) || analyzing}
-              className="w-full py-4 bg-emerald-500 text-gray-900 rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full py-4 bg-emerald-500 text-gray-900 rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed  flex items-center justify-center gap-2"
             >
               {analyzing ? (
                 <>
@@ -522,7 +522,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
-                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-base font-semibold hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-base font-semibold hover:bg-gray-200 "
                 >
                   try another
                 </button>                <button
@@ -535,7 +535,7 @@ export default function Home() {
                       alert('Results copied!');
                     }
                   }}
-                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 "
                 >
                   📤 share
                 </button>
@@ -617,7 +617,7 @@ export default function Home() {
                     <button
                       onClick={() => setSafePage(p => Math.max(1, p - 1))}
                       disabled={safePage === 1}
-                      className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-600 transition-colors"
+                      className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-600 "
                     >
                       ← prev
                     </button>
@@ -627,7 +627,7 @@ export default function Home() {
                     <button
                       onClick={() => setSafePage(p => Math.min(paginatedSafe.totalPages, p + 1))}
                       disabled={safePage === paginatedSafe.totalPages}
-                      className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-600 transition-colors"
+                      className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-600 "
                     >
                       next →
                     </button>
@@ -673,7 +673,7 @@ export default function Home() {
                     <button
                       onClick={() => setUnknownPage(p => Math.max(1, p - 1))}
                       disabled={unknownPage === 1}
-                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-600 transition-colors"
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-600 "
                     >
                       ← prev
                     </button>
@@ -683,7 +683,7 @@ export default function Home() {
                     <button
                       onClick={() => setUnknownPage(p => Math.min(paginatedUnknown.totalPages, p + 1))}
                       disabled={unknownPage === paginatedUnknown.totalPages}
-                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-600 transition-colors"
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-600 "
                     >
                       next →
                     </button>
