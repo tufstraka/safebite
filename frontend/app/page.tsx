@@ -378,17 +378,17 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-12 relative z-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 relative z-10">
         {!results ? (
           <>
             {/* Direct intro */}
             <div className="mb-8">
-              <h2 className="text-4xl font-bold text-gray-900 mb-3">snap your food</h2>
-              <p className="text-lg text-gray-600">take a pic. we'll check the allergens.</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">snap your food</h2>
+              <p className="text-base sm:text-lg text-gray-600">take a pic. we'll check the allergens.</p>
             </div>
 
             {/* Upload */}
-            <div className="bg-white rounded-2xl p-6 mb-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 border border-gray-200 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">1. snap it</h3>
               
               {menuFile ? (
