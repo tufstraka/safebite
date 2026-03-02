@@ -20,6 +20,7 @@ from PyPDF2 import PdfReader
 import boto3
 import os
 from menu_validator import is_food_menu
+from ai_parser import parse_menu_with_ai
 from dotenv import load_dotenv
 
 # Load environment variables
