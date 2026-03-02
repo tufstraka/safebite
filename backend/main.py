@@ -442,7 +442,7 @@ Be thorough about visible ingredients - this is for allergen detection."""
                         break
         
         logger.info(f"Text parser found {len(dishes)} dishes")
-        return dishes[:20]  # Max 20 dishes
+        return dishes  # Max 20 dishes
     
     async def analyze_menu_url(self, url: str) -> Dict:
         """Use Nova Act to scrape menu from URL"""

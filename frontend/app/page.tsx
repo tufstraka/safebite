@@ -18,6 +18,21 @@ export default function Home() {
   const [customInput, setCustomInput] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [safePage, setSafePage] = useState(1);
+  const [unsafePage, setUnsafePage] = useState(1);
+  const [unknownPage, setUnknownPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  const paginate = (items: any[], page: number) => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return {
+      items: items.slice(start, end),
+      totalPages: Math.ceil(items.length / ITEMS_PER_PAGE),
+      currentPage: page
+    };
+  };
+
   const [menuFile, setMenuFile] = useState<File | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -546,6 +561,27 @@ export default function Home() {
 
             </div>
 
+
+            {/* AI Recommendation */}
+            {results.recommendation && (
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 mb-6 border-2 border-purple-400 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">✨</span>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-black text-purple-900 mb-2">recommended for you</h3>
+                    <p className="text-purple-800 font-medium">{results.recommendation}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Calculate paginated data */}
+            {(() => {
+              window.paginatedSafe = paginate(results.safe_dishes, safePage);
+              window.paginatedUnsafe = paginate(results.unsafe_dishes, unsafePage);
+              window.paginatedUnknown = paginate(results.unknown_dishes, unknownPage);
+            })()}
+            
             {/* Safe */}
             {results.safe_dishes.length > 0 && (
               <div className="bg-white rounded-xl p-6 border border-gray-200">
@@ -554,7 +590,7 @@ export default function Home() {
                   Good to Go
                 </h3>
                 <div className="space-y-3">
-                  {results.safe_dishes.map((dish: any, idx: number) => (
+                  {window.paginatedSafe.items.map((dish: any, idx: number) => (
                     <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-gray-300">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
@@ -564,10 +600,39 @@ export default function Home() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
+                      {dish.safe_explanation && (
+                        <div className="bg-emerald-100 rounded-lg p-3 mb-2 border border-emerald-300">
+                          <p className="text-emerald-800 text-sm font-medium">
+                            <span className="font-bold">Why it's safe:</span> {dish.safe_explanation}
+                          </p>
+                        </div>
+                      )}
                       <p className="text-gray-700 text-sm font-medium italic">{dish.recommendations}</p>
                     </div>
                   ))}
                 </div>
+                {/* Pagination */}
+                {paginatedSafe.totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-4 mt-4">
+                    <button
+                      onClick={() => setSafePage(p => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-600 transition-colors"
+                    >
+                      ← prev
+                    </button>
+                    <span className="text-gray-700 font-medium">
+                      page {safePage} of {paginatedSafe.totalPages}
+                    </span>
+                    <button
+                      onClick={() => setSafePage(p => Math.min(paginatedSafe.totalPages, p + 1))}
+                      disabled={safePage === paginatedSafe.totalPages}
+                      className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-600 transition-colors"
+                    >
+                      next →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -579,7 +644,7 @@ export default function Home() {
                   Skip These
                 </h3>
                 <div className="space-y-3">
-                  {results.unsafe_dishes.map((dish: any, idx: number) => (
+                  {window.paginatedUnsafe.items.map((dish: any, idx: number) => (
                     <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-red-900">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
@@ -602,134 +667,27 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+                {/* Pagination */}
+                {paginatedUnknown.totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-4 mt-4">
+                    <button
+                      onClick={() => setUnknownPage(p => Math.max(1, p - 1))}
+                      disabled={unknownPage === 1}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-600 transition-colors"
+                    >
+                      ← prev
+                    </button>
+                    <span className="text-gray-700 font-medium">
+                      page {unknownPage} of {paginatedUnknown.totalPages}
+                    </span>
+                    <button
+                      onClick={() => setUnknownPage(p => Math.min(paginatedUnknown.totalPages, p + 1))}
+                      disabled={unknownPage === paginatedUnknown.totalPages}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-600 transition-colors"
+                    >
+                      next →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
-
-        {/* Footer */}
-        <footer className="border-t border-gray-200 mt-12 pt-6">
-          <div className="flex justify-between items-center text-xs text-gray-500">
-            <p>always double-check with staff</p>
-            <span className="text-gray-500">made in ke 🎴</span>
-          </div>
-        </footer>
-      </div>
-
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-
-      {/* Console Easter Egg */}
-      <ConsoleEasterEgg />
-      {/* PWA Install Prompt */}
-      {showPWAPrompt && (
-        <div className="fixed bottom-6 left-6 right-6 z-50 animate-slide-up">
-          <div className="bg-white rounded-2xl p-4 shadow-2xl border border-gray-200 flex items-center gap-3">
-            <div className="flex-1">
-              <p className="text-gray-900 font-semibold text-sm mb-1">install SafeBite</p>
-              <p className="text-gray-600 text-xs">quick access from your home screen 🎴</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                onClick={() => setShowPWAPrompt(false)}
-                className="px-3 py-2 text-gray-500 text-base font-semibold"
-              >
-                later
-              </button>
-              <button
-                onClick={handleInstallPWA}
-                className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold"
-              >
-                install
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      
-      {/* Scan History Modal */}
-      {showHistory && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6" onClick={() => setShowHistory(false)}>
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
-              <h2 className="text-2xl font-bold text-gray-900">scan history</h2>
-              <button onClick={() => setShowHistory(false)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
-            </div>
-            <div className="p-6">
-              {scanHistory.length === 0 ? (
-                <p className="text-gray-500 text-center py-12">no scans yet. snap your first menu!</p>
-              ) : (
-                <div className="space-y-3">
-                  {scanHistory.map((scan: any) => (
-                    <div key={scan.id} className="border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-400 transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-bold text-gray-900">{scan.filename}</p>
-                          <p className="text-xs text-gray-500">{new Date(scan.timestamp).toLocaleString()}</p>
-                        </div>
-                        <span className="text-sm font-semibold text-gray-700">{scan.results.total} dishes</span>
-                      </div>
-                      <div className="flex gap-2 text-sm mb-2">
-                        <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-semibold">✓ {scan.results.safe}</span>
-                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-lg font-semibold">✗ {scan.results.unsafe}</span>
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-lg font-semibold">? {scan.results.unknown}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {scan.allergens?.map((a: string) => (
-                          <span key={a} className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">{a}</span>
-                        ))}
-                        {scan.customAllergens?.map((a: string) => (
-                          <span key={a} className="text-xs px-2 py-1 bg-pink-100 text-pink-800 rounded-full font-medium">{a}</span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {scanHistory.length > 0 && (
-              <div className="p-6 border-t border-gray-200 flex justify-between">
-                <button
-                  onClick={() => {
-                    if (confirm('Clear all scan history?')) {
-                      localStorage.removeItem('safebite_history');
-                      setScanHistory([]);
-                      setShowHistory(false);
-                    }
-                  }}
-                  className="text-sm text-red-600 hover:text-red-700 font-semibold"
-                >
-                  🗑️ clear all
-                </button>
-                <p className="text-xs text-gray-500">{scanHistory.length} scans saved</p>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-
-      {/* Camera View Modal */}
-      {showCamera && (
-        <CameraView
-          onCapture={(file) => {
-            setMenuFile(file);
-            setShowCamera(false);
-          }}
-          onClose={() => setShowCamera(false)}
-        />
-      )}
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <ConsoleEasterEgg />
-      <FeedbackForm />
-    </div>
-  );
-}
