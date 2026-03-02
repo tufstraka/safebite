@@ -475,8 +475,6 @@ Your response (be creative, reference what they uploaded):"""
                         "price": "$0.00"
                     })
                     
-                    # Limit to prevent spam
-                        break
         
         logger.info(f"Text parser found {len(dishes)} dishes")
         return dishes  # Max 20 dishes
@@ -534,47 +532,6 @@ Your response (be creative, reference what they uploaded):"""
             }
         ]
     
-
-    def parse_allergens_from_reasoning(self, reasoning: str, user_allergens: list) -> list:
-        """Parse AI reasoning to extract detected allergens"""
-        if not reasoning:
-            return []
-        
-        detected = []
-        reasoning_lower = reasoning.lower()
-        
-        # Check each user allergen
-        for allergen in user_allergens:
-            allergen_lower = allergen.lower()
-            
-            # Look for explicit allergen mentions in reasoning
-            # Pattern: "allergen: GLUTEN:" or "DAIRY:" or just "gluten"
-            if (f'allergen: {allergen_lower}' in reasoning_lower or 
-                f'{allergen_lower}:' in reasoning_lower or
-                f'contains {allergen_lower}' in reasoning_lower):
-                detected.append(allergen)
-                continue
-            
-            # Check for keyword variations
-            variations = {
-                'gluten': ['wheat', 'flour', 'bread', 'croutons'],
-                'dairy': ['milk', 'cheese', 'cream', 'butter', 'parmesan', 'mozzarella', 'feta'],
-                'egg': ['egg', 'mayonnaise'],
-                'fish': ['fish', 'anchovy', 'anchovi', 'salmon', 'tuna'],
-                'shellfish': ['shellfish', 'shrimp', 'crab', 'lobster', 'calamari'],
-                'tree nuts': ['nuts', 'almond', 'walnut', 'cashew', 'pecan'],
-                'peanuts': ['peanut', 'groundnut'],
-                'soy': ['soy', 'tofu', 'edamame'],
-            }
-            
-            if allergen_lower in variations:
-                for variant in variations[allergen_lower]:
-                    if variant in reasoning_lower:
-                        detected.append(allergen)
-                        break
-        
-        return detected
-
     async def assess_dish_safety(self, dish: Dict, allergens: List[str], custom_keywords: Dict[str, List[str]] = {}) -> DishSafety:
         """Assess safety with ingredient inference"""
         name = dish["name"]
