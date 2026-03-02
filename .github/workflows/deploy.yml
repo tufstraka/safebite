@@ -6,17 +6,34 @@ on:
       - main
 
 jobs:
-  trigger-webhook:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
       - name: Trigger deployment webhook
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          WEBHOOK_URL: https://safebite.locsafe.org/webhook
         run: |
-          curl -X POST https://safebite.locsafe.org/webhook \
-            -H "Content-Type: application/json" \
-            -H "X-Hub-Signature-256: sha256=$(echo -n '${{ toJson(github) }}' | openssl dgst -sha256 -hmac '${{ secrets.WEBHOOK_SECRET }}' | sed 's/^.* //')" \
-            -d '${{ toJson(github) }}'
+          # Get the push event payload
+          PAYLOAD='${{ toJson(github.event) }}'
           
-          echo "✅ Webhook triggered!"
+          # Calculate signature
+          SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "${WEBHOOK_SECRET:-safebite-deploy-secret-2026}" | sed 's/^.* //')
+          
+          # Send webhook
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: sha256=$SIGNATURE" \
+            -d "$PAYLOAD")
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Webhook accepted! Deployment started."
+          else
+            echo "❌ Webhook failed with code: $HTTP_CODE"
+            exit 1
+          fi
+          
           echo "⏳ Deployment running on server..."
           echo "🌐 Check: https://safebite.locsafe.org"
