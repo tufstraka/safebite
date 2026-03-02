@@ -172,60 +172,12 @@ class NovaMenuAnalyzer:
         # For PDFs: Convert to image then use Nova Pro
         if filename.lower().endswith('.pdf'):
             logger.info(f"Processing PDF: {filename}")
-            try:
-                # Convert PDF to JPEG
-                image_data = await self.convert_pdf_to_image(image_data)
-                filename = filename.replace('.pdf', '.jpg')  # Update filename for format detection
-                logger.info("✓ PDF converted to image, proceeding with Nova Pro analysis")
-                # Fall through to image processing below
-            except ValueError as e:
-                raise  # Re-raise conversion errors
-            except Exception as e:
-                logger.error(f"PDF conversion failed: {e}")
-                # OLD FALLBACK LOGIC REMOVED - just fail gracefully
-                if False:  # Disabled text extraction path
-                    # Generate humorous rejection message with Nova 2 Lite
-                    try:
-                        prompt = f"""The user uploaded something that's not a restaurant menu. Based on the text content, create a SHORT (1-2 sentences), humorous, casual rejection message in Keith's voice (Nairobi dev, lowercase, direct, funny). Tell them what they uploaded and ask for an actual menu.
+            # Convert PDF to JPEG
+            image_data = await self.convert_pdf_to_image(image_data)
+            filename = filename.replace('.pdf', '.jpg')  # Update filename for format detection
+            logger.info("✓ PDF converted to image, proceeding with Nova Pro analysis")
+            # Now filename ends with .jpg, so it falls through to image processing below
 
-Text preview: {text[:200]}
-
-Reply in lowercase, be funny but helpful:"""
-                        
-                        response = self.bedrock.invoke_model(
-                            modelId="us.amazon.nova-lite-v1:0",
-                            body=json.dumps({
-                                "messages": [{"role": "user", "content": [{"text": prompt}]}],
-                                "inferenceConfig": {"max_new_tokens": 100, "temperature": 0.9}
-                            })
-                        )
-                        ai_message = json.loads(response['body'].read())['output']['message']['content'][0]['text'].strip()
-                        raise ValueError(ai_message)
-                    except Exception as e:
-                        # Fallback if AI fails
-                        raise ValueError("bruh, that's not a menu. upload something with food on it 🍕")
-                logger.info(f"Extracted {len(text)} characters from PDF")
-                # Parse dishes from extracted text with improved parser
-                # Try AI parsing first for better accuracy
-                dishes = await parse_menu_with_ai(self.bedrock, text)
-                
-                # Fallback to regex parsing if AI fails
-                if not dishes or len(dishes) < 3:
-                    logger.info("AI parsing yielded few dishes, trying regex fallback")
-                    dishes = self._parse_dishes_from_text(text)
-                if dishes and len(dishes) > 0:
-                    logger.info(f"✓ Parsed {len(dishes)} dishes from PDF text")
-                    return {"text": text, "dishes": dishes}
-                else:
-                    logger.warning(f"PDF text extraction succeeded but parser found no dishes")
-                    logger.warning(f"First 500 chars of PDF text: {text[:500]}")
-            else:
-                logger.warning("PDF text extraction failed or insufficient text")
-            
-            # PDF conversion failed - re-raise the error
-            logger.error("⚠️ PDF to image conversion failed")
-            raise ValueError("couldn't convert PDF to image. try uploading a photo instead 📸")
-        
         # For images: Use Nova Pro
         if self.bedrock:
             try:
