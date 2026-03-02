@@ -52,8 +52,15 @@ export default function AdminPage() {
   useEffect(() => {
     // Get passcode from storage
     const passcode = localStorage.getItem('safebite_auth') || sessionStorage.getItem('safebite_auth');
+    
+    // Only fetch if we have a passcode (authenticated)
+    if (!passcode) {
+      setLoading(false);
+      return;
+    }
+    
     const headers = {
-      'X-Admin-Passcode': passcode || ''
+      'X-Admin-Passcode': passcode
     };
 
     // Fetch all data

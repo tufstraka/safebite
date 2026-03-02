@@ -10,8 +10,15 @@ export default function FeedbacksPage() {
 
   useEffect(() => {
     const passcode = localStorage.getItem('safebite_auth') || sessionStorage.getItem('safebite_auth');
+    
+    // Only fetch if we have a passcode (authenticated)
+    if (!passcode) {
+      setLoading(false);
+      return;
+    }
+    
     const headers = {
-      'X-Admin-Passcode': passcode || ''
+      'X-Admin-Passcode': passcode
     };
 
     fetch('/api/feedback/all', { headers })
