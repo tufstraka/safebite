@@ -136,7 +136,26 @@ class NovaMenuAnalyzer:
             # Validate it's actually a food menu
             if text and len(text.strip()) > 50:
                 if not is_food_menu(text):
-                    raise ValueError("This doesn't look like a food menu. Please upload a restaurant menu with dishes and prices.")
+                    # Generate humorous rejection message with Nova 2 Lite
+                    try:
+                        prompt = f"""The user uploaded something that's not a restaurant menu. Based on the text content, create a SHORT (1-2 sentences), humorous, casual rejection message in Keith's voice (Nairobi dev, lowercase, direct, funny). Tell them what they uploaded and ask for an actual menu.
+
+Text preview: {text[:200]}
+
+Reply in lowercase, be funny but helpful:"""
+                        
+                        response = self.bedrock.invoke_model(
+                            modelId="us.amazon.nova-lite-v1:0",
+                            body=json.dumps({
+                                "messages": [{"role": "user", "content": [{"text": prompt}]}],
+                                "inferenceConfig": {"max_new_tokens": 100, "temperature": 0.9}
+                            })
+                        )
+                        ai_message = json.loads(response['body'].read())['output']['message']['content'][0]['text'].strip()
+                        raise ValueError(ai_message)
+                    except Exception as e:
+                        # Fallback if AI fails
+                        raise ValueError("bruh, that's not a menu. upload something with food on it 🍕")
                 logger.info(f"Extracted {len(text)} characters from PDF")
                 # Parse dishes from extracted text with improved parser
                 dishes = self._parse_dishes_from_text(text)
@@ -714,9 +733,9 @@ Be concise. Only list allergens you're confident about with their source:"""
                 f"{safe_count} options and not a single {allergen_text} in sight. easy."
             ]
             suffix = random.choice([
-                " double-check with staff though.",
-                " still, quick confirm won't hurt.",
-                " ask your server to be sure.",
+                "",
+                "",
+                "",
                 " verify with the kitchen just in case."
             ])
             return random.choice(messages) + suffix
