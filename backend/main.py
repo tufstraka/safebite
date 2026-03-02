@@ -72,6 +72,7 @@ class MenuAnalysisResponse(BaseModel):
     analysis_timestamp: str
     analysis_time_eat: str  # East Africa Time
     voice_summary: str
+    recommendation: Optional[str] = None  # AI meal recommendation
 
 # ALLERGEN DATABASE
 COMMON_ALLERGENS = [
@@ -649,6 +650,25 @@ Be thorough about visible ingredients - this is for allergen detection."""
             ingredients_inferred=visible_ingredients[:5]
         )
     
+
+    async def generate_recommendation(self, safe_dishes: List, allergens: List[str]) -> Optional[str]:
+        """Generate Keith-style meal recommendation from safe dishes"""
+        if not safe_dishes:
+            return None
+        
+        # Pick highest safety score
+        best = max(safe_dishes, key=lambda d: d.safety_score)
+        
+        import random
+        templates = [
+            f"go for the {best.name.lower()}. clean choice, {best.safety_score}% safe.",
+            f"{best.name.lower()} looks solid. no {', '.join(allergens[:2])} here.",
+            f"try {best.name.lower()}. tested it, you're good.",
+            f"{best.name.lower()} is your safest bet. {best.safety_score}% confidence.",
+            f"i'd pick {best.name.lower()}. no allergens detected.",
+        ]
+        return random.choice(templates)
+
     async def _infer_ingredients_with_ai(self, name: str, description: str) -> str:
         """Use Nova 2 Lite to intelligently infer ALL likely ingredients"""
         if self.bedrock:
