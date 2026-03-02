@@ -8,6 +8,9 @@ from pydantic import BaseModel, HttpUrl
 from typing import List, Optional, Dict
 import logging
 from datetime import datetime, timezone, timedelta, timezone
+from database import Scan, init_db, SessionLocal
+from admin_routes import router as admin_router
+from sqlalchemy.orm import Session
 from pathlib import Path
 import base64
 import json
@@ -33,6 +36,12 @@ app = FastAPI(
     description="Menu Safety Scanner",
     version="1.0.0"
 )
+# Initialize database on startup
+init_db()
+# Include admin routes
+app.include_router(admin_router)
+
+
 
 # CORS middleware
 app.add_middleware(
@@ -867,6 +876,48 @@ async def get_allergens():
         "total": len(COMMON_ALLERGENS)
     }
 
+
+def save_scan_to_db(
+    filename: str,
+    file_type: str,
+    allergens: list,
+    custom_allergens: list,
+    result_data: dict,
+    user_ip: str = None,
+    user_agent: str = None
+):
+    """Save scan data to database"""
+    try:
+        db = SessionLocal()
+        
+        scan = Scan(
+            filename=filename,
+            file_type=file_type,
+            allergens=allergens,
+            custom_allergens=custom_allergens,
+            total_dishes=result_data.get('total_dishes', 0),
+            safe_count=len(result_data.get('safe_dishes', [])),
+            unsafe_count=len(result_data.get('unsafe_dishes', [])),
+            unknown_count=len(result_data.get('unknown_dishes', [])),
+            restaurant_name=result_data.get('restaurant_name', 'Unknown'),
+            user_ip=user_ip,
+            user_agent=user_agent,
+            dishes=[d.dict() for d in result_data.get('safe_dishes', []) + 
+                   result_data.get('unsafe_dishes', []) + 
+                   result_data.get('unknown_dishes', [])],
+            voice_summary=result_data.get('voice_summary', ''),
+            recommendation=result_data.get('recommendation')
+        )
+        
+        db.add(scan)
+        db.commit()
+        db.close()
+        
+        logger.info(f"Saved scan to database: {filename}")
+    except Exception as e:
+        logger.error(f"Failed to save scan to database: {e}")
+
+
 @app.post("/analyze/image", response_model=MenuAnalysisResponse)
 async def analyze_menu_image(
     file: UploadFile = File(...), 
@@ -928,6 +979,25 @@ async def analyze_menu_image(
         now_eat = now_utc.astimezone(NAIROBI_OFFSET)
         
         file_type = "PDF" if file.filename.lower().endswith('.pdf') else "Image"
+        
+        # Save to database
+        save_scan_to_db(
+            filename=file.filename,
+            file_type=file_type,
+            allergens=allergen_list,
+            custom_allergens=custom_list,
+            result_data={
+                'total_dishes': len(menu_data["dishes"]),
+                'safe_dishes': safe_dishes,
+                'unsafe_dishes': unsafe_dishes,
+                'unknown_dishes': unknown_dishes,
+                'restaurant_name': f"Uploaded {file_type}",
+                'voice_summary': voice_summary,
+                'recommendation': recommendation
+            },
+            user_ip=None,  # Can add request.client.host if needed
+            user_agent=None
+        )
         
         return MenuAnalysisResponse(
             restaurant_name=f"Uploaded {file_type}",
