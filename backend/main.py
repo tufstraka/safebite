@@ -8,6 +8,8 @@ from pydantic import BaseModel, HttpUrl
 from typing import List, Optional, Dict
 import logging
 from datetime import datetime, timezone, timedelta, timezone
+import json
+from pathlib import Path
 import base64
 import json
 import io
@@ -28,6 +30,34 @@ logger = logging.getLogger(__name__)
 NAIROBI_OFFSET = timezone(timedelta(hours=3))  # EAT = UTC+3
 
 app = FastAPI(
+
+# Request logging
+REQUEST_LOG_DIR = Path("request_logs")
+REQUEST_LOG_DIR.mkdir(exist_ok=True)
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    """Log all API requests"""
+    start_time = datetime.now()
+    response = await call_next(request)
+    duration = (datetime.now() - start_time).total_seconds()
+    
+    log_entry = {
+        "timestamp": start_time.isoformat(),
+        "method": request.method,
+        "path": str(request.url.path),
+        "status_code": response.status_code,
+        "duration_seconds": round(duration, 3),
+        "client_ip": request.client.host if request.client else "unknown"
+    }
+    
+    # Save to daily log file
+    log_file = REQUEST_LOG_DIR / f"{start_time.strftime('%Y-%m-%d')}.jsonl"
+    with open(log_file, "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
+    
+    return response
+
     title="SafeBite API",
     description="Menu Safety Scanner",
     version="1.0.0"
@@ -986,5 +1016,28 @@ async def analyze_menu_url(request: MenuAnalysisRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
+
+@app.get("/admin/requests")
+async def admin_requests(limit: int = 100):
+    """Get recent API requests (admin endpoint)"""
+    all_requests = []
+    
+    # Read all log files (most recent first)
+    log_files = sorted(REQUEST_LOG_DIR.glob("*.jsonl"), reverse=True)
+    
+    for log_file in log_files[:7]:  # Last 7 days
+        with open(log_file) as f:
+            for line in f:
+                all_requests.append(json.loads(line))
+                if len(all_requests) >= limit:
+                    break
+        if len(all_requests) >= limit:
+            break
+    
+    # Sort by timestamp desc
+    all_requests.sort(key=lambda x: x["timestamp"], reverse=True)
+    
+    return {"requests": all_requests[:limit], "total": len(all_requests)}
+
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

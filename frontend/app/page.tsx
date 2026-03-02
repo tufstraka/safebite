@@ -5,6 +5,7 @@ import { Shield, Upload, AlertTriangle, CheckCircle, XCircle, HelpCircle, X, Cam
 import Toast from './components/Toast';
 import ConsoleEasterEgg from './components/ConsoleEasterEgg';
 import CameraView from './components/CameraView';
+import FeedbackForm from './components/FeedbackForm';
 
 const ALLERGENS = [
   'Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Wheat', 'Soy',
@@ -434,7 +435,7 @@ export default function Home() {
                   <button
                     key={allergen}
                     onClick={() => toggleAllergen(allergen)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-3 py-2 rounded-lg text-base font-semibold transition-all ${
                       selectedAllergens.includes(allergen)
                         ? 'bg-emerald-500 text-gray-900'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -459,7 +460,7 @@ export default function Home() {
                   />
                   <button
                     onClick={addCustomAllergen}
-                    className="px-4 py-2 bg-emerald-500 text-gray-900 rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
+                    className="px-4 py-2 bg-emerald-500 text-gray-900 rounded-lg text-base font-semibold hover:bg-emerald-600 transition-colors"
                   >
                     Add
                   </button>
@@ -506,7 +507,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
-                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-base font-semibold hover:bg-gray-200 transition-colors"
                 >
                   try another
                 </button>                <button
@@ -597,7 +598,7 @@ export default function Home() {
                           ))}
                         </div>
                       )}
-                      <p className="text-red-300 text-sm font-medium">{dish.recommendations}</p>
+                      <p className="text-red-300 text-base font-semibold">{dish.recommendations}</p>
                     </div>
                   ))}
                 </div>
@@ -637,7 +638,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => setShowPWAPrompt(false)}
-                className="px-3 py-2 text-gray-500 text-sm font-medium"
+                className="px-3 py-2 text-gray-500 text-base font-semibold"
               >
                 later
               </button>
