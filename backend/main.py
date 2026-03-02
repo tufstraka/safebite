@@ -172,7 +172,13 @@ Reply in lowercase, be funny but helpful:"""
                         raise ValueError("bruh, that's not a menu. upload something with food on it 🍕")
                 logger.info(f"Extracted {len(text)} characters from PDF")
                 # Parse dishes from extracted text with improved parser
-                dishes = self._parse_dishes_from_text(text)
+                # Try AI parsing first for better accuracy
+                dishes = await parse_menu_with_ai(self.bedrock, text)
+                
+                # Fallback to regex parsing if AI fails
+                if not dishes or len(dishes) < 3:
+                    logger.info("AI parsing yielded few dishes, trying regex fallback")
+                    dishes = self._parse_dishes_from_text(text)
                 if dishes and len(dishes) > 0:
                     logger.info(f"✓ Parsed {len(dishes)} dishes from PDF text")
                     return {"text": text, "dishes": dishes}
