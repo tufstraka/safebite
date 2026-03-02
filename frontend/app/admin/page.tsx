@@ -22,16 +22,43 @@ interface AdminStats {
   file_types: { [key: string]: number };
 }
 
+interface UserStats {
+  total_users: number;
+  active_users: number;
+  returning_users: number;
+  new_users: number;
+  avg_scans_per_user: number;
+}
+
+interface User {
+  id: number;
+  user_hash: string;
+  first_seen: string;
+  last_seen: string;
+  total_scans: number;
+  total_dishes_checked: number;
+  top_allergens: { [key: string]: number };
+  ip_address: string;
+  user_agent: string;
+}
+
 export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch real stats from database
-    fetch('/api/admin/stats')
-      .then(res => res.json())
-      .then(data => {
-        setStats(data);
+    // Fetch all data
+    Promise.all([
+      fetch('/api/admin/stats').then(res => res.json()),
+      fetch('/api/admin/users/stats').then(res => res.json()),
+      fetch('/api/admin/users/list?limit=10').then(res => res.json())
+    ])
+      .then(([scanStats, userStatsData, usersData]) => {
+        setStats(scanStats);
+        setUserStats(userStatsData);
+        setUsers(usersData.users || []);
         setLoading(false);
       })
       .catch(err => {
@@ -72,7 +99,41 @@ export default function AdminPage() {
           <p className="text-gray-600">real-time analytics from database</p>
         </div>
 
-        {/* Main stats grid */}
+        {/* User stats section */}
+        {userStats && (
+          <>
+            <h2 className="text-2xl font-black text-gray-900 mb-4">👥 user statistics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+              <div className="bg-blue-50 rounded-2xl p-6 border-2 border-blue-400 shadow-sm">
+                <p className="text-sm text-blue-800 font-bold mb-2">total users</p>
+                <p className="text-5xl font-black text-blue-700">{userStats.total_users}</p>
+              </div>
+              
+              <div className="bg-green-50 rounded-2xl p-6 border-2 border-green-400 shadow-sm">
+                <p className="text-sm text-green-800 font-bold mb-2">active (30d)</p>
+                <p className="text-5xl font-black text-green-700">{userStats.active_users}</p>
+              </div>
+              
+              <div className="bg-purple-50 rounded-2xl p-6 border-2 border-purple-400 shadow-sm">
+                <p className="text-sm text-purple-800 font-bold mb-2">returning</p>
+                <p className="text-5xl font-black text-purple-700">{userStats.returning_users}</p>
+              </div>
+              
+              <div className="bg-cyan-50 rounded-2xl p-6 border-2 border-cyan-400 shadow-sm">
+                <p className="text-sm text-cyan-800 font-bold mb-2">new users</p>
+                <p className="text-5xl font-black text-cyan-700">{userStats.new_users}</p>
+              </div>
+              
+              <div className="bg-orange-50 rounded-2xl p-6 border-2 border-orange-400 shadow-sm">
+                <p className="text-sm text-orange-800 font-bold mb-2">avg scans</p>
+                <p className="text-5xl font-black text-orange-700">{userStats.avg_scans_per_user}</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Scan stats section */}
+        <h2 className="text-2xl font-black text-gray-900 mb-4">📊 scan statistics</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-2xl p-6 border-2 border-gray-300 shadow-sm">
             <p className="text-sm text-gray-700 font-bold mb-2">total scans</p>
@@ -95,23 +156,10 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Secondary stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-6 border-2 border-gray-300 shadow-sm">
-            <p className="text-sm text-gray-700 font-bold mb-2">avg unsafe dishes</p>
-            <p className="text-3xl font-black text-red-600">{stats.average_unsafe.toFixed(1)}</p>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 border-2 border-gray-300 shadow-sm">
-            <p className="text-sm text-gray-700 font-bold mb-2">avg unknown dishes</p>
-            <p className="text-3xl font-black text-orange-600">{stats.average_unknown.toFixed(1)}</p>
-          </div>
-        </div>
-
         {/* Top allergens */}
         {stats.top_allergens.length > 0 && (
           <div className="bg-white rounded-2xl p-6 mb-8 border-2 border-gray-300 shadow-sm">
-            <h2 className="text-2xl font-black text-gray-900 mb-4">top allergens checked</h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-4">🥜 top allergens checked</h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {stats.top_allergens.map((item, i) => (
                 <div key={i} className="bg-gradient-to-br from-emerald-50 to-cyan-50 rounded-xl p-4 border-2 border-emerald-200">
@@ -124,10 +172,71 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Recent users */}
+        {users.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 mb-8 border-2 border-gray-300 shadow-sm">
+            <h2 className="text-2xl font-black text-gray-900 mb-4">👤 recent users</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="text-left py-3 px-2 text-sm font-bold text-gray-700">User ID</th>
+                    <th className="text-left py-3 px-2 text-sm font-bold text-gray-700">Last Seen</th>
+                    <th className="text-left py-3 px-2 text-sm font-bold text-gray-700">Scans</th>
+                    <th className="text-left py-3 px-2 text-sm font-bold text-gray-700">Dishes</th>
+                    <th className="text-left py-3 px-2 text-sm font-bold text-gray-700">Top Allergens</th>
+                    <th className="text-left py-3 px-2 text-sm font-bold text-gray-700">Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-2">
+                        <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                          {user.user_hash}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-sm text-gray-600">
+                        {new Date(user.last_seen).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className="font-bold text-emerald-700">{user.total_scans}</span>
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className="font-bold text-gray-700">{user.total_dishes_checked}</span>
+                      </td>
+                      <td className="py-3 px-2">
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(user.top_allergens || {})
+                            .sort(([, a], [, b]) => b - a)
+                            .slice(0, 3)
+                            .map(([allergen, count]) => (
+                              <span key={allergen} className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full capitalize">
+                                {allergen} ({count})
+                              </span>
+                            ))}
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-xs text-gray-500">
+                        {user.ip_address}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Recent activity */}
         {stats.recent_activity.length > 0 ? (
           <div className="bg-white rounded-2xl p-6 border-2 border-gray-300 shadow-sm">
-            <h2 className="text-2xl font-black text-gray-900 mb-4">recent scans</h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-4">📝 recent scans</h2>
             <div className="space-y-3">
               {stats.recent_activity.map((scan) => (
                 <div key={scan.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-emerald-400 transition-colors">
@@ -171,7 +280,7 @@ export default function AdminPage() {
         {/* File types */}
         {Object.keys(stats.file_types).length > 0 && (
           <div className="bg-white rounded-2xl p-6 mt-8 border-2 border-gray-300 shadow-sm">
-            <h2 className="text-2xl font-black text-gray-900 mb-4">file types</h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-4">📄 file types</h2>
             <div className="flex gap-4">
               {Object.entries(stats.file_types).map(([type, count]) => (
                 <div key={type} className="bg-gray-50 rounded-xl p-4 border border-gray-200">

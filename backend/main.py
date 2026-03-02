@@ -989,6 +989,14 @@ def save_scan_to_db(
         
         db.add(scan)
         db.commit()
+        
+        # Track user activity
+        if user_ip and user_agent:
+            from database import track_user
+            all_allergens = allergens + (custom_allergens or [])
+            total_dishes = result_data.get('total_dishes', 0)
+            track_user(db, user_ip, user_agent, all_allergens, total_dishes)
+        
         db.close()
         
         logger.info(f"Saved scan to database: {filename}")
@@ -1197,3 +1205,84 @@ async def get_all_feedback():
     
     return {"feedbacks": feedbacks}
 
+
+# Admin endpoints
+@app.get("/admin/users/stats")
+async def get_user_statistics():
+    """Get aggregated user statistics"""
+    try:
+        from database import get_user_stats
+        db = SessionLocal()
+        stats = get_user_stats(db)
+        db.close()
+        return stats
+    except Exception as e:
+        logger.error(f"Failed to get user stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/users/list")
+async def get_users_list(limit: int = 50, offset: int = 0):
+    """Get list of users with their details"""
+    try:
+        from database import User
+        db = SessionLocal()
+        
+        users = db.query(User)\
+            .order_by(User.last_seen.desc())\
+            .limit(limit)\
+            .offset(offset)\
+            .all()
+        
+        user_list = []
+        for user in users:
+            user_list.append({
+                "id": user.id,
+                "user_hash": user.user_hash[:8] + "...",  # Truncate for privacy
+                "first_seen": user.first_seen.isoformat(),
+                "last_seen": user.last_seen.isoformat(),
+                "total_scans": user.total_scans,
+                "total_dishes_checked": user.total_dishes_checked,
+                "top_allergens": user.top_allergens or {},
+                "ip_address": user.ip_address,
+                "user_agent": user.user_agent[:50] + "..." if user.user_agent and len(user.user_agent) > 50 else user.user_agent,
+            })
+        
+        db.close()
+        return {"users": user_list, "total": len(user_list)}
+    except Exception as e:
+        logger.error(f"Failed to get users list: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/stats")
+async def get_admin_stats():
+    """Get comprehensive admin statistics"""
+    try:
+        from database import get_user_stats
+        db = SessionLocal()
+        
+        # User stats
+        user_stats = get_user_stats(db)
+        
+        # Scan stats
+        from database import Scan
+        total_scans = db.query(Scan).count()
+        total_dishes = sum(s.total_dishes or 0 for s in db.query(Scan).all())
+        
+        # Get scans from last 7 days
+        from datetime import timedelta
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        recent_scans = db.query(Scan).filter(Scan.timestamp >= week_ago).count()
+        
+        db.close()
+        
+        return {
+            "users": user_stats,
+            "scans": {
+                "total_scans": total_scans,
+                "total_dishes_analyzed": total_dishes,
+                "scans_last_7_days": recent_scans
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get admin stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

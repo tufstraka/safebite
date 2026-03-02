@@ -3,7 +3,7 @@ Admin analytics endpoints for SafeBite
 """
 from fastapi import APIRouter
 from sqlalchemy import func, desc
-from database import Scan, SessionLocal
+from database import Scan, User, SessionLocal, get_user_stats
 from datetime import datetime, timedelta
 from collections import Counter
 
@@ -15,6 +15,9 @@ async def get_admin_stats():
     db = SessionLocal()
     
     try:
+        # User stats
+        user_stats = get_user_stats(db)
+        
         # Total scans
         total_scans = db.query(func.count(Scan.id)).scalar() or 0
         
@@ -71,6 +74,7 @@ async def get_admin_stats():
         file_type_breakdown = {ft: count for ft, count in file_types}
         
         return {
+            "users": user_stats,
             "total_scans": total_scans,
             "total_dishes": total_dishes,
             "recent_scans_24h": recent_scans,
@@ -118,5 +122,44 @@ async def get_all_scans(limit: int = 100, offset: int = 0):
             "offset": offset
         }
         
+    finally:
+        db.close()
+
+@router.get("/admin/users/stats")
+async def get_user_statistics():
+    """Get aggregated user statistics"""
+    db = SessionLocal()
+    try:
+        stats = get_user_stats(db)
+        return stats
+    finally:
+        db.close()
+
+@router.get("/admin/users/list")
+async def get_users_list(limit: int = 50, offset: int = 0):
+    """Get list of users with their details"""
+    db = SessionLocal()
+    try:
+        users = db.query(User)\
+            .order_by(desc(User.last_seen))\
+            .limit(limit)\
+            .offset(offset)\
+            .all()
+        
+        user_list = []
+        for user in users:
+            user_list.append({
+                "id": user.id,
+                "user_hash": user.user_hash[:8] + "...",  # Truncate for privacy
+                "first_seen": user.first_seen.isoformat(),
+                "last_seen": user.last_seen.isoformat(),
+                "total_scans": user.total_scans,
+                "total_dishes_checked": user.total_dishes_checked,
+                "top_allergens": user.top_allergens or {},
+                "ip_address": user.ip_address,
+                "user_agent": user.user_agent[:50] + "..." if user.user_agent and len(user.user_agent) > 50 else user.user_agent,
+            })
+        
+        return {"users": user_list, "total": len(user_list)}
     finally:
         db.close()
