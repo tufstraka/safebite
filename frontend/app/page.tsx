@@ -222,11 +222,11 @@ export default function Home() {
 
   const getSafetyColor = (level: string) => {
     const colors: any = {
-      'Safe': 'bg-emerald-500',
+      'Safe': 'bg-emerald-1000',
       'Likely Safe': 'bg-blue-500',
-      'Unknown': 'bg-yellow-500',
+      'Unknown': 'bg-yellow-1000',
       'Caution': 'bg-orange-500',
-      'Unsafe': 'bg-red-500'
+      'Unsafe': 'bg-red-1000'
     };
     return colors[level] || 'bg-gray-500';
   };
@@ -392,7 +392,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">1. snap it</h3>
               
               {menuFile ? (
-                <div className="border-2 border-emerald-500 bg-emerald-50 rounded-xl p-6 text-center">
+                <div className="border-2 border-emerald-500 bg-emerald-100 rounded-xl p-6 text-center">
                   <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
                   <p className="text-gray-900 font-medium">{menuFile.name}</p>
                   <p className="text-gray-500 text-sm mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -400,7 +400,7 @@ export default function Home() {
               ) : (
                 <div className="space-y-3">
                   {/* Camera button - primary on mobile */}
-                  <label className="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 rounded-xl p-6 transition-colors flex flex-col items-center gap-3 cursor-pointer shadow-lg shadow-emerald-500/20">
+                  <label className="w-full bg-emerald-1000 hover:bg-emerald-600 text-gray-900 rounded-xl p-6 transition-colors flex flex-col items-center gap-3 cursor-pointer shadow-lg shadow-emerald-500/20">
                     <Camera className="w-12 h-12" />
                     <div>
                       <p className="font-bold text-lg">take a pic</p>
@@ -436,7 +436,7 @@ export default function Home() {
                     onClick={() => toggleAllergen(allergen)}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       selectedAllergens.includes(allergen)
-                        ? 'bg-emerald-500 text-gray-900'
+                        ? 'bg-emerald-1000 text-gray-900'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -459,7 +459,7 @@ export default function Home() {
                   />
                   <button
                     onClick={addCustomAllergen}
-                    className="px-4 py-2 bg-emerald-500 text-gray-900 rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
+                    className="px-4 py-2 bg-emerald-1000 text-gray-900 rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
                   >
                     Add
                   </button>
@@ -483,7 +483,7 @@ export default function Home() {
             <button
               onClick={analyzeMenu}
               disabled={!menuFile || (selectedAllergens.length === 0 && customAllergens.length === 0) || analyzing}
-              className="w-full py-4 bg-emerald-500 text-gray-900 rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full py-4 bg-emerald-1000 text-gray-900 rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {analyzing ? (
                 <>
@@ -519,7 +519,7 @@ export default function Home() {
                       alert('Results copied!');
                     }
                   }}
-                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                  className="px-4 py-2 bg-emerald-1000 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors"
                 >
                   📤 share
                 </button>
@@ -643,7 +643,7 @@ export default function Home() {
               </button>
               <button
                 onClick={handleInstallPWA}
-                className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold"
+                className="px-4 py-2 bg-emerald-1000 text-white rounded-lg text-sm font-semibold"
               >
                 install
               </button>
