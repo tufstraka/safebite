@@ -266,8 +266,8 @@ Be thorough about visible ingredients - this is for allergen detection."""
             logger.warning("Bedrock client not initialized")
         
                 # Use Nova Pro to identify what was uploaded
-                try:
-                    prompt = "Describe what you see in this image in 1-2 sentences. Be specific and direct."
+            try:
+                prompt = "Describe what you see in this image in 1-2 sentences. Be specific and direct."
                     response = self.bedrock.invoke_model(
                         modelId="amazon.nova-pro-v1:0",
                         body=json.dumps({
