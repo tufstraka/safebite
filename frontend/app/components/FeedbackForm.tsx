@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 
 export default function FeedbackForm() {
   const [show, setShow] = useState(false);
+  const [showWidget, setShowWidget] = useState(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -52,13 +53,24 @@ export default function FeedbackForm() {
 
   return (
     <>
-      {/* Floating button */}
-      <button
-        onClick={() => setShow(true)}
-        className="fixed bottom-6 right-6 bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg font-semibold transition-all z-50"
-      >
-        💬 feedback
-      </button>
+      {/* Dismissable Floating Widget */}
+      {showWidget && (
+        <div className="fixed bottom-6 right-6 flex items-center gap-2 z-50">
+          <button
+            onClick={() => setShowWidget(false)}
+            className="bg-gray-700 hover:bg-gray-800 text-white p-2 rounded-full shadow-lg transition-all"
+            title="Dismiss feedback"
+          >
+            ✕
+          </button>
+          <button
+            onClick={() => setShow(true)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg font-semibold transition-all"
+          >
+            💬 feedback
+          </button>
+        </div>
+      )}
 
       {/* Modal */}
       {show && (
