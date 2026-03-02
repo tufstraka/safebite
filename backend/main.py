@@ -699,7 +699,7 @@ Your response (be creative, reference what they uploaded):"""
         
         return DishSafety(
             name=name,
-            description=dish["description"],
+            description=dish.get("description", ""),
             safety_score=safety_score,
             safety_level=level,
             detected_allergens=detected,
