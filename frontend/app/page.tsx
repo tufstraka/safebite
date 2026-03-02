@@ -532,9 +532,10 @@ export default function Home() {
                   className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-base font-semibold hover:bg-gray-200 transition-colors"
                 >
                   try another
-                </button>                <button
+                </button>
+                <button
                   onClick={() => {
-                    const text = `SafeBite Scan: ${results.safe_count} safe, ${results.unsafe_count} unsafe, ${results.unknown_count} unknown`;
+                    const text = `SafeBite Scan: ${results.safe_dishes.length} safe, ${results.unsafe_dishes.length} unsafe, ${results.unknown_dishes.length} unknown`;
                     if (navigator.share) {
                       navigator.share({ text, title: 'SafeBite Results' });
                     } else {

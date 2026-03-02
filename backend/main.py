@@ -15,6 +15,7 @@ from pathlib import Path
 import base64
 import json
 import io
+import re
 from PyPDF2 import PdfReader
 import boto3
 import os
@@ -255,7 +256,6 @@ DO NOT hallucinate ingredients that aren't clearly visible or typical for the di
                 # Try to parse JSON from response
                 try:
                     # Extract JSON from response (handle markdown code blocks)
-                    import re
                     # Remove markdown code blocks if present
                     cleaned = re.sub(r'```json\s*|\s*```', '', text_response)
                     
@@ -537,8 +537,8 @@ Your response (be creative, reference what they uploaded):"""
         name = dish["name"]
         description = dish["description"].lower()
         
-        # Step 1: Infer allergens with reasoning
-        ai_result = await self._infer_ingredients_with_ai(name, description)
+        # Step 1: Infer allergens with reasoning - pass user's allergens to focus the AI
+        ai_result = await self._infer_ingredients_with_ai(name, description, allergens)
         inferred_allergens = ai_result.get("allergens", "")
         ai_reasoning = ai_result.get("reasoning", "")
         
@@ -553,19 +553,19 @@ Your response (be creative, reference what they uploaded):"""
             # Check visible description
             found_in_description = False
             for keyword in keywords:
-                import re
                 # Check if keyword uses word boundary regex
-            if isinstance(keyword, str) and keyword.startswith(r"\b"):
-                # Use regex for word boundary
-                if re.search(keyword, description, re.IGNORECASE) or re.search(keyword, name.lower(), re.IGNORECASE):
+                if isinstance(keyword, str) and keyword.startswith(r"\b"):
+                    # Use regex for word boundary
+                    if re.search(keyword, description, re.IGNORECASE) or re.search(keyword, name.lower(), re.IGNORECASE):
+                        detected.append(allergen)
+                        found_in_description = True
+                        break
+                elif keyword.lower() in description or keyword.lower() in name.lower():
                     detected.append(allergen)
                     found_in_description = True
                     break
-            elif keyword.lower() in description or keyword.lower() in name.lower():
-                detected.append(allergen)
-                found_in_description = True
-                break
-            # Check AI-inferred allergens
+            
+            # Check AI-inferred allergens if not found in description
             if not found_in_description:
                 for keyword in keywords:
                     if keyword.lower() in inferred_allergens.lower():
@@ -714,34 +714,39 @@ Your response (be creative, reference what they uploaded):"""
         ]
         return random.choice(templates)
 
-    async def _infer_ingredients_with_ai(self, name: str, description: str) -> str:
-        """Use Nova 2 Lite to intelligently infer ALL likely ingredients"""
+    async def _infer_ingredients_with_ai(self, name: str, description: str, user_allergens: List[str] = None) -> str:
+        """Use Nova 2 Lite to intelligently infer allergens - ONLY for user's selected allergens"""
         if self.bedrock:
             try:
-                prompt = f"""You are a food safety expert. Analyze this dish for allergens.
+                # Only check for allergens the user cares about
+                allergen_focus = ", ".join(user_allergens) if user_allergens else "dairy, eggs, nuts, gluten, soy, fish, shellfish"
+                
+                prompt = f"""You are a food safety expert. Analyze this dish for SPECIFIC allergens.
 
 Dish name: {name}
 Description: {description}
 
-Task: If this dish likely contains common allergens, explain WHY.
+USER'S ALLERGENS TO CHECK: {allergen_focus}
+
+Task: ONLY check if this dish contains the allergens listed above. Ignore other allergens.
 
 IMPORTANT RULES:
-1. Only mention allergens if HIGHLY CONFIDENT they're present
-2. Explain WHERE the allergen comes from (which component/ingredient)
-3. Focus on: dairy, eggs, nuts, gluten, soy, fish, shellfish
-4. If unsure, write "no clear allergens detected"
+1. ONLY mention allergens from the user's list above
+2. Only flag if HIGHLY CONFIDENT the allergen is present
+3. Explain WHERE the allergen comes from (which component/ingredient)
+4. If the dish doesn't contain any of the user's allergens, write "no allergens detected"
 5. Be specific about the SOURCE of the allergen
+6. DO NOT mention allergens the user didn't ask about
 
 Format your response as:
 ALLERGEN: source/reason
 
-Examples:
-- "Caesar Salad" → FISH: anchovies in Caesar dressing; EGG: raw egg in dressing; DAIRY: parmesan cheese
-- "Pad Thai" → FISH: fish sauce (traditional recipe); PEANUTS: crushed peanuts topping; EGG: scrambled egg
-- "Birthday Cake" → DAIRY: butter in cake + cream in frosting; EGGS: in cake batter; GLUTEN: wheat flour
-- "Grilled Chicken" → no clear allergens detected (unless sauce specified)
+Examples (if user asked about gluten and dairy):
+- "Caesar Salad" → DAIRY: parmesan cheese; GLUTEN: croutons made from wheat
+- "Grilled Chicken" → no allergens detected
+- "Pasta Carbonara" → DAIRY: parmesan and cream; GLUTEN: wheat pasta
 
-Be concise. Only list allergens you're confident about with their source:"""
+Be concise. Only list allergens from the user's list that you're confident about:"""
 
                 body = json.dumps({
                     "messages": [
@@ -776,22 +781,35 @@ Be concise. Only list allergens you're confident about with their source:"""
                 
                 logger.info(f"Nova 2 Lite response for '{name}': {ingredients[:100]}...")
                 
-                # Parse the response - format: "ALLERGEN: reason; ALLERGEN: reason"
-                if "no clear allergens" in ingredients.lower():
+                # Parse the response - format: "ALLERGEN: reason" (can be newline or semicolon separated)
+                if "no clear allergens" in ingredients.lower() or "no allergens detected" in ingredients.lower():
                     return {"allergens": "", "reasoning": ""}
                 
-                # Extract allergens and reasoning
+                # Extract allergens and reasoning - handle both newline and semicolon separators
                 allergen_list = []
                 reasoning_parts = []
                 
-                for line in ingredients.split(';'):
+                # Split by newlines first, then by semicolons
+                lines = []
+                for part in ingredients.split('\n'):
+                    for subpart in part.split(';'):
+                        if subpart.strip():
+                            lines.append(subpart.strip())
+                
+                for line in lines:
+                    # Clean up common prefixes like "allergen:", "ALLERGEN:", etc.
+                    line = re.sub(r'^(allergen:?\s*)', '', line, flags=re.IGNORECASE)
+                    line = line.strip()
+                    
                     if ':' in line:
                         parts = line.split(':', 1)
                         if len(parts) == 2:
                             allergen = parts[0].strip().upper()
                             reason = parts[1].strip()
-                            allergen_list.append(allergen.lower())
-                            reasoning_parts.append(f"{allergen.lower()}: {reason}")
+                            # Skip if allergen name is too long (probably not an allergen)
+                            if len(allergen) < 20 and allergen:
+                                allergen_list.append(allergen.lower())
+                                reasoning_parts.append(f"{allergen.lower()}: {reason}")
                 
                 result = {
                     "allergens": ", ".join(allergen_list),
