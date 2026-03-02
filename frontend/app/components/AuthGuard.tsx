@@ -27,14 +27,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     e.preventDefault();
     
     if (passcode === PASSCODE) {
-      setIsAuthenticated(true);
-      setError('');
-      
       if (rememberMe) {
         localStorage.setItem(AUTH_KEY, passcode);
       } else {
         sessionStorage.setItem(AUTH_KEY, passcode);
       }
+      
+      // Reload to trigger data fetch with new auth
+      window.location.reload();
     } else {
       setError('wrong passcode');
       setPasscode('');
