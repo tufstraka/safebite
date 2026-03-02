@@ -723,19 +723,10 @@ export default function Home() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
-                      {dish.detected_allergens.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {dish.detected_allergens.map((allergen: string, i: number) => (
-                            <span key={i} className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
-                              {allergen}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                       {dish.ai_reasoning && (
                         <div className="bg-red-100 rounded-lg p-3 mb-2 border border-red-300">
                           <p className="text-red-800 text-sm font-medium">
-                            <span className="font-bold">why to skip:</span> {dish.ai_reasoning}
+                            {dish.ai_reasoning}
                           </p>
                         </div>
                       )}
