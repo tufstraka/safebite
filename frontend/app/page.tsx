@@ -711,6 +711,8 @@ export default function Home() {
                 <p className="text-xs text-gray-500">{scanHistory.length} scans saved</p>
               </div>
             )}
+      <FeedbackForm />
+
           </div>
         </div>
       )}
