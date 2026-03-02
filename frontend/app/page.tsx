@@ -33,6 +33,7 @@ export default function Home() {
 
 
   // Pagination helper
+  const [showFeedbackWidget, setShowFeedbackWidget] = useState(true);
   const paginate = (items: any[], page: number) => {
     const start = (page - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE;
