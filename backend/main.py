@@ -573,7 +573,7 @@ Be thorough about visible ingredients - this is for allergen detection."""
                 "not enough info here. better ask than guess.",
                 "menu doesn't say. check with staff before ordering.",
                 "unclear from this. ask what's actually in it.",
-                "description's not helping. verify with the server.",
+                "description's not clear.",
                 "hard to say for sure. ask the kitchen directly.",
                 "menu's being cryptic. get confirmation from staff."
             ]
@@ -736,7 +736,7 @@ Be concise. Only list allergens you're confident about with their source:"""
                 "",
                 "",
                 "",
-                " verify with the kitchen just in case."
+                ""
             ])
             return random.choice(messages) + suffix
         elif safe_count == 0:
