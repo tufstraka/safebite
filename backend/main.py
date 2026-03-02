@@ -262,6 +262,45 @@ Be thorough about visible ingredients - this is for allergen detection."""
                 
             except Exception as e:
                 logger.error(f"Nova Pro API call failed: {e}")
+                
+                # Try to identify what was uploaded for better error message
+                try:
+                    recognize_prompt = "What do you see in this image? Describe it in 1-2 sentences."
+                    recognize_response = self.bedrock.invoke_model(
+                        modelId="amazon.nova-pro-v1:0",
+                        body=json.dumps({
+                            "messages": [{
+                                "role": "user",
+                                "content": [
+                                    {"image": {"format": "png", "source": {"bytes": base64.b64encode(image_data).decode()}}},
+                                    {"text": recognize_prompt}
+                                ]
+                            }],
+                            "inferenceConfig": {"max_new_tokens": 100, "temperature": 0.7}
+                        }
+                        )
+                    )
+                    img_desc = json.loads(recognize_response["body"].read())["output"]["message"]["content"][0]["text"].strip()
+                    
+                    # Generate humorous rejection
+                    humor_prompt = f"""You uploaded: {img_desc}
+                
+                Create a SHORT (1 sentence), funny response in Keith's voice (lowercase, casual, Kenyan). Tell them what they uploaded and ask for a menu or food photo:"""
+                    
+                    humor_resp = self.bedrock.invoke_model(
+                        modelId="us.amazon.nova-lite-v1:0",
+                        body=json.dumps({
+                            "messages": [{"role": "user", "content": [{"text": humor_prompt}]}],
+                            "inferenceConfig": {"max_new_tokens": 80, "temperature": 0.9}
+                        })
+                    )
+                    funny_msg = json.loads(humor_resp["body"].read())["output"]["message"]["content"][0]["text"].strip()
+                    raise ValueError(funny_msg)
+                except ValueError:
+                    raise  # Re-raise the funny message
+                except Exception:
+                    # If image recognition also fails, generic message
+                    raise ValueError("couldn't process that image. upload a clear photo of a menu or food 📸")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
         else:
