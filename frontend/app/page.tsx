@@ -356,9 +356,9 @@ export default function Home() {
       <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50 relative shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3">
           <Shield className="w-6 h-6 text-emerald-400" />
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-col items-start gap-0.5">
             <h1 className="text-xl font-bold text-gray-900">SafeBite</h1>
-            <span className="text-xs text-slate-500">by</span>
+            <span className="text-xs text-slate-400 hover:text-emerald-400 transition-colors font-medium">by</span>
             <a 
               href="https://github.com/tufstraka" 
               target="_blank"
