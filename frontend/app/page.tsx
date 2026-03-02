@@ -416,10 +416,23 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">1. snap it</h3>
               
               {menuFile ? (
-                <div className="border-2 border-emerald-500 bg-emerald-100 rounded-xl p-6 text-center">
-                  <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-                  <p className="text-gray-900 font-medium">{menuFile.name}</p>
-                  <p className="text-gray-700 text-sm font-medium mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                <div className="border-2 border-emerald-500 bg-emerald-100 rounded-xl p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-10 h-10 text-emerald-500 flex-shrink-0" />
+                      <div>
+                        <p className="text-gray-900 font-medium">{menuFile.name}</p>
+                        <p className="text-gray-600 text-sm mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setMenuFile(null)}
+                      className="text-red-500 hover:text-red-700 font-semibold text-sm px-3 py-1 rounded hover:bg-red-50 transition-colors flex-shrink-0"
+                      title="Remove file"
+                    >
+                      ✕ remove
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
