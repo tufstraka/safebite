@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'SafeBite - Scan Menus for Allergens | Instant Food Safety Check',
-  description: 'Snap a pic of any menu and instantly see which dishes are safe for your allergies. Gluten, dairy, nuts, shellfish - we check them all. Made in Kenya.',
+  description: 'Snap a pic of any menu and instantly see which dishes are safe for your allergies. Gluten, dairy, nuts, shellfish - we check them all.',
   keywords: [
     'food allergen scanner',
     'allergen detection',
@@ -13,8 +13,7 @@ export const metadata: Metadata = {
     'gluten free finder',
     'dairy free checker',
     'nut allergy app',
-    'safebite',
-    'kenya food tech'
+    'safebite'
   ],
   authors: [{ name: 'Keith Kadima', url: 'https://github.com/tufstraka' }],
   creator: 'Keith Kadima',
@@ -49,7 +48,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'SafeBite - Scan Menus for Allergens',
-    description: 'Snap a menu, instantly see which dishes are safe for your allergies. Made in Kenya.',
+    description: 'Snap a menu, instantly see which dishes are safe for your allergies.',
     creator: '@dobynog',
     images: ['https://safebite.locsafe.org/og-image.png'],
   },
