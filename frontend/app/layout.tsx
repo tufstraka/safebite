@@ -1,5 +1,12 @@
 import './globals.css'
+import { Quicksand } from 'next/font/google'
 import { metadata } from './metadata'
+
+const quicksand = Quicksand({ 
+  weight: ['400', '500', '600', '700'], 
+  subsets: ['latin'], 
+  display: 'swap' 
+})
 
 export { metadata }
 
@@ -45,7 +52,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">
+      <body className={quicksand.className}>
         {children}
       </body>
     </html>
