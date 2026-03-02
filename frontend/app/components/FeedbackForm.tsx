@@ -32,7 +32,6 @@ export default function FeedbackForm() {
         setName('');
         setEmail('');
         setShow(false);
-        // Show toast instead of alert
         const toast = document.createElement('div');
         toast.textContent = 'thanks for the feedback';
         toast.className = 'fixed top-6 right-6 bg-emerald-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
@@ -53,22 +52,27 @@ export default function FeedbackForm() {
 
   return (
     <>
-      {/* Dismissable Floating Widget */}
+      {/* Floating Widget with Integrated Dismiss */}
       {showWidget && (
-        <div className="fixed bottom-6 right-6 flex items-center gap-2 z-50">
-          <button
-            onClick={() => setShowWidget(false)}
-            className="bg-gray-700 hover:bg-gray-800 text-white p-2 rounded-full shadow-lg transition-all"
-            title="Dismiss feedback"
-          >
-            ✕
-          </button>
-          <button
-            onClick={() => setShow(true)}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg font-semibold transition-all"
-          >
-            💬 feedback
-          </button>
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className="relative">
+            {/* Small dismiss button top-right corner */}
+            <button
+              onClick={() => setShowWidget(false)}
+              className="absolute -top-1 -right-1 bg-gray-700 hover:bg-gray-800 text-white rounded-full p-1 shadow-md transition-all z-10"
+              title="Dismiss"
+            >
+              <X className="w-3 h-3" />
+            </button>
+            
+            {/* Main feedback button */}
+            <button
+              onClick={() => setShow(true)}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg font-semibold transition-all"
+            >
+              💬 feedback
+            </button>
+          </div>
         </div>
       )}
 
