@@ -396,7 +396,7 @@ export default function Home() {
                 <div className="border-2 border-emerald-500 bg-emerald-100 rounded-xl p-6 text-center">
                   <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
                   <p className="text-gray-900 font-medium">{menuFile.name}</p>
-                  <p className="text-gray-500 text-sm mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <p className="text-gray-700 text-sm font-medium mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -419,7 +419,7 @@ export default function Home() {
                   {/* Upload option - secondary */}
                   <label className="block cursor-pointer">
                     <div className="border border-gray-300 rounded-xl p-4 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors">
-                      <p className="text-gray-500 text-sm">or upload a photo/pdf</p>
+                      <p className="text-gray-700 text-sm font-medium">or upload a photo/pdf</p>
                     </div>
                     <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
                   </label>
@@ -503,7 +503,7 @@ export default function Home() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-1">{results.restaurant_name}</h2>
-                  <p className="text-gray-500 text-sm">{results.total_dishes} items • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
+                  <p className="text-gray-700 text-sm font-medium">{results.total_dishes} items • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
                 </div>
                 <button
                   onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
@@ -564,7 +564,7 @@ export default function Home() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
-                      <p className="text-gray-500 text-sm italic">{dish.recommendations}</p>
+                      <p className="text-gray-700 text-sm font-medium italic">{dish.recommendations}</p>
                     </div>
                   ))}
                 </div>

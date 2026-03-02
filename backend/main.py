@@ -988,3 +988,43 @@ async def analyze_menu_url(request: MenuAnalysisRequest):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+
+
+# Feedback endpoints
+FEEDBACK_DIR = Path("feedback_data")
+FEEDBACK_DIR.mkdir(exist_ok=True)
+
+@app.post("/feedback")
+async def submit_feedback(
+    name: str = Form("Anonymous"),
+    email: str = Form(""),
+    message: str = Form(...),
+    timestamp: str = Form(...)
+):
+    """Save user feedback"""
+    feedback = {
+        "name": name,
+        "email": email,
+        "message": message,
+        "timestamp": timestamp
+    }
+    
+    # Save to file
+    filename = FEEDBACK_DIR / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(filename, 'w') as f:
+        json.dump(feedback, f, indent=2)
+    
+    return {"status": "success"}
+
+@app.get("/feedback/all")
+async def get_all_feedback():
+    """Get all feedback"""
+    feedbacks = []
+    
+    if FEEDBACK_DIR.exists():
+        for file in sorted(FEEDBACK_DIR.glob("*.json"), reverse=True):
+            with open(file) as f:
+                feedbacks.append(json.load(f))
+    
+    return {"feedbacks": feedbacks}
+
