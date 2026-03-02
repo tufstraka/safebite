@@ -916,12 +916,12 @@ async def analyze_menu_image(
         # Generate voice summary
         voice_summary = await analyzer.generate_voice_summary(
             len(safe_dishes), len(unsafe_dishes), all_allergens
-
+        )
+        
         # Generate recommendation
         recommendation = None
         if safe_dishes:
             recommendation = await analyzer.generate_recommendation(safe_dishes, all_allergens)
-        )
         
         # Timestamp in EAT (Nairobi time)
         now_utc = datetime.now(timezone.utc)
@@ -987,12 +987,12 @@ async def analyze_menu_url(request: MenuAnalysisRequest):
         # Generate voice summary
         voice_summary = await analyzer.generate_voice_summary(
             len(safe_dishes), len(unsafe_dishes), all_allergens
-
+        )
+        
         # Generate recommendation
         recommendation = None
         if safe_dishes:
             recommendation = await analyzer.generate_recommendation(safe_dishes, all_allergens)
-        )
         
         # Timestamp in EAT (Nairobi time)
         now_utc = datetime.now(timezone.utc)
