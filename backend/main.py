@@ -139,17 +139,51 @@ class NovaMenuAnalyzer:
             logger.error(f"PDF extraction failed: {e}")
             return {"allergens": "", "reasoning": ""}
     
+
+    async def convert_pdf_to_image(self, pdf_data: bytes) -> bytes:
+        """Convert first page of PDF to JPEG image for Nova Pro"""
+        try:
+            from pdf2image import convert_from_bytes
+            from PIL import Image
+            import io
+            
+            # Convert first page to image (most menus are 1-2 pages)
+            images = convert_from_bytes(pdf_data, first_page=1, last_page=1)
+            
+            if not images:
+                raise ValueError("PDF conversion produced no images")
+            
+            # Convert to JPEG bytes
+            img = images[0]
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='JPEG', quality=95)
+            img_byte_arr.seek(0)
+            
+            logger.info(f"✓ Converted PDF to JPEG image ({len(img_byte_arr.getvalue())} bytes)")
+            return img_byte_arr.getvalue()
+            
+        except Exception as e:
+            logger.error(f"PDF to image conversion failed: {e}")
+            raise ValueError("couldn't convert PDF to image. try uploading a photo instead 📸")
+
     async def analyze_menu_image(self, image_data: bytes, filename: str = "") -> Dict:
         """OCR images OR extract text from PDFs"""
         
-        # For PDFs: Use PyPDF2 text extraction (Nova Pro doesn't support PDF format)
+        # For PDFs: Convert to image then use Nova Pro
         if filename.lower().endswith('.pdf'):
             logger.info(f"Processing PDF: {filename}")
-            text = await self.extract_text_from_pdf(image_data)
-            
-            # Validate it's actually a food menu
-            if text and len(text.strip()) > 50:
-                if not is_food_menu(text):
+            try:
+                # Convert PDF to JPEG
+                image_data = await self.convert_pdf_to_image(image_data)
+                filename = filename.replace('.pdf', '.jpg')  # Update filename for format detection
+                logger.info("✓ PDF converted to image, proceeding with Nova Pro analysis")
+                # Fall through to image processing below
+            except ValueError as e:
+                raise  # Re-raise conversion errors
+            except Exception as e:
+                logger.error(f"PDF conversion failed: {e}")
+                # OLD FALLBACK LOGIC REMOVED - just fail gracefully
+                if False:  # Disabled text extraction path
                     # Generate humorous rejection message with Nova 2 Lite
                     try:
                         prompt = f"""The user uploaded something that's not a restaurant menu. Based on the text content, create a SHORT (1-2 sentences), humorous, casual rejection message in Keith's voice (Nairobi dev, lowercase, direct, funny). Tell them what they uploaded and ask for an actual menu.
