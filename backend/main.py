@@ -548,8 +548,8 @@ Your response (be creative, reference what they uploaded):"""
     
     async def assess_dish_safety(self, dish: Dict, allergens: List[str], custom_keywords: Dict[str, List[str]] = {}) -> DishSafety:
         """Assess safety with ingredient inference"""
-        name = dish["name"]
-        description = dish["description"].lower()
+        name = dish.get("name", "Unknown")
+        description = dish.get("description", "").lower()
         
         # Step 1: Infer allergens with reasoning - pass user's allergens to focus the AI
         ai_result = await self._infer_ingredients_with_ai(name, description, allergens)
