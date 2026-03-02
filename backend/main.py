@@ -168,7 +168,6 @@ Reply in lowercase, be funny but helpful:"""
             else:
                 logger.warning("PDF text extraction failed or insufficient text")
             
-            # PDF parsing completely failed - return demo with warning
                 raise ValueError("Could not extract menu items. Please upload a clear photo of a restaurant menu or food.")
         
         # For images: Use Nova Pro
