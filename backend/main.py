@@ -147,20 +147,39 @@ class NovaMenuAnalyzer:
             from PIL import Image
             import io
             
-            # Convert first page to image (most menus are 1-2 pages)
-            images = convert_from_bytes(pdf_data, first_page=1, last_page=1, poppler_path="/usr/bin")
+            # Convert ALL pages to images (menus can have multiple pages)
+            images = convert_from_bytes(pdf_data, poppler_path="/usr/bin")
             
             if not images:
                 raise ValueError("PDF conversion produced no images")
             
-            # Convert to JPEG bytes
-            img = images[0]
-            img_byte_arr = io.BytesIO()
-            img.save(img_byte_arr, format='JPEG', quality=95)
-            img_byte_arr.seek(0)
-            
-            logger.info(f"✓ Converted PDF to JPEG image ({len(img_byte_arr.getvalue())} bytes)")
-            return img_byte_arr.getvalue()
+            # Convert all pages to JPEG and combine
+            if len(images) == 1:
+                # Single page - just convert it
+                img = images[0]
+                img_byte_arr = io.BytesIO()
+                img.save(img_byte_arr, format='JPEG', quality=95)
+                img_byte_arr.seek(0)
+                logger.info(f"✓ Converted 1-page PDF to JPEG ({len(img_byte_arr.getvalue())} bytes)")
+                return img_byte_arr.getvalue()
+            else:
+                # Multiple pages - combine them vertically
+                total_width = max(img.width for img in images)
+                total_height = sum(img.height for img in images)
+                
+                # Create combined image
+                combined = Image.new('RGB', (total_width, total_height), 'white')
+                y_offset = 0
+                for img in images:
+                    combined.paste(img, (0, y_offset))
+                    y_offset += img.height
+                
+                # Convert to JPEG bytes
+                img_byte_arr = io.BytesIO()
+                combined.save(img_byte_arr, format='JPEG', quality=95)
+                img_byte_arr.seek(0)
+                logger.info(f"✓ Converted {len(images)}-page PDF to combined JPEG ({len(img_byte_arr.getvalue())} bytes)")
+                return img_byte_arr.getvalue()
             
         except Exception as e:
             logger.error(f"PDF to image conversion failed: {e}")
