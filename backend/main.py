@@ -581,10 +581,15 @@ Your response (be creative, reference what they uploaded):"""
             
             # Check AI-inferred allergens if not found in description
             if not found_in_description:
+                # Check both inferred_allergens string AND ai_reasoning
                 for keyword in keywords:
-                    if keyword.lower() in inferred_allergens.lower():
+                    if keyword.lower() in inferred_allergens.lower() or keyword.lower() in ai_reasoning.lower():
                         detected.append(allergen)
                         break
+                
+                # Also check if allergen name itself is in ai_reasoning
+                if allergen_lower in ai_reasoning.lower() and allergen not in detected:
+                    detected.append(allergen)
         
         # Calculate safety score
         if detected:
