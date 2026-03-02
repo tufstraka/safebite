@@ -12,6 +12,13 @@ cd /home/ubuntu/.openclaw/workspace/price-intelligence-ai
 echo "📥 Pulling latest changes from GitHub..."
 git pull origin main
 
+# Install backend dependencies (in venv)
+echo "📦 Installing backend packages..."
+cd backend
+./venv/bin/pip install -r requirements.txt --quiet 2>/dev/null || true
+./venv/bin/pip install sqlalchemy aiosqlite --quiet
+cd ..
+
 # Build frontend
 echo "🔨 Building frontend..."
 cd frontend

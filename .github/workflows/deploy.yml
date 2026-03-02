@@ -22,6 +22,11 @@ jobs:
             # Pull latest changes
             git pull origin main
             
+            # Install backend dependencies (in venv)
+            cd backend
+            ./venv/bin/pip install sqlalchemy aiosqlite --quiet
+            cd ..
+            
             # Build frontend
             cd frontend
             npm install --legacy-peer-deps
