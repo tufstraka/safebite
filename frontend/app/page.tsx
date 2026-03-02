@@ -448,14 +448,14 @@ export default function Home() {
 
               {/* Custom */}
               <div className="border-t border-gray-200 pt-4">
-                <label className="block text-sm text-gray-600 mb-2">Add Custom</label>
+                <label className="block text-sm text-gray-600 mb-2">got something else?</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={customInput}
                     onChange={(e) => setCustomInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addCustomAllergen()}
-                    placeholder="MSG, Cilantro, etc."
+                    placeholder="msg, cilantro, whatever"
                     className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 focus:outline-none"
                   />
                   <button
