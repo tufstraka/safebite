@@ -1,7 +1,8 @@
 """
 Admin analytics endpoints for SafeBite
 """
-from fastapi import APIRouter, HTTPException, Header, Depends
+from fastapi import APIRouter, HTTPException, Header, Depends, Form
+from typing import Optional
 from sqlalchemy import func, desc
 from database import Scan, User, SessionLocal, get_user_stats
 from datetime import datetime, timedelta
@@ -169,5 +170,98 @@ async def get_users_list(limit: int = 50, offset: int = 0, authorized: bool = De
             })
         
         return {"users": user_list, "total": len(user_list)}
+    finally:
+        db.close()
+
+# Feedback endpoints
+@router.get("/feedback/all")
+async def get_all_feedback(authorized: bool = Depends(verify_admin)):
+    """Get all feedback (admin only)"""
+    db = SessionLocal()
+    try:
+        from database import Feedback
+        feedback_items = db.query(Feedback).order_by(desc(Feedback.timestamp)).all()
+        
+        return {
+            "total": len(feedback_items),
+            "feedback": [
+                {
+                    "id": f.id,
+                    "timestamp": f.timestamp.isoformat(),
+                    "message": f.message,
+                    "rating": f.rating,
+                    "email": f.email,
+                    "page": f.page,
+                    "status": f.status,
+                    "admin_notes": f.admin_notes
+                }
+                for f in feedback_items
+            ]
+        }
+    finally:
+        db.close()
+
+@router.post("/feedback/submit")
+async def submit_feedback(
+    message: str = Form(...),
+    rating: Optional[int] = Form(None),
+    email: Optional[str] = Form(None),
+    page: Optional[str] = Form(None),
+    user_ip: Optional[str] = Form(None),
+    user_agent: Optional[str] = Form(None)
+):
+    """Submit feedback (public endpoint)"""
+    db = SessionLocal()
+    try:
+        from database import Feedback
+        
+        feedback = Feedback(
+            message=message,
+            rating=rating,
+            email=email,
+            page=page,
+            user_ip=user_ip,
+            user_agent=user_agent,
+            status='new'
+        )
+        
+        db.add(feedback)
+        db.commit()
+        
+        return {"success": True, "message": "Feedback submitted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@router.patch("/feedback/{feedback_id}/status")
+async def update_feedback_status(
+    feedback_id: int,
+    status: str = Form(...),
+    admin_notes: Optional[str] = Form(None),
+    authorized: bool = Depends(verify_admin)
+):
+    """Update feedback status (admin only)"""
+    db = SessionLocal()
+    try:
+        from database import Feedback
+        
+        feedback = db.query(Feedback).filter(Feedback.id == feedback_id).first()
+        if not feedback:
+            raise HTTPException(status_code=404, detail="Feedback not found")
+        
+        feedback.status = status
+        if admin_notes:
+            feedback.admin_notes = admin_notes
+        
+        db.commit()
+        
+        return {"success": True, "message": "Feedback updated"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()

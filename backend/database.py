@@ -83,6 +83,28 @@ class Analytics(Base):
     # Device info
     device_breakdown = Column(JSON)  # {device_type: count}
 
+
+class Feedback(Base):
+    """User feedback"""
+    __tablename__ = 'feedback'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Feedback content
+    message = Column(String(2000), nullable=False)
+    rating = Column(Integer)  # 1-5 optional rating
+    email = Column(String(200))  # Optional email for follow-up
+    
+    # Context
+    page = Column(String(100))  # Which page they were on
+    user_ip = Column(String(50))
+    user_agent = Column(String(500))
+    
+    # Status
+    status = Column(String(20), default='new')  # new, read, resolved
+    admin_notes = Column(String(1000))
+
 # Database setup
 DB_PATH = os.path.join(os.path.dirname(__file__), 'safebite.db')
 engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)

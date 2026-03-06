@@ -20,6 +20,7 @@ import asyncio
 # Import our new Nova components
 from nova_textract_ocr import TextractMenuExtractor
 from nova_lite_reasoner import NovaLiteAllergenReasoner
+from admin_routes import router as admin_router
 
 load_dotenv()
 
@@ -40,6 +41,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include admin routes
+app.include_router(admin_router)
 
 # Initialize Nova components
 textract_extractor = TextractMenuExtractor()
