@@ -1,52 +1,38 @@
 """
-SafeBite - Restaurant Menu Safety Scanner
+SafeBite AI - Complete Nova Integration
+Updated Backend with Textract + Nova 2 Lite
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Header
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from typing import List, Optional, Dict
 import logging
-from datetime import datetime, timezone, timedelta, timezone
-from database import Scan, init_db, SessionLocal
-from admin_routes import router as admin_router
-from sqlalchemy.orm import Session
-from pathlib import Path
+from datetime import datetime, timezone, timedelta
 import base64
 import json
 import io
-import re
 from PyPDF2 import PdfReader
-import boto3
 import os
-from menu_validator import is_food_menu
-from ai_parser import parse_menu_with_ai
 from dotenv import load_dotenv
+import asyncio
 
-# Load environment variables
+# Import our new Nova components
+from nova_textract_ocr import TextractMenuExtractor
+from nova_lite_reasoner import NovaLiteAllergenReasoner
+
 load_dotenv()
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Timezone for timestamps
-NAIROBI_OFFSET = timezone(timedelta(hours=3))  # EAT = UTC+3
-ADMIN_PASSCODE = "8992"
-
 app = FastAPI(
-    title="SafeBite API",
-    description="Menu Safety Scanner",
-    version="1.0.0"
+    title="SafeBite AI API - Nova Powered",
+    description="AI Menu Safety Scanner with AWS Textract + Nova 2 Lite",
+    version="2.0.0"
 )
-# Initialize database on startup
-init_db()
-# Include admin routes
-app.include_router(admin_router)
 
-
-
-# CORS middleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,1242 +41,279 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize Nova components
+textract_extractor = TextractMenuExtractor()
+nova_reasoner = NovaLiteAllergenReasoner()
+
 # DATA MODELS
 
-class AllergenList(BaseModel):
-    allergens: List[str]
-
-class MenuAnalysisRequest(BaseModel):
-    menu_url: Optional[HttpUrl] = None
-    allergens: List[str]
-    custom_allergens: Optional[List[str]] = []
-
-class DishSafety(BaseModel):
+class DishAnalysis(BaseModel):
     name: str
     description: str
+    price: str
     safety_score: int  # 0-100
-    safety_level: str  # Safe, Likely Safe, Unknown, Caution, Unsafe
+    safety_level: str  # "safe", "caution", "unsafe"
     detected_allergens: List[str]
     confidence: int  # 0-100
-    recommendations: str
-    ingredients_inferred: List[str]
-    ai_reasoning: Optional[str] = None  # AI explanation for safety assessment
+    hidden_ingredients: List[str]
+    reasoning: str
+    color_code: str  # "green", "yellow", "red"
 
-class MenuAnalysisResponse(BaseModel):
+class MenuScanResponse(BaseModel):
     restaurant_name: str
     total_dishes: int
-    safe_dishes: List[DishSafety]
-    unsafe_dishes: List[DishSafety]
-    unknown_dishes: List[DishSafety]
+    safe_dishes: List[DishAnalysis]
+    caution_dishes: List[DishAnalysis]
+    unsafe_dishes: List[DishAnalysis]
     analysis_timestamp: str
-    analysis_time_eat: str  # East Africa Time
-    voice_summary: str
-    recommendation: Optional[str] = None  # AI meal recommendation
+    extraction_method: str  # "textract_image" or "textract_pdf"
+    ai_summary: str
 
-# ALLERGEN DATABASE
-COMMON_ALLERGENS = [
-    "peanuts", "tree nuts", "milk", "eggs", "wheat", 
-    "soy", "fish", "shellfish", "sesame", "mustard",
-    "celery", "lupin", "sulfites", "mollusks"
-]
-
+# COMMON ALLERGENS
 ALLERGEN_KEYWORDS = {
     "peanuts": ["peanut", "groundnut", "arachis"],
     "tree nuts": ["almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut", "macadamia"],
     "milk": ["milk", "cheese", "cream", "butter", "yogurt", "dairy", "lactose", "whey", "casein"],
-    "eggs": ["egg", "mayo", "mayonnaise", "meringue", "custard"],
-    "wheat": ["wheat", "flour", "bread", "pasta", "noodle", "couscous", "semolina"],
-    "soy": ["soy", "tofu", "edamame", "miso", "tempeh"],
-    "fish": [r"fish", "salmon", "tuna", "cod", "anchov", "sardine"],
-    "shellfish": ["shrimp", "crab", "lobster", "prawn", "crawfish", "crayfish"],
+    "eggs": ["egg", "albumin", "mayonnaise"],
+    "wheat": ["wheat", "flour", "bread", "pasta", "gluten"],
+    "soy": ["soy", "tofu", "edamame", "soy sauce"],
+    "fish": ["fish", "salmon", "tuna", "cod", "anchovy"],
+    "shellfish": ["shrimp", "crab", "lobster", "clam", "oyster"],
     "sesame": ["sesame", "tahini"],
-    "gluten": ["wheat", "barley", "rye", "flour", "bread"]
+    "gluten": ["gluten", "wheat", "barley", "rye"],
+    "mustard": ["mustard"],
+    "celery": ["celery"]
 }
 
-# NOVA INTEGRATION
-class NovaMenuAnalyzer:
-    """Integration with all Nova models for menu analysis"""
-    
-    def __init__(self):
-        logger.info("Nova Menu Analyzer initialized")
-        # Initialize Bedrock client for Nova Pro
-        try:
-            self.bedrock = boto3.client(
-                service_name='bedrock-runtime',
-                region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
-            )
-            logger.info("Bedrock client initialized successfully")
-        except Exception as e:
-            logger.warning(f"Bedrock client initialization failed: {e}")
-            self.bedrock = None
-    
-    async def extract_text_from_pdf(self, pdf_data: bytes) -> str:
-        """Extract text from PDF using PyPDF2"""
-        try:
-            pdf_file = io.BytesIO(pdf_data)
-            reader = PdfReader(pdf_file)
-            
-            text = ""
-            for page in reader.pages:
-                text += page.extract_text() + "\n"
-            
-            logger.info(f"Extracted {len(text)} characters from PDF")
-            return text
-        except Exception as e:
-            logger.error(f"PDF extraction failed: {e}")
-            return {"allergens": "", "reasoning": ""}
-    
-
-    async def convert_pdf_to_image(self, pdf_data: bytes) -> bytes:
-        """Convert first page of PDF to JPEG image for Nova Pro"""
-        try:
-            from pdf2image import convert_from_bytes
-            from PIL import Image
-            import io
-            
-            # Convert ALL pages to images (menus can have multiple pages)
-            images = convert_from_bytes(pdf_data, poppler_path="/usr/bin")
-            
-            if not images:
-                raise ValueError("PDF conversion produced no images")
-            
-            # Convert all pages to JPEG and combine
-            if len(images) == 1:
-                # Single page - just convert it
-                img = images[0]
-                img_byte_arr = io.BytesIO()
-                img.save(img_byte_arr, format='JPEG', quality=95)
-                img_byte_arr.seek(0)
-                logger.info(f"✓ Converted 1-page PDF to JPEG ({len(img_byte_arr.getvalue())} bytes)")
-                return img_byte_arr.getvalue()
-            else:
-                # Multiple pages - combine them vertically
-                total_width = max(img.width for img in images)
-                total_height = sum(img.height for img in images)
-                
-                # Create combined image
-                combined = Image.new('RGB', (total_width, total_height), 'white')
-                y_offset = 0
-                for img in images:
-                    combined.paste(img, (0, y_offset))
-                    y_offset += img.height
-                
-                # Convert to JPEG bytes
-                img_byte_arr = io.BytesIO()
-                combined.save(img_byte_arr, format='JPEG', quality=95)
-                img_byte_arr.seek(0)
-                logger.info(f"✓ Converted {len(images)}-page PDF to combined JPEG ({len(img_byte_arr.getvalue())} bytes)")
-                return img_byte_arr.getvalue()
-            
-        except Exception as e:
-            logger.error(f"PDF to image conversion failed: {e}")
-            raise ValueError("couldn't convert PDF to image. try uploading a photo instead 📸")
-
-    async def analyze_menu_image(self, image_data: bytes, filename: str = "") -> Dict:
-        """OCR images OR extract text from PDFs"""
-        
-        # For PDFs: Convert to image then use Nova Pro
-        if filename.lower().endswith('.pdf'):
-            logger.info(f"Processing PDF: {filename}")
-            # Convert PDF to JPEG
-            image_data = await self.convert_pdf_to_image(image_data)
-            filename = filename.replace('.pdf', '.jpg')  # Update filename for format detection
-            logger.info("✓ PDF converted to image, proceeding with Nova Pro analysis")
-            # Now filename ends with .jpg, so it falls through to image processing below
-
-        # For images: Use Nova Pro
-        if self.bedrock:
-            try:
-                logger.info(f"Calling Nova Pro for image analysis (file: {filename})...")
-                
-                # Encode image to base64
-                image_base64 = base64.b64encode(image_data).decode('utf-8')
-                
-                # Determine image format (Nova Pro: jpeg, png, gif, webp only)
-                image_format = "jpeg"
-                if filename.lower().endswith('.png'):
-                    image_format = "png"
-                elif filename.lower().endswith('.webp'):
-                    image_format = "webp"
-                elif filename.lower().endswith('.gif'):
-                    image_format = "gif"
-                
-                # Nova Pro request for images - with validation
-                body = json.dumps({
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "image": {
-                                        "format": image_format,
-                                        "source": {"bytes": image_base64}
-                                    }
-                                },
-                                {
-                                    "text": """FIRST: Determine if this image contains food or a menu.
-
-If this is NOT food or a menu (e.g., a cat, car, person, document, screenshot, meme, etc.), respond with EXACTLY:
-{"not_food": true, "what_it_is": "brief description of what you see"}
-
-If this IS food or a menu, analyze it carefully and extract ALL visible food items.
-
-For EACH food item you see, create a JSON object with:
-- "name": The dish/food name (if on menu) OR describe what you see (e.g., "Grilled chicken breast", "Pasta with sauce")
-- "description": Detailed ingredients and preparation you can identify from the image (be specific about visible ingredients like cheese, nuts, vegetables, sauces, etc.)
-- "price": The price if visible, otherwise "$0.00"
-
-Return ONLY a JSON array in this exact format:
-[{"name": "Item Name", "description": "detailed ingredients visible", "price": "$X.XX"}]
-
-If you see multiple items, include them all. If it's a single plate, describe everything on it.
-Be thorough about visible ingredients - this is for allergen detection.
-ONLY describe ingredients you can ACTUALLY SEE in the image.
-DO NOT assume, infer, or hallucinate ingredients based on what's "typical" for the dish.
-If you're unsure about an ingredient, DO NOT include it."""
-                                }
-                            ]
-                        }
-                    ],
-                    "inferenceConfig": {
-                        "max_new_tokens": 3000,
-                        "temperature": 0.3
-                    }
-                })
-                
-                response = self.bedrock.invoke_model(
-                    modelId='amazon.nova-pro-v1:0',
-                    body=body
-                )
-                
-                result = json.loads(response['body'].read())
-                text_response = result['output']['message']['content'][0]['text']
-                
-                logger.info(f"Nova Pro raw response: {text_response[:300]}...")
-                
-                # Try to parse JSON from response
-                try:
-                    # Extract JSON from response (handle markdown code blocks)
-                    # Remove markdown code blocks if present
-                    cleaned = re.sub(r'```json\s*|\s*```', '', text_response)
-                    
-                    # Check if it's a "not food" response
-                    not_food_match = re.search(r'\{[^}]*"not_food"\s*:\s*true[^}]*\}', cleaned, re.DOTALL)
-                    if not_food_match:
-                        try:
-                            not_food_data = json.loads(not_food_match.group(0))
-                            what_it_is = not_food_data.get("what_it_is", "something that's not food")
-                            
-                            # Generate humorous rejection with Keith's personality
-                            humor_prompt = f"""The user uploaded an image of: {what_it_is}
-
-Create a SHORT (1-2 sentences), funny, casual rejection message. Be specific about what they uploaded and ask for a menu or food photo. Use lowercase, be witty but helpful.
-
-Examples:
-- "that's a lovely cat, but i'm here to analyze menus, not adorable pets! 🐱 snap a menu instead"
-- "nice car! but unless it's edible, i can't help. upload a menu or food pic 🚗"
-- "cool selfie! but i need to see food, not faces. try again with a menu 📸"
-
-Your response (be creative, reference what they uploaded):"""
-                            
-                            humor_resp = self.bedrock.invoke_model(
-                                modelId="us.amazon.nova-lite-v1:0",
-                                body=json.dumps({
-                                    "messages": [{"role": "user", "content": [{"text": humor_prompt}]}],
-                                    "inferenceConfig": {"max_new_tokens": 100, "temperature": 0.9}
-                                })
-                            )
-                            funny_msg = json.loads(humor_resp["body"].read())["output"]["message"]["content"][0]["text"].strip()
-                            raise ValueError(funny_msg)
-                        except ValueError:
-                            raise
-                        except Exception:
-                            raise ValueError(f"that's {what_it_is}, not food! upload a menu or food photo 📸")
-                    
-                    # Find JSON array for food items
-                    json_match = re.search(r'\[.*\]', cleaned, re.DOTALL)
-                    if json_match:
-                        dishes = json.loads(json_match.group(0))
-                        if dishes and len(dishes) > 0:
-                            logger.info(f"✓ Nova Pro extracted {len(dishes)} items successfully")
-                            return {"text": text_response, "dishes": dishes}
-                        else:
-                            logger.warning("Nova Pro returned empty array")
-                    else:
-                        logger.warning(f"Could not find JSON array in response")
-                except ValueError:
-                    raise  # Re-raise validation errors
-                except Exception as e:
-                    logger.error(f"JSON parsing failed: {e}")
-                    logger.error(f"Raw response was: {text_response[:500]}")
-                
-            except Exception as e:
-                logger.error(f"Nova Pro API call failed: {e}")
-                
-                # Try to identify what was uploaded for better error message
-                try:
-                    recognize_prompt = "What do you see in this image? Describe it in 1-2 sentences."
-                    recognize_response = self.bedrock.invoke_model(
-                        modelId="amazon.nova-pro-v1:0",
-                        body=json.dumps({
-                            "messages": [{
-                                "role": "user",
-                                "content": [
-                                    {"image": {"format": "png", "source": {"bytes": base64.b64encode(image_data).decode()}}},
-                                    {"text": recognize_prompt}
-                                ]
-                            }],
-                            "inferenceConfig": {"max_new_tokens": 100, "temperature": 0.7}
-                        }
-                        )
-                    )
-                    img_desc = json.loads(recognize_response["body"].read())["output"]["message"]["content"][0]["text"].strip()
-                    
-                    # Generate humorous rejection
-                    humor_prompt = f"""You uploaded: {img_desc}
-                
-                Create a SHORT (1 sentence), funny response in Keith's voice (lowercase, casual, Kenyan). Tell them what they uploaded and ask for a menu or food photo:"""
-                    
-                    humor_resp = self.bedrock.invoke_model(
-                        modelId="us.amazon.nova-lite-v1:0",
-                        body=json.dumps({
-                            "messages": [{"role": "user", "content": [{"text": humor_prompt}]}],
-                            "inferenceConfig": {"max_new_tokens": 80, "temperature": 0.9}
-                        })
-                    )
-                    funny_msg = json.loads(humor_resp["body"].read())["output"]["message"]["content"][0]["text"].strip()
-                    raise ValueError(funny_msg)
-                except ValueError:
-                    raise  # Re-raise the funny message
-                except Exception:
-                    # If image recognition also fails, generic message
-                    raise ValueError("couldn't process that image. upload a clear photo of a menu or food 📸")
-                import traceback
-                logger.error(f"Traceback: {traceback.format_exc()}")
-        else:
-            logger.warning("Bedrock client not initialized")
-        
-        # Fallback to demo data
-        logger.warning("⚠️ Falling back to demo dishes (analysis failed)")
-        return {
-            "text": "Sample menu extracted",
-            "dishes": self._get_demo_dishes()
-        }
-    
-    def _parse_dishes_from_text(self, text: str) -> List[Dict]:
-        """Parse dish names and descriptions from extracted PDF text - IMPROVED"""
-        dishes = []
-        lines = text.split('\n')
-        
-        # Try multiple parsing strategies
-        
-        # Strategy 1: Look for lines with prices ($)
-        for i, line in enumerate(lines):
-            line = line.strip()
-            if not line or len(line) < 3:
-                continue
-            
-            # Check if line contains a price
-            if '$' in line or '€' in line or '£' in line:
-                # Split on price
-                parts = line.split('$')
-                if len(parts) >= 2:
-                    name_part = parts[0].strip()
-                    # Price is first number after $
-                    price_match = parts[1].split()[0] if parts[1].split() else "0.00"
-                    price = f"${price_match}"
-                    
-                    # Description might be on next line or same line
-                    description = ""
-                    # Check if there's more text after price on same line
-                    after_price = '$'.join(parts[1:])
-                    if len(after_price) > 10:
-                        description = after_price[len(price_match):].strip()
-                    # Check next line for description
-                    elif i + 1 < len(lines):
-                        next_line = lines[i + 1].strip()
-                        if next_line and '$' not in next_line and len(next_line) > 10:
-                            description = next_line
-                    
-                    if name_part:
-                        # Filter out menu headers, footers, legends
-                        name_lower = name_part.lower()
-                        skip_patterns = [
-                            'prices are subject to change',
-                            'prices are in',
-                            'inclusive of vat',
-                            'service charge',
-                            'catering levy',
-                            'allergen',
-                            'gluten dairy peanuts',
-                            'fish dairy peanuts',
-                            'all prices',
-                            'menu',
-                            'appetizers',
-                            'entrees',
-                            'desserts',
-                            'beverages',
-                            'starters',
-                            'mains',
-                            'sides'
-                        ]
-                        
-                        # Skip if it's a header/footer/legend
-                        if any(pattern in name_lower for pattern in skip_patterns):
-                            continue
-                        
-                        # Skip if it's just a list of allergens
-                        allergen_words = ['fish', 'dairy', 'peanuts', 'gluten', 'eggs', 'shellfish', 'soy', 'nuts']
-                        word_count = len(name_part.split())
-                        allergen_count = sum(1 for allergen in allergen_words if allergen in name_lower)
-                        if word_count <= 10 and allergen_count >= 3:
-                            continue
-                        
-                        dishes.append({
-                            "name": name_part[:100],  # Limit length
-                            "description": description[:300] if description else name_part,
-                            "price": price
-                        })
-        
-        # Strategy 2: If no prices found, look for numbered items or capitalized lines
-        if not dishes:
-            for i, line in enumerate(lines):
-                line = line.strip()
-                # Skip short lines, numbers, headers
-                if len(line) < 5 or line.isnumeric():
-                    continue
-                
-                # Check if it looks like a dish name (starts with capital, not too long)
-                if line[0].isupper() and len(line) < 100 and not line.endswith(':'):
-                    # Get description from next line if available
-                    description = ""
-                    if i + 1 < len(lines):
-                        next_line = lines[i + 1].strip()
-                        if next_line and next_line[0].islower() and len(next_line) > 10:
-                            description = next_line
-                    
-                    # Filter out headers/footers
-                    line_lower = line.lower()
-                    skip_patterns = [
-                        'prices are subject to change',
-                        'prices are in',
-                        'inclusive of',
-                        'service charge',
-                        'allergen',
-                        'all prices',
-                        'menu section'
-                    ]
-                    
-                    if any(pattern in line_lower for pattern in skip_patterns):
-                        continue
-                    
-                    dishes.append({
-                        "name": line,
-                        "description": description if description else line,
-                        "price": "$0.00"
-                    })
-                    
-        
-        logger.info(f"Text parser found {len(dishes)} dishes")
-        return dishes  # Max 20 dishes
-    
-    async def analyze_menu_url(self, url: str) -> Dict:
-        """Use Nova Act to scrape menu from URL"""
-        # In production: Nova Act navigates and extracts
-        return {
-            "restaurant": "Demo Restaurant",
-            "dishes": self._get_demo_dishes()
-        }
-    
-    def _get_demo_dishes(self) -> List[Dict]:
-        """Demo menu data"""
-        return [
-            {
-                "name": "Pad Thai",
-                "description": "Rice noodles with egg, peanuts, bean sprouts, lime",
-                "price": "$14.99"
-            },
-            {
-                "name": "Green Curry",
-                "description": "Coconut curry with vegetables and choice of protein",
-                "price": "$15.99"
-            },
-            {
-                "name": "Tom Yum Soup",
-                "description": "Spicy and sour soup with shrimp, mushrooms, lemongrass",
-                "price": "$8.99"
-            },
-            {
-                "name": "Spring Rolls",
-                "description": "Fresh vegetables wrapped in rice paper with peanut sauce",
-                "price": "$6.99"
-            },
-            {
-                "name": "Mango Sticky Rice",
-                "description": "Sweet sticky rice with fresh mango and coconut milk",
-                "price": "$7.99"
-            },
-            {
-                "name": "Grilled Salmon",
-                "description": "Atlantic salmon with teriyaki glaze and sesame seeds",
-                "price": "$18.99"
-            },
-            {
-                "name": "Margherita Pizza",
-                "description": "Fresh mozzarella, tomato sauce, basil on thin crust",
-                "price": "$13.99"
-            },
-            {
-                "name": "Caesar Salad",
-                "description": "Romaine lettuce, parmesan, croutons, caesar dressing",
-                "price": "$9.99"
-            }
-        ]
-    
-    async def assess_dish_safety(self, dish: Dict, allergens: List[str], custom_keywords: Dict[str, List[str]] = {}) -> DishSafety:
-        """Assess safety with ingredient inference"""
-        name = dish.get("name", "Unknown")
-        description = dish.get("description", "").lower()
-        
-        # Step 1: Infer allergens with reasoning - pass user's allergens to focus the AI
-        ai_result = await self._infer_ingredients_with_ai(name, description, allergens)
-        inferred_allergens = ai_result.get("allergens", "")
-        ai_reasoning = ai_result.get("reasoning", "")
-        
-        # Step 2: Check for allergens in visible description + inferred ingredients
-        all_keywords = {**ALLERGEN_KEYWORDS, **custom_keywords}
-        
-        detected = []
-        for allergen in allergens:
-            allergen_lower = allergen.lower()
-            keywords = all_keywords.get(allergen_lower, [allergen_lower])
-            
-            # Check visible description
-            found_in_description = False
-            for keyword in keywords:
-                # Check if keyword uses word boundary regex
-                if isinstance(keyword, str) and keyword.startswith(r"\b"):
-                    # Use regex for word boundary
-                    if re.search(keyword, description, re.IGNORECASE) or re.search(keyword, name.lower(), re.IGNORECASE):
-                        detected.append(allergen)
-                        found_in_description = True
-                        break
-                elif keyword.lower() in description or keyword.lower() in name.lower():
-                    detected.append(allergen)
-                    found_in_description = True
-                    break
-            
-            # Check AI-inferred allergens if not found in description
-            if not found_in_description:
-                # Check both inferred_allergens string AND ai_reasoning
-                for keyword in keywords:
-                    if keyword.lower() in inferred_allergens.lower() or keyword.lower() in ai_reasoning.lower():
-                        detected.append(allergen)
-                        break
-                
-                # Also check if allergen name itself is in ai_reasoning
-                if allergen_lower in ai_reasoning.lower() and allergen not in detected:
-                    detected.append(allergen)
-        
-        # Calculate safety score
-        if detected:
-            # Higher penalty for detected allergens
-            safety_score = max(0, 50 - (len(detected) * 25))
-        else:
-            # Check for ambiguous ingredients
-            ambiguous_words = ["sauce", "dressing", "seasoning", "spice", "frosting"]
-            has_ambiguous = any(word in description for word in ambiguous_words)
-            safety_score = 70 if has_ambiguous else 90
-        
-        # Determine level
-        if safety_score >= 90:
-            level = "Safe"
-        elif safety_score >= 70:
-            level = "Likely Safe"
-        elif safety_score >= 40:
-            level = "Unknown"
-        elif safety_score >= 20:
-            level = "Caution"
-        else:
-            level = "Unsafe"
-        
-        # Generate recommendations with Keith's personality - direct, practical, honest
-        if detected:
-            allergen_list = ', '.join(detected)
-            
-            # Use AI reasoning if available, otherwise generic message
-            context = ""
-            if ai_reasoning:
-                # Extract reasoning for detected allergens only
-                detected_reasoning = []
-                for allergen in detected:
-                    for reason_part in ai_reasoning.split(';'):
-                        if allergen.lower() in reason_part.lower():
-                            # Clean up the reasoning
-                            reason = reason_part.split(':', 1)[1].strip() if ':' in reason_part else reason_part.strip()
-                            detected_reasoning.append(reason)
-                            break
-                
-                if detected_reasoning:
-                    context = f" ({', '.join(detected_reasoning)})"
-            
-            if len(detected) == 1:
-                # Dynamic, personality-driven advice with AI reasoning
-                import random
-                
-                # Vary the tone and approach
-                styles = [
-                    # Direct/casual
-                    f"nah, this has {allergen_list}{context}. skip it.",
-                    f"yeah, {allergen_list} in here{context}. pass on this one.",
-                    f"got {allergen_list}{context}. not worth it.",
-                    # Practical/helpful
-                    f"heads up - {allergen_list}{context}. ask if they can leave it out.",
-                    f"this one has {allergen_list}{context}. see if they can swap it.",
-                    f"contains {allergen_list}{context}. check with the kitchen.",
-                    # Confident/matter-of-fact
-                    f"{allergen_list} detected{context}. i'd pick something else.",
-                    f"spotted {allergen_list}{context}. better options on the menu.",
-                    f"has {allergen_list}{context}. go for another dish.",
-                    # Kenyan casual
-                    f"ati {allergen_list}{context}? skip that one.",
-                    f"sawa so this has {allergen_list}{context}. not safe."
-                ]
-                recommendations = random.choice(styles)
-            else:
-                # Multiple allergens - varied responses
-                import random
-                styles = [
-                    f"bruh, this has {allergen_list}{context}. hard pass.",
-                    f"nope - {allergen_list}{context}. skip entirely.",
-                    f"this one's got {allergen_list}{context}. not happening.",
-                    f"multiple issues here: {allergen_list}{context}. avoid.",
-                    f"{allergen_list}{context}. definitely skip this one.",
-                    f"way too much going on - {allergen_list}{context}. pass."
-                ]
-                recommendations = random.choice(styles)
-        elif safety_score < 90:
-            # Honest about uncertainty - varied personality
-            import random
-            uncertain = [
-                "can't tell from the menu. just ask your server.",
-                "description's vague. quick question to the kitchen.",
-                "not enough info here. better ask than guess.",
-                "menu doesn't say. check with staff before ordering.",
-                "unclear from this. ask what's actually in it.",
-                "description's not clear.",
-                "hard to say for sure. ask the kitchen directly.",
-                "menu's being cryptic. get confirmation from staff."
-            ]
-            recommendations = random.choice(uncertain)
-        else:
-            # Casually confident - varied tone
-            import random
-            safe = [
-                "looks clean.",
-                "should be fine.",
-                "seems safe.",
-                "you're good.",
-                "this one looks okay. run it by the server to be sure.",
-                "appears safe.",
-                "should work.",
-                "looking good."
-            ]
-            recommendations = random.choice(safe)
-        
-        # Extract basic ingredients from description
-        visible_ingredients = self._extract_simple_ingredients(description)
-        
-        confidence = 90 if detected else 75
-        
-        return DishSafety(
-            name=name,
-            description=dish.get("description", ""),
-            safety_score=safety_score,
-            safety_level=level,
-            detected_allergens=detected,
-            confidence=confidence,
-            recommendations=recommendations,
-            ingredients_inferred=visible_ingredients[:5],
-            ai_reasoning=ai_reasoning if ai_reasoning else None
-        )
-    
-
-    async def generate_recommendation(self, safe_dishes: List, allergens: List[str]) -> Optional[str]:
-        """Generate Keith-style meal recommendation from safe dishes"""
-        if not safe_dishes:
-            return None
-        
-        # Pick highest safety score
-        best = max(safe_dishes, key=lambda d: d.safety_score)
-        
-        import random
-        templates = [
-            f"go for the {best.name.lower()}. clean choice, {best.safety_score}% safe.",
-            f"{best.name.lower()} looks solid. no {', '.join(allergens[:2])} here.",
-            f"try {best.name.lower()}. tested it, you're good.",
-            f"{best.name.lower()} is your safest bet. {best.safety_score}% confidence.",
-            f"i'd pick {best.name.lower()}. no allergens detected.",
-        ]
-        return random.choice(templates)
-
-    async def _infer_ingredients_with_ai(self, name: str, description: str, user_allergens: List[str] = None) -> str:
-        """Use Nova 2 Lite to intelligently infer allergens - ONLY for user's selected allergens"""
-        if self.bedrock:
-            try:
-                # Only check for allergens the user cares about
-                allergen_focus = ", ".join(user_allergens) if user_allergens else "dairy, eggs, nuts, gluten, soy, fish, shellfish"
-                
-                prompt = f"""You are a CONSERVATIVE food safety expert. Only flag allergens you are HIGHLY CONFIDENT about.
-
-Dish name: {name}
-Description: {description}
-
-USER'S ALLERGENS TO CHECK: {allergen_focus}
-
-Task: ONLY check if this dish contains the allergens listed above. Ignore other allergens.
-
-IMPORTANT RULES:
-1. ONLY mention allergens from the user's list above
-2. Only flag if HIGHLY CONFIDENT the allergen is present
-3. Explain WHERE the allergen comes from (which component/ingredient)
-4. If the dish doesn't contain any of the user's allergens, write "no allergens detected"
-5. Be specific about the SOURCE of the allergen
-6. DO NOT mention allergens the user didn't ask about
-
-Format your response as:
-ALLERGEN: source/reason
-
-Examples (if user asked about gluten and dairy):
-- "Caesar Salad" → DAIRY: parmesan cheese; GLUTEN: croutons made from wheat
-- "Grilled Chicken" → no allergens detected
-- "Pasta Carbonara" → DAIRY: parmesan and cream; GLUTEN: wheat pasta
-
-Be concise. Only list allergens from the user's list that you're confident about:"""
-
-                body = json.dumps({
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": [{"text": prompt}]
-                        }
-                    ],
-                    "inferenceConfig": {
-                        "max_new_tokens": 150,
-                        "temperature": 0.1,
-                        "top_p": 0.9
-                    }
-                })
-                
-                response = self.bedrock.invoke_model(
-                    modelId='us.amazon.nova-lite-v1:0',  # Use regional inference profile
-                    body=body
-                )
-                
-                result = json.loads(response['body'].read())
-                ingredients = result['output']['message']['content'][0]['text'].strip()
-                
-                # Validation: Check if AI is being too creative
-                if len(ingredients) > 200:
-                    logger.warning(f"AI response too long ({len(ingredients)} chars), possible hallucination")
-                    return {"allergens": "", "reasoning": ""}
-                
-                if "uncertain" in ingredients.lower():
-                    logger.info(f"AI expressed uncertainty for '{name}'")
-                    return {"allergens": "", "reasoning": ""}
-                
-                logger.info(f"Nova 2 Lite response for '{name}': {ingredients[:100]}...")
-                
-                # Parse the response - format: "ALLERGEN: reason" (can be newline or semicolon separated)
-                if "no clear allergens" in ingredients.lower() or "no allergens detected" in ingredients.lower():
-                    return {"allergens": "", "reasoning": ""}
-                
-                # Extract allergens and reasoning - handle both newline and semicolon separators
-                allergen_list = []
-                reasoning_parts = []
-                
-                # Split by newlines first, then by semicolons
-                lines = []
-                for part in ingredients.split('\n'):
-                    for subpart in part.split(';'):
-                        if subpart.strip():
-                            lines.append(subpart.strip())
-                
-                for line in lines:
-                    # Clean up common prefixes like "allergen:", "ALLERGEN:", etc.
-                    line = re.sub(r'^(allergen:?\s*)', '', line, flags=re.IGNORECASE)
-                    line = line.strip()
-                    
-                    if ':' in line:
-                        parts = line.split(':', 1)
-                        if len(parts) == 2:
-                            allergen = parts[0].strip().upper()
-                            reason = parts[1].strip().lower()
-                            
-                            # Skip if reason says "none detected" or "no allergens"
-                            skip_phrases = ['none detected', 'no allergens', 'not detected', 'not found', 'none found']
-                            should_skip = any(phrase in reason for phrase in skip_phrases)
-                            
-                            # Skip if allergen name is too long (probably not an allergen)
-                            if len(allergen) < 20 and allergen and not should_skip:
-                                allergen_list.append(allergen.lower())
-                                reasoning_parts.append(f"{allergen.lower()}: {reason}")
-                
-                result = {
-                    "allergens": ", ".join(allergen_list),
-                    "reasoning": "; ".join(reasoning_parts)
-                }
-                
-                logger.info(f"Parsed: allergens={result['allergens']}, reasoning={result['reasoning'][:80]}...")
-                return result
-                
-            except Exception as e:
-                logger.warning(f"Nova 2 Lite inference failed: {e}")
-        
-        # Fallback to simple extraction
-        return description
-    
-    def _extract_simple_ingredients(self, description: str) -> List[str]:
-        """Extract visible ingredients from description"""
-        common_ingredients = [
-            "rice", "noodles", "chicken", "beef", "pork", "shrimp", "fish",
-            "vegetables", "coconut", "peanuts", "sesame", "egg", "milk",
-            "cheese", "tomato", "lettuce", "mushrooms", "onion", "garlic"
-        ]
-        
-        found = []
-        for ingredient in common_ingredients:
-            if ingredient in description.lower():
-                found.append(ingredient)
-        
-        return found[:5]  # Limit to 5
-    
-    async def generate_voice_summary(self, safe_count: int, unsafe_count: int, allergens: List[str]) -> str:
-        """Generate conversational voice summary with Keith's personality - direct, casual, Kenyan touches"""
-        allergen_text = " and ".join(allergens) if len(allergens) <= 2 else f"{', '.join(allergens[:-1])}, and {allergens[-1]}"
-        
-        import random
-        
-        if unsafe_count == 0:
-            # All safe - confident, casual
-            messages = [
-                f"sawa! all {safe_count} dishes work for you. no {allergen_text} anywhere.",
-                f"you're good - {safe_count} safe options, zero {allergen_text}.",
-                f"nice one. got {safe_count} dishes, none have {allergen_text}.",
-                f"clean menu. all {safe_count} dishes safe for {allergen_text}.",
-                f"{safe_count} options and not a single {allergen_text} in sight. easy."
-            ]
-            suffix = random.choice([
-                "",
-                "",
-                "",
-                ""
-            ])
-            return random.choice(messages) + suffix
-        elif safe_count == 0:
-            # Nothing safe - honest, helpful
-            messages = [
-                f"bruh, nothing here works for {allergen_text}.",
-                f"nah, this menu's not it. everything has {allergen_text}.",
-                f"tough one - zero options without {allergen_text}.",
-                f"this place and {allergen_text} don't mix. nothing safe."
-            ]
-            suffix = random.choice([
-                " ask if they can modify something.",
-                " see if the kitchen can work around it.",
-                " might wanna check other spots.",
-                " ask what they can customize."
-            ])
-            return random.choice(messages) + suffix
-        else:
-            # Mixed results - practical
-            if unsafe_count == 1:
-                messages = [
-                    f"got {safe_count} safe, 1 to skip.",
-                    f"{safe_count} good options, just 1 with {allergen_text}.",
-                    f"looking good - {safe_count} safe dishes, only 1 issue.",
-                    f"{safe_count} work, 1 doesn't. pretty solid."
-                ]
-            else:
-                messages = [
-                    f"found {safe_count} safe and {unsafe_count} with {allergen_text}.",
-                    f"{safe_count} good ones, {unsafe_count} to avoid.",
-                    f"got {safe_count} safe dishes. skip the {unsafe_count} with {allergen_text}.",
-                    f"{safe_count} work for you, {unsafe_count} don't."
-                ]
-            suffix = random.choice([
-                " check below.",
-                " scroll down for details.",
-                " see the list below.",
-                " details down there."
-            ])
-            return random.choice(messages) + suffix
-
-analyzer = NovaMenuAnalyzer()
-
-# API ENDPOINTS
-
-@app.get("/")
-async def root():
-    return {
-        "name": "SafeBite API",
-        "version": "1.0.0",
-        "status": "operational",
-        "features": ["Image OCR", "PDF Text Extraction", "Custom Allergens", "Ingredient Inference"]
-    }
-
 @app.get("/health")
-async def health():
+async def health_check():
     return {
-        "name": "SafeBite API",
-        "version": "1.0.0",
-        "status": "operational"
+        "name": "SafeBite AI API (Nova Powered)",
+        "version": "2.0.0",
+        "status": "operational",
+        "models": {
+            "ocr": "AWS Textract",
+            "reasoning": "Amazon Nova 2 Lite",
+            "formatting": "SafeBite AI"
+        }
     }
 
-@app.get("/allergens")
-async def get_allergens():
-    """Get list of supported allergens"""
-    return {
-        "allergens": COMMON_ALLERGENS,
-        "total": len(COMMON_ALLERGENS)
-    }
-
-
-def save_scan_to_db(
-    filename: str,
-    file_type: str,
-    allergens: list,
-    custom_allergens: list,
-    result_data: dict,
-    user_ip: str = None,
-    user_agent: str = None
-):
-    """Save scan data to database"""
-    try:
-        db = SessionLocal()
-        
-        scan = Scan(
-            filename=filename,
-            file_type=file_type,
-            allergens=allergens,
-            custom_allergens=custom_allergens,
-            total_dishes=result_data.get('total_dishes', 0),
-            safe_count=len(result_data.get('safe_dishes', [])),
-            unsafe_count=len(result_data.get('unsafe_dishes', [])),
-            unknown_count=len(result_data.get('unknown_dishes', [])),
-            restaurant_name=result_data.get('restaurant_name', 'Unknown'),
-            user_ip=user_ip,
-            user_agent=user_agent,
-            dishes=[d.dict() for d in result_data.get('safe_dishes', []) + 
-                   result_data.get('unsafe_dishes', []) + 
-                   result_data.get('unknown_dishes', [])],
-            voice_summary=result_data.get('voice_summary', ''),
-            recommendation=result_data.get('recommendation')
-        )
-        
-        db.add(scan)
-        db.commit()
-        
-        # Track user activity
-        if user_ip and user_agent:
-            from database import track_user
-            all_allergens = allergens + (custom_allergens or [])
-            total_dishes = result_data.get('total_dishes', 0)
-            track_user(db, user_ip, user_agent, all_allergens, total_dishes)
-        
-        db.close()
-        
-        logger.info(f"Saved scan to database: {filename}")
-    except Exception as e:
-        logger.error(f"Failed to save scan to database: {e}")
-
-
-@app.post("/analyze/image", response_model=MenuAnalysisResponse)
+@app.post("/analyze/image", response_model=MenuScanResponse)
 async def analyze_menu_image(
-    request: Request,
-    file: UploadFile = File(...), 
-    allergens: str = Form(""),
-    custom_allergens: str = Form("")
+    file: UploadFile = File(...),
+    allergens: str = Form(...),
+    custom_allergens: str = Form(default="")
 ):
     """
-    Analyze menu from uploaded image or PDF
-    allergens: comma-separated list
-    custom_allergens: comma-separated list of additional allergens
+    Complete menu analysis pipeline:
+    1. Textract OCR extraction
+    2. Nova 2 Lite allergen reasoning
+    3. Formatted menu output with color coding
     """
     try:
         # Parse allergens
-        allergen_list = [a.strip().lower() for a in allergens.split(",") if a.strip()]
-        custom_list = [a.strip() for a in custom_allergens.split(",") if a.strip()]
+        user_allergens = [a.strip().lower() for a in allergens.split(",") if a.strip()]
+        if custom_allergens:
+            user_allergens.extend([a.strip().lower() for a in custom_allergens.split(",") if a.strip()])
         
-        # Combine allergen lists
-        all_allergens = allergen_list + custom_list
-        
-        if not all_allergens:
-            raise HTTPException(status_code=400, detail="Please specify at least one allergen")
+        logger.info(f"Analyzing menu for allergens: {user_allergens}")
         
         # Read file
-        file_data = await file.read()
+        file_bytes = await file.read()
+        file_extension = file.filename.split('.')[-1].lower()
         
-        # Analyze with Nova Pro (supports both images and PDFs)
-        menu_data = await analyzer.analyze_menu_image(file_data, file.filename)
+        # Step 1: Extract text with Textract
+        if file_extension == 'pdf':
+            extraction_result = await textract_extractor.extract_from_pdf(file_bytes)
+            extraction_method = "textract_pdf"
+        else:
+            extraction_result = await textract_extractor.extract_menu_from_image(file_bytes)
+            extraction_method = "textract_image"
         
-        # Build custom keywords dict for custom allergens
-        custom_keywords = {allergen.lower(): [allergen.lower()] for allergen in custom_list}
+        if not extraction_result['success']:
+            raise HTTPException(status_code=400, detail=f"OCR failed: {extraction_result.get('error', 'Unknown error')}")
         
-        # Assess each dish
-        safe_dishes = []
-        unsafe_dishes = []
-        unknown_dishes = []
+        dishes = extraction_result['dishes']
+        logger.info(f"Textract extracted {len(dishes)} dishes")
         
-        for dish in menu_data["dishes"]:
-            safety = await analyzer.assess_dish_safety(dish, all_allergens, custom_keywords)
-            
-            if safety.safety_score >= 70:
-                safe_dishes.append(safety)
-            elif safety.safety_score >= 40:
-                unknown_dishes.append(safety)
-            else:
-                unsafe_dishes.append(safety)
+        if not dishes:
+            raise HTTPException(status_code=400, detail="No dishes found in image. Please upload a clear menu photo.")
         
-        # Generate voice summary
-        voice_summary = await analyzer.generate_voice_summary(
-            len(safe_dishes), len(unsafe_dishes), all_allergens
-        )
+        # Step 2: Analyze each dish with Nova 2 Lite
+        analyzed_dishes = []
         
-        # Generate recommendation
-        recommendation = None
-        if safe_dishes:
-            recommendation = await analyzer.generate_recommendation(safe_dishes, all_allergens)
+        for dish in dishes:
+            try:
+                # Get AI reasoning from Nova 2 Lite
+                ai_analysis = await nova_reasoner.analyze_allergens(
+                    dish_name=dish['name'],
+                    dish_description=dish.get('description', ''),
+                    user_allergens=user_allergens,
+                    extracted_ingredients=None  # Textract doesn't extract ingredients directly
+                )
+                
+                # Also infer hidden ingredients
+                hidden_ingredients = await nova_reasoner.infer_hidden_ingredients(
+                    dish_name=dish['name'],
+                    dish_description=dish.get('description', '')
+                )
+                
+                # Combine analysis
+                detected = ai_analysis.get('detected_allergens', [])
+                confidence = ai_analysis.get('confidence', 50)
+                safety_level = ai_analysis.get('safety_level', 'unknown')
+                
+                # Calculate safety score
+                if safety_level == 'safe':
+                    safety_score = 90
+                    color_code = 'green'
+                elif safety_level == 'caution':
+                    safety_score = 50
+                    color_code = 'yellow'
+                else:  # unsafe or unknown
+                    safety_score = 10 if safety_level == 'unsafe' else 50
+                    color_code = 'red' if safety_level == 'unsafe' else 'yellow'
+                
+                analyzed_dish = DishAnalysis(
+                    name=dish['name'],
+                    description=dish.get('description', ''),
+                    price=dish.get('price', 'N/A'),
+                    safety_score=safety_score,
+                    safety_level=safety_level,
+                    detected_allergens=detected,
+                    confidence=confidence,
+                    hidden_ingredients=hidden_ingredients,
+                    reasoning=ai_analysis.get('reasoning', 'AI analysis unavailable'),
+                    color_code=color_code
+                )
+                
+                analyzed_dishes.append(analyzed_dish)
+                
+            except Exception as dish_error:
+                logger.warning(f"Failed to analyze dish '{dish['name']}': {str(dish_error)}")
+                # Add dish with unknown safety
+                analyzed_dishes.append(DishAnalysis(
+                    name=dish['name'],
+                    description=dish.get('description', ''),
+                    price=dish.get('price', 'N/A'),
+                    safety_score=50,
+                    safety_level='unknown',
+                    detected_allergens=[],
+                    confidence=0,
+                    hidden_ingredients=[],
+                    reasoning=f"Analysis failed: {str(dish_error)}",
+                    color_code='yellow'
+                ))
         
-        # Timestamp in EAT (Nairobi time)
-        now_utc = datetime.now(timezone.utc)
-        now_eat = now_utc.astimezone(NAIROBI_OFFSET)
+        # Step 3: Categorize dishes
+        safe_dishes = [d for d in analyzed_dishes if d.color_code == 'green']
+        caution_dishes = [d for d in analyzed_dishes if d.color_code == 'yellow']
+        unsafe_dishes = [d for d in analyzed_dishes if d.color_code == 'red']
         
-        file_type = "PDF" if file.filename.lower().endswith('.pdf') else "Image"
+        # Generate AI summary
+        ai_summary = f"Found {len(safe_dishes)} safe dishes, {len(caution_dishes)} dishes needing caution, and {len(unsafe_dishes)} unsafe dishes for your allergen profile."
         
-        # Save to database
-        user_ip = request.client.host if request.client else None
-        user_agent = request.headers.get("user-agent", "Unknown")
-        
-        save_scan_to_db(
-            filename=file.filename,
-            file_type=file_type,
-            allergens=allergen_list,
-            custom_allergens=custom_list,
-            result_data={
-                'total_dishes': len(menu_data["dishes"]),
-                'safe_dishes': safe_dishes,
-                'unsafe_dishes': unsafe_dishes,
-                'unknown_dishes': unknown_dishes,
-                'restaurant_name': f"Uploaded {file_type}",
-                'voice_summary': voice_summary,
-                'recommendation': recommendation
-            },
-            user_ip=user_ip,
-            user_agent=user_agent
-        )
-        
-        return MenuAnalysisResponse(
-            restaurant_name=f"Uploaded {file_type}",
-            total_dishes=len(menu_data["dishes"]),
+        return MenuScanResponse(
+            restaurant_name=file.filename.replace('.jpg', '').replace('.png', '').replace('.pdf', '').title(),
+            total_dishes=len(analyzed_dishes),
             safe_dishes=safe_dishes,
+            caution_dishes=caution_dishes,
             unsafe_dishes=unsafe_dishes,
-            unknown_dishes=unknown_dishes,
-            analysis_timestamp=now_utc.isoformat(),
-            analysis_time_eat=now_eat.strftime("%H:%M EAT"),
-            recommendation=recommendation,
-            voice_summary=voice_summary
+            analysis_timestamp=datetime.now(timezone.utc).isoformat(),
+            extraction_method=extraction_method,
+            ai_summary=ai_summary
         )
         
-    except ValueError as ve:
-        # Validation errors (not a menu, bad format, etc.)
-        logger.warning(f"Validation error: {ve}")
-        raise HTTPException(status_code=400, detail=str(ve))
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Analysis failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
 
-@app.post("/analyze/url", response_model=MenuAnalysisResponse)
-async def analyze_menu_url(request: MenuAnalysisRequest):
+@app.post("/analyze/photo")
+async def analyze_single_dish_photo(
+    file: UploadFile = File(...),
+    allergens: str = Form(...)
+):
     """
-    Analyze menu from restaurant URL
+    Quick analysis for single dish photo
+    Returns: Safe ✅ or Unsafe ⚠️ with reasoning
     """
     try:
-        if not request.menu_url:
-            raise HTTPException(status_code=400, detail="Menu URL required")
+        user_allergens = [a.strip().lower() for a in allergens.split(",") if a.strip()]
+        file_bytes = await file.read()
         
-        all_allergens = request.allergens + (request.custom_allergens or [])
+        # Extract text
+        extraction_result = await textract_extractor.extract_menu_from_image(file_bytes)
         
-        if not all_allergens:
-            raise HTTPException(status_code=400, detail="Please specify at least one allergen")
-        
-        # Analyze with Nova Act
-        menu_data = await analyzer.analyze_menu_url(str(request.menu_url))
-        
-        # Build custom keywords
-        custom_keywords = {a.lower(): [a.lower()] for a in (request.custom_allergens or [])}
-        
-        # Assess each dish
-        safe_dishes = []
-        unsafe_dishes = []
-        unknown_dishes = []
-        
-        for dish in menu_data["dishes"]:
-            safety = await analyzer.assess_dish_safety(dish, all_allergens, custom_keywords)
+        if not extraction_result['success'] or not extraction_result['dishes']:
+            # Fallback: Use full text for basic keyword matching
+            full_text = extraction_result.get('full_text', '').lower()
+            detected = []
             
-            if safety.safety_score >= 70:
-                safe_dishes.append(safety)
-            elif safety.safety_score >= 40:
-                unknown_dishes.append(safety)
+            for allergen in user_allergens:
+                keywords = ALLERGEN_KEYWORDS.get(allergen, [allergen])
+                if any(kw in full_text for kw in keywords):
+                    detected.append(allergen)
+            
+            if detected:
+                return {
+                    "result": "Unsafe ⚠️",
+                    "detected_allergens": detected,
+                    "reasoning": f"Detected {', '.join(detected)} in text",
+                    "confidence": 60
+                }
             else:
-                unsafe_dishes.append(safety)
+                return {
+                    "result": "Likely Safe ✅",
+                    "detected_allergens": [],
+                    "reasoning": "No allergens detected in visible text",
+                    "confidence": 70
+                }
         
-        # Generate voice summary
-        voice_summary = await analyzer.generate_voice_summary(
-            len(safe_dishes), len(unsafe_dishes), all_allergens
+        # Use Nova 2 Lite for analysis
+        dish = extraction_result['dishes'][0]  # First dish
+        ai_analysis = await nova_reasoner.analyze_allergens(
+            dish_name=dish['name'],
+            dish_description=dish.get('description', ''),
+            user_allergens=user_allergens
         )
         
-        # Generate recommendation
-        recommendation = None
-        if safe_dishes:
-            recommendation = await analyzer.generate_recommendation(safe_dishes, all_allergens)
+        detected = ai_analysis.get('detected_allergens', [])
         
-        # Timestamp in EAT (Nairobi time)
-        now_utc = datetime.now(timezone.utc)
-        now_eat = now_utc.astimezone(NAIROBI_OFFSET)
-        
-        return MenuAnalysisResponse(
-            restaurant_name=menu_data.get("restaurant", "Restaurant"),
-            total_dishes=len(menu_data["dishes"]),
-            safe_dishes=safe_dishes,
-            unsafe_dishes=unsafe_dishes,
-            unknown_dishes=unknown_dishes,
-            analysis_timestamp=now_utc.isoformat(),
-            analysis_time_eat=now_eat.strftime('%H:%M EAT'),
-            voice_summary=voice_summary
-        )
-        
-    except ValueError as ve:
-        # Validation errors (not a menu, bad format, etc.)
-        logger.warning(f"Validation error: {ve}")
-        raise HTTPException(status_code=400, detail=str(ve))
+        if detected:
+            return {
+                "result": "Unsafe ⚠️",
+                "detected_allergens": detected,
+                "reasoning": ai_analysis.get('reasoning', ''),
+                "confidence": ai_analysis.get('confidence', 0)
+            }
+        else:
+            return {
+                "result": "Safe ✅",
+                "detected_allergens": [],
+                "reasoning": ai_analysis.get('reasoning', 'No allergens detected'),
+                "confidence": ai_analysis.get('confidence', 0)
+            }
+            
     except Exception as e:
-        logger.error(f"Analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Photo analysis failed: {str(e)}")
+        return {
+            "result": "Error",
+            "detected_allergens": [],
+            "reasoning": f"Analysis failed: {str(e)}",
+            "confidence": 0
+        }
+
+@app.get("/allergens")
+async def list_allergens():
+    """List supported allergens"""
+    return {
+        "common_allergens": list(ALLERGEN_KEYWORDS.keys()),
+        "total": len(ALLERGEN_KEYWORDS),
+        "supports_custom": True
+    }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
-
-
-# Feedback endpoints
-FEEDBACK_DIR = Path("feedback_data")
-FEEDBACK_DIR.mkdir(exist_ok=True)
-
-@app.post("/feedback")
-async def submit_feedback(feedback: dict):
-    """Save user feedback"""
-    
-    # Save to file
-    filename = FEEDBACK_DIR / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    with open(filename, 'w') as f:
-        json.dump(feedback, f, indent=2)
-    
-    return {"status": "success"}
-
-@app.get("/feedback/all")
-async def get_all_feedback(x_admin_passcode: str = Header(None)):
-    """Get all feedback"""
-    if x_admin_passcode != ADMIN_PASSCODE:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    feedbacks = []
-    
-    if FEEDBACK_DIR.exists():
-        for file in sorted(FEEDBACK_DIR.glob("*.json"), reverse=True):
-            with open(file) as f:
-                feedbacks.append(json.load(f))
-    
-    return {"feedbacks": feedbacks}
-
-
-# Admin endpoints
-@app.get("/admin/users/stats")
-async def get_user_statistics():
-    """Get aggregated user statistics"""
-    try:
-        from database import get_user_stats
-        db = SessionLocal()
-        stats = get_user_stats(db)
-        db.close()
-        return stats
-    except Exception as e:
-        logger.error(f"Failed to get user stats: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/admin/users/list")
-async def get_users_list(limit: int = 50, offset: int = 0):
-    """Get list of users with their details"""
-    try:
-        from database import User
-        db = SessionLocal()
-        
-        users = db.query(User)\
-            .order_by(User.last_seen.desc())\
-            .limit(limit)\
-            .offset(offset)\
-            .all()
-        
-        user_list = []
-        for user in users:
-            user_list.append({
-                "id": user.id,
-                "user_hash": user.user_hash[:8] + "...",  # Truncate for privacy
-                "first_seen": user.first_seen.isoformat(),
-                "last_seen": user.last_seen.isoformat(),
-                "total_scans": user.total_scans,
-                "total_dishes_checked": user.total_dishes_checked,
-                "top_allergens": user.top_allergens or {},
-                "ip_address": user.ip_address,
-                "user_agent": user.user_agent[:50] + "..." if user.user_agent and len(user.user_agent) > 50 else user.user_agent,
-            })
-        
-        db.close()
-        return {"users": user_list, "total": len(user_list)}
-    except Exception as e:
-        logger.error(f"Failed to get users list: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/admin/stats")
-async def get_admin_stats():
-    """Get comprehensive admin statistics"""
-    try:
-        from database import get_user_stats
-        db = SessionLocal()
-        
-        # User stats
-        user_stats = get_user_stats(db)
-        
-        # Scan stats
-        from database import Scan
-        total_scans = db.query(Scan).count()
-        total_dishes = sum(s.total_dishes or 0 for s in db.query(Scan).all())
-        
-        # Get scans from last 7 days
-        from datetime import timedelta
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        recent_scans = db.query(Scan).filter(Scan.timestamp >= week_ago).count()
-        
-        db.close()
-        
-        return {
-            "users": user_stats,
-            "scans": {
-                "total_scans": total_scans,
-                "total_dishes_analyzed": total_dishes,
-                "scans_last_7_days": recent_scans
-            }
-        }
-    except Exception as e:
-        logger.error(f"Failed to get admin stats: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    uvicorn.run(app, host="0.0.0.0", port=8000)

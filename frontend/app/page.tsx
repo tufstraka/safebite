@@ -549,7 +549,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => {
-                    const text = `SafeBite Scan: ${results.safe_dishes.length} safe, ${results.unsafe_dishes.length} unsafe, ${results.unknown_dishes.length} unknown`;
+                    const text = `SafeBite Scan: ${results.safe_dishes.length} safe, ${results.unsafe_dishes.length} unsafe, ${results.caution_dishes.length} unknown`;
                     if (navigator.share) {
                       navigator.share({ text, title: 'SafeBite Results' });
                     } else {
@@ -571,7 +571,7 @@ export default function Home() {
                   <div className="text-sm font-bold text-emerald-800">safe ✓</div>
                 </div>
                 <div className="bg-amber-50 p-6 rounded-2xl shadow-sm border-2 border-amber-400">
-                  <div className="text-4xl font-black text-amber-700">{results.unknown_dishes.length}</div>
+                  <div className="text-4xl font-black text-amber-700">{results.caution_dishes.length}</div>
                   <div className="text-sm font-bold text-amber-800">check these</div>
                 </div>
                 <div className="bg-red-50 p-6 rounded-2xl shadow-sm border-2 border-red-400">
@@ -652,14 +652,14 @@ export default function Home() {
             )}
 
             {/* Unknown - Check These */}
-            {results.unknown_dishes.length > 0 && (
+            {results.caution_dishes.length > 0 && (
               <div className="bg-white rounded-xl p-6 border border-gray-200 mt-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <HelpCircle className="w-5 h-5 text-amber-600" />
                   Check These
                 </h3>
                 <div className="space-y-3">
-                  {paginate(results.unknown_dishes, unknownPage).items.map((dish: any, idx: number) => (
+                  {paginate(results.caution_dishes, unknownPage).items.map((dish: any, idx: number) => (
                     <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-amber-400">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
@@ -681,7 +681,7 @@ export default function Home() {
                   ))}
                 </div>
                 {/* Unknown Pagination */}
-                {paginate(results.unknown_dishes, unknownPage).totalPages > 1 && (
+                {paginate(results.caution_dishes, unknownPage).totalPages > 1 && (
                   <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => setUnknownPage(p => Math.max(1, p - 1))}
@@ -691,11 +691,11 @@ export default function Home() {
                       ← prev
                     </button>
                     <span className="text-sm text-gray-600 font-medium">
-                      {unknownPage} / {paginate(results.unknown_dishes, unknownPage).totalPages}
+                      {unknownPage} / {paginate(results.caution_dishes, unknownPage).totalPages}
                     </span>
                     <button
-                      onClick={() => setUnknownPage(p => Math.min(paginate(results.unknown_dishes, unknownPage).totalPages, p + 1))}
-                      disabled={unknownPage === paginate(results.unknown_dishes, unknownPage).totalPages}
+                      onClick={() => setUnknownPage(p => Math.min(paginate(results.caution_dishes, unknownPage).totalPages, p + 1))}
+                      disabled={unknownPage === paginate(results.caution_dishes, unknownPage).totalPages}
                       className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-200 transition-colors"
                     >
                       next →
