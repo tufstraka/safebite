@@ -12,10 +12,21 @@ Prize Pool: **$3,000 + $5,000 AWS Credits**
 
 ## The Problem
 
-- **32 million Americans** have food allergies
-- Restaurants don't list ingredients clearly
-- Calling restaurants doesn't help - staff often don't know exact ingredients
+### Global Food Allergy Crisis
+
+- **Up to 10% of the worldwide population** has food allergies (Wikipedia, citing peer-reviewed studies)
+- **~8% of children** and **~5% of adults** globally are affected
+- Food allergy prevalence is **increasing rapidly** in industrialized nations
+- In Australia, hospital admissions for food-induced anaphylaxis increased by **13.2%** from 1994-2005
+- Children of East Asian or African descent in Western countries have **significantly higher risk**
+- Asia and Africa are experiencing **growing food allergy prevalence** as lifestyles become more westernized
+
+### The Daily Struggle
+
+- Restaurants don't list all ingredients clearly
+- Staff often don't know exact ingredients or cross-contamination risks
 - **One wrong dish = life-threatening anaphylaxis**
+- Hidden allergens (butter in vegetables, flour in sauces, fish sauce in Asian dishes)
 - **NO good automated solution exists** in the market
 
 ---
@@ -155,20 +166,19 @@ def assess_safety(dish, selected_allergens):
 
 ### ✅ Currently Active
 
-#### 1. **Nova Pro** (Multimodal Vision)
-- **Model:** `amazon.nova-pro-v1:0`
-- **Purpose:** OCR menu images
+#### 1. **AWS Textract** (OCR)
+- **Service:** AWS Textract
+- **Purpose:** Extract text from menu images and PDFs
 - **What it does:**
   - Extracts dish names from photos
   - Identifies visible ingredients
   - Reads prices and descriptions
   - Handles various image formats
-- **Cost:** $0.0008 per image
-- **Verified:** Working with burger, cake, menu tests
+- **Cost:** $0.0015 per page
 
 #### 2. **Nova 2 Lite** (Fast Reasoning)
 - **Model:** `us.amazon.nova-lite-v1:0`
-- **Purpose:** AI ingredient inference
+- **Purpose:** AI ingredient inference and allergen reasoning
 - **What it does:**
   - Reasons about recipe contents
   - Infers hidden ingredients (butter in cake, flour in breading)
@@ -177,29 +187,45 @@ def assess_safety(dish, selected_allergens):
 - **Cost:** $0.012 per 1,000 dishes
 - **Verified:** Birthday cake test (detected milk when not visible)
 
-### 📝 Not Using Nova
+#### 3. **Nova 2 Sonic** (Voice AI) 🆕
+- **Model:** `us.amazon.nova-sonic-v1:0`
+- **Purpose:** Text-to-speech safety summaries
+- **What it does:**
+  - Generates natural voice audio summaries
+  - Reads out safe/unsafe dish counts
+  - Provides audio recommendations
+  - Accessibility for visually impaired users
+- **Fallback:** Amazon Polly (neural voice)
+
+#### 4. **Amazon Titan Embeddings** (Semantic Matching) 🆕
+- **Model:** `amazon.titan-embed-text-v2:0`
+- **Purpose:** Semantic allergen matching
+- **What it does:**
+  - Vector similarity for ingredient matching
+  - Catches allergens keyword matching misses
+  - Understands ingredient relationships
+  - Finds safe dish alternatives
+
+#### 5. **SafeBite Agentic AI** (Multi-Step Reasoning) 🆕
+- **Framework:** Custom agent using Nova 2 Lite
+- **Purpose:** Comprehensive menu analysis with reasoning trace
+- **What it does:**
+  - Plans analysis strategy
+  - Executes multi-step reasoning
+  - Tracks execution history
+  - Provides explainable AI decisions
+
+### 📝 Supporting Services
 
 #### PyPDF2 (Local Processing)
 - **Purpose:** PDF text extraction
 - **Why not Nova:** Works great locally, free, fast
 - **Cost:** $0
 
-### ⏳ Planned Integration
-
-#### Nova 2 Sonic (Voice)
-- **Purpose:** Text-to-speech safety summaries
-- **Status:** Easy to integrate, not critical for MVP
-
-#### Nova Embeddings (Semantic Matching)
-- **Purpose:** Fuzzy allergen matching
-- **Status:** Keyword matching sufficient for now
-
-### ❌ Not Available
-
-#### Nova Act (UI Automation)
-- **Purpose:** Scrape restaurant websites
-- **Status:** Announced Feb 27, 2026, not in AWS API yet
-- **Workaround:** Demo data for URL endpoint
+#### Amazon Polly (Voice Fallback)
+- **Purpose:** Backup text-to-speech
+- **Engine:** Neural voice (Joanna)
+- **Cost:** $4 per 1M characters
 
 ---
 
@@ -214,10 +240,17 @@ def assess_safety(dish, selected_allergens):
 - ✅ **Confidence Scores** - Know how certain the analysis is
 - ✅ **Safety Recommendations** - Actionable advice per dish
 
+### 🆕 Advanced Features (v3.0)
+- ✅ **Voice Summaries** - Audio readout of results (Nova 2 Sonic)
+- ✅ **Semantic Matching** - Vector-based allergen detection (Titan Embeddings)
+- ✅ **Agentic Analysis** - Multi-step reasoning with execution trace
+- ✅ **Safe Alternatives** - AI suggests similar safe dishes
+- ✅ **Explainable AI** - See why each decision was made
+
 ### Technical Features
 - ✅ **Real-time Analysis** - Results in 2-5 seconds
 - ✅ **Multi-format Support** - Images + PDFs
-- ✅ **Intelligent OCR** - Nova Pro for accuracy
+- ✅ **Intelligent OCR** - AWS Textract for accuracy
 - ✅ **AI Ingredient Inference** - Nova 2 Lite reasoning
 - ✅ **Fallback Handling** - Graceful degradation if APIs fail
 - ✅ **Cost Efficient** - $0.41 per 1,000 scans
@@ -380,21 +413,23 @@ curl -X POST http://localhost:8000/analyze/image \
 ## Use Cases
 
 ### Primary Users
-- **People with food allergies** (32M in US alone)
-- **Parents of allergic children** (extreme caution needed)
+- **People with food allergies globally** (up to 10% of world population)
+- **Parents of allergic children** (~8% of children worldwide)
+- **Travelers** navigating foreign menus and cuisines
 - **Severe allergy cases** (life-threatening reactions)
 
 ### Scenarios
 1. **Dining out** - Scan menu before ordering
-2. **Travel** - Check foreign language menus
+2. **International travel** - Check foreign language menus
 3. **Meal planning** - Verify recipes and ingredients
 4. **Cross-contamination awareness** - Hidden allergen detection
 
 ### Why It Matters
-- **Anaphylaxis is life-threatening** - 200,000 ER visits/year in US
+- **Anaphylaxis is life-threatening** - Hospitalizations increasing globally
 - **Restaurant staff don't know** - Kitchen details often unknown
 - **Ingredients change** - Seasonal substitutions happen
-- **Hidden allergens** - Butter in vegetables, milk in bread
+- **Hidden allergens** - Butter in vegetables, milk in bread, fish sauce in Asian dishes
+- **Regional variations** - Shellfish allergies most common in East Asia, peanut allergies in Western nations
 
 ---
 

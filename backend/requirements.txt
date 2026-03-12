@@ -6,8 +6,8 @@ python-dotenv==1.0.0
 httpx==0.26.0
 dnspython==2.4.2
 beautifulsoup4==4.12.3
-playwright==1.41.0
-httpx==0.26.0
 python-multipart==0.0.6
 PyPDF2==3.0.1
 pdf2image==1.16.3
+numpy==1.26.3
+sqlalchemy==2.0.25
