@@ -118,7 +118,7 @@ class NovaLiteAllergenReasoner:
 - ONLY flag allergens the user specifically told you they are allergic to
 - The "detected_allergens" array should ONLY contain items from: [{allergens_list}]
 
-**Write the "reasoning" in a warm, caring, conversational tone like you're talking to a friend:**
+**Write the "reasoning" in a warm, caring, conversational tone like you're talking to a friend but do not include a greeting:**
 - If SAFE: Be encouraging! The dish doesn't contain {allergens_list}
 - If CAUTION: Be helpful and caring. There might be {allergens_list} hidden
 - If UNSAFE: Be clear but kind. The dish contains {allergens_list}
