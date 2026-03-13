@@ -24,6 +24,10 @@ export default function Home() {
   const [showCamera, setShowCamera] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [scanHistory, setScanHistory] = useState<any[]>([]);
+  
+  // Voice feature state
+  const [isPlayingVoice, setIsPlayingVoice] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
 
   // Pagination state
   const [safePage, setSafePage] = useState(1);
@@ -164,6 +168,62 @@ export default function Home() {
     setCustomAllergens(customAllergens.filter(a => a !== allergen));
   };
 
+  // Voice summary function
+  const playVoiceSummary = async () => {
+    if (!results || !menuFile) return;
+    
+    setVoiceLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', menuFile);
+      formData.append('allergens', selectedAllergens.map(a => a.toLowerCase()).join(','));
+      formData.append('custom_allergens', customAllergens.join(','));
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/analyze/voice`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Voice generation failed');
+      }
+      
+      const data = await response.json();
+      
+      if (data.audio) {
+        // Play the audio
+        const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+        setIsPlayingVoice(true);
+        audio.onended = () => setIsPlayingVoice(false);
+        audio.onerror = () => {
+          setIsPlayingVoice(false);
+          setToast({ message: 'Audio playback failed', type: 'error' });
+        };
+        await audio.play();
+      } else {
+        // Fallback to browser speech synthesis
+        const summary = `Found ${results.safe_dishes.length} safe dishes, ${results.caution_dishes.length} to check, and ${results.unsafe_dishes.length} to avoid.`;
+        const utterance = new SpeechSynthesisUtterance(summary);
+        utterance.rate = 0.9;
+        utterance.onend = () => setIsPlayingVoice(false);
+        setIsPlayingVoice(true);
+        speechSynthesis.speak(utterance);
+      }
+    } catch (error) {
+      console.error('Voice summary failed:', error);
+      // Fallback to browser speech synthesis
+      const summary = `Found ${results.safe_dishes.length} safe dishes, ${results.caution_dishes.length} to check, and ${results.unsafe_dishes.length} to avoid.`;
+      const utterance = new SpeechSynthesisUtterance(summary);
+      utterance.rate = 0.9;
+      utterance.onend = () => setIsPlayingVoice(false);
+      setIsPlayingVoice(true);
+      speechSynthesis.speak(utterance);
+    } finally {
+      setVoiceLoading(false);
+    }
+  };
+
   const handleCameraClick = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -206,7 +266,8 @@ export default function Home() {
         custom_allergens: customAllergens.join(',')
       });
 
-      const response = await fetch('/api/analyze/image', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/analyze/image`, {
         method: 'POST',
         body: formData,
         cache: 'no-store',
@@ -520,15 +581,21 @@ export default function Home() {
             <button
               onClick={analyzeMenu}
               disabled={!menuFile || (selectedAllergens.length === 0 && customAllergens.length === 0) || analyzing}
-              className="w-full py-4 bg-emerald-500 text-gray-900 rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full py-4 bg-emerald-500 text-gray-900 rounded-xl font-bold text-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30"
             >
               {analyzing ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  reading menu...
-                </>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                    <span>scanning menu...</span>
+                  </div>
+                  <span className="text-xs text-emerald-800">checking ingredients</span>
+                </div>
               ) : (
-                'scan'
+                <>
+                  <span className="text-xl">🔍</span>
+                  scan for allergens
+                </>
               )}
             </button>
           </>
@@ -546,6 +613,22 @@ export default function Home() {
                   className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-base font-semibold hover:bg-gray-200 transition-colors"
                 >
                   try another
+                </button>
+                <button
+                  onClick={playVoiceSummary}
+                  disabled={voiceLoading || isPlayingVoice}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-semibold hover:bg-purple-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {voiceLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      loading...
+                    </>
+                  ) : isPlayingVoice ? (
+                    <>🔊 playing...</>
+                  ) : (
+                    <>🔊 hear summary</>
+                  )}
                 </button>
                 <button
                   onClick={() => {
@@ -584,21 +667,24 @@ export default function Home() {
             </div>
 
 
-            {/* AI Recommendation */}
-            {results.recommendation && (
+            {/* Summary */}
+            {results.ai_summary && (
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 mb-6 border-2 border-purple-400 shadow-sm">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">✨</span>
                   <div className="flex-1">
-                    <h3 className="text-lg font-black text-purple-900 mb-2">recommended for you</h3>
-                    <p className="text-purple-800 font-medium">{results.recommendation}</p>
+                    <h3 className="text-lg font-black text-purple-900 mb-2">Summary</h3>
+                    <p className="text-purple-800 font-medium">{results.ai_summary}</p>
+                    <p className="text-purple-600 text-xs mt-2">
+                      Scanned: {results.analysis_timestamp}
+                    </p>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Safe */}
-            {results.safe_dishes.length > 0 && (
+                {results.safe_dishes.length > 0 && (
               <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-emerald-600" />
@@ -615,14 +701,25 @@ export default function Home() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
-                      {dish.ai_reasoning && (
+                      {dish.price && dish.price !== 'N/A' && (
+                        <p className="text-gray-700 text-sm font-semibold mb-2">{dish.price}</p>
+                      )}
+                      {dish.reasoning && (
                         <div className="bg-emerald-100 rounded-lg p-3 mb-2 border border-emerald-300">
                           <p className="text-emerald-800 text-sm font-medium">
-                            <span className="font-bold">why it's safe:</span> {dish.ai_reasoning}
+                            <span className="font-bold">💡 Why safe:</span> {dish.reasoning}
                           </p>
                         </div>
                       )}
-                      <p className="text-gray-700 text-sm font-medium italic">{dish.recommendations}</p>
+                      {dish.hidden_ingredients && dish.hidden_ingredients.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {dish.hidden_ingredients.slice(0, 5).map((ing: string, i: number) => (
+                            <span key={i} className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                              {ing}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -669,14 +766,34 @@ export default function Home() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
-                      {dish.ai_reasoning && (
+                      {dish.price && dish.price !== 'N/A' && (
+                        <p className="text-gray-700 text-sm font-semibold mb-2">{dish.price}</p>
+                      )}
+                      {dish.detected_allergens && dish.detected_allergens.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {dish.detected_allergens.map((allergen: string, i: number) => (
+                            <span key={i} className="px-2 py-1 bg-amber-200 text-amber-800 rounded text-xs font-semibold">
+                              ⚠️ {allergen}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {dish.reasoning && (
                         <div className="bg-amber-100 rounded-lg p-3 mb-2 border border-amber-300">
                           <p className="text-amber-800 text-sm font-medium">
-                            <span className="font-bold">why uncertain:</span> {dish.ai_reasoning}
+                            <span className="font-bold">⚠️ Note:</span> {dish.reasoning}
                           </p>
                         </div>
                       )}
-                      <p className="text-amber-700 text-sm font-semibold">{dish.recommendations}</p>
+                      {dish.hidden_ingredients && dish.hidden_ingredients.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {dish.hidden_ingredients.slice(0, 5).map((ing: string, i: number) => (
+                            <span key={i} className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                              {ing}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -707,30 +824,51 @@ export default function Home() {
 
             {/* Unsafe */}
             {results.unsafe_dishes.length > 0 && (
-              <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="bg-white rounded-xl p-6 border border-gray-200 mt-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-red-600" />
-                  Skip These
+                  ⛔ Skip These
                 </h3>
                 <div className="space-y-3">
                   {paginate(results.unsafe_dishes, unsafePage).items.map((dish: any, idx: number) => (
-                    <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-red-900">
+                    <div key={idx} className="p-6 rounded-2xl shadow-sm bg-red-50 border-2 border-red-400">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
-                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-gray-900 rounded-full text-xs font-bold flex items-center gap-1`}>
+                        <div className={`px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold flex items-center gap-1`}>
                           {getSafetyIcon(dish.safety_level)}
-                          {dish.safety_score}%
+                          UNSAFE
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
-                      {dish.ai_reasoning && (
+                      {dish.price && dish.price !== 'N/A' && (
+                        <p className="text-gray-700 text-sm font-semibold mb-2">{dish.price}</p>
+                      )}
+                      {dish.detected_allergens && dish.detected_allergens.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {dish.detected_allergens.map((allergen: string, i: number) => (
+                            <span key={i} className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs font-bold">
+                              🚫 {allergen}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {dish.reasoning && (
                         <div className="bg-red-100 rounded-lg p-3 mb-2 border border-red-300">
                           <p className="text-red-800 text-sm font-medium">
-                            {dish.ai_reasoning}
+                            <span className="font-bold">🚫 Warning:</span> {dish.reasoning}
                           </p>
                         </div>
                       )}
-                      <p className="text-red-700 text-sm font-semibold">{dish.recommendations}</p>
+                      {dish.hidden_ingredients && dish.hidden_ingredients.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          <span className="text-xs text-gray-500 mr-1">Hidden:</span>
+                          {dish.hidden_ingredients.slice(0, 5).map((ing: string, i: number) => (
+                            <span key={i} className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                              {ing}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -214,31 +214,35 @@ Return JSON array: ["ingredient1", "ingredient2", ...]"""
         infer_step.confidence = 0.8
         self.execution_trace.append(infer_step)
         
-        # Step: Check allergens
+        # Step: Check allergens - ONLY check for user's specified allergens
         check_step = AgentStep(
             action=AgentAction.CHECK_ALLERGEN,
             input_data={"dish": dish_name, "allergens": user_allergens},
-            reasoning=f"Checking {dish_name} against user allergens"
+            reasoning=f"Checking {dish_name} ONLY against user's specified allergens: {', '.join(user_allergens)}"
         )
         
         detected_allergens = []
         all_text = f"{dish_name} {dish_desc} {' '.join(hidden_ingredients)}".lower()
         
+        # Keywords for each allergen type - ONLY used for allergens the user specified
         allergen_keywords = {
             "peanuts": ["peanut", "groundnut"],
-            "tree nuts": ["almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut"],
-            "milk": ["milk", "cheese", "cream", "butter", "dairy", "whey", "casein"],
-            "eggs": ["egg", "albumin", "mayonnaise"],
-            "wheat": ["wheat", "flour", "bread", "pasta", "gluten"],
-            "soy": ["soy", "tofu", "edamame"],
-            "fish": ["fish", "salmon", "tuna", "cod", "anchovy"],
-            "shellfish": ["shrimp", "crab", "lobster", "clam", "oyster"],
+            "tree nuts": ["almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut", "macadamia"],
+            "nuts": ["nut", "almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut", "macadamia", "peanut"],
+            "milk": ["milk", "cheese", "cream", "butter", "dairy", "whey", "casein", "lactose"],
+            "eggs": ["egg", "albumin", "mayonnaise", "meringue", "aioli"],
+            "wheat": ["wheat", "flour", "bread", "pasta", "gluten", "breadcrumb"],
+            "soy": ["soy", "tofu", "edamame", "soya"],
+            "fish": ["fish", "salmon", "tuna", "cod", "anchovy", "bass", "trout"],
+            "shellfish": ["shrimp", "crab", "lobster", "clam", "oyster", "mussel", "scallop", "prawn"],
             "sesame": ["sesame", "tahini"],
-            "gluten": ["gluten", "wheat", "barley", "rye"]
+            "gluten": ["gluten", "wheat", "barley", "rye", "flour"]
         }
         
+        # IMPORTANT: Only check for allergens the user is actually allergic to
         for allergen in user_allergens:
-            keywords = allergen_keywords.get(allergen.lower(), [allergen.lower()])
+            allergen_lower = allergen.lower().strip()
+            keywords = allergen_keywords.get(allergen_lower, [allergen_lower])
             if any(kw in all_text for kw in keywords):
                 detected_allergens.append(allergen)
         

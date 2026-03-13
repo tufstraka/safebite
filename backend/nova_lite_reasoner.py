@@ -44,7 +44,7 @@ class NovaLiteAllergenReasoner:
             
             logger.info(f"Calling Nova 2 Lite for allergen analysis: {dish_name}")
             
-            # Call Nova 2 Lite
+            # Call Nova 2 Lite - content must be an array
             response = self.bedrock.invoke_model(
                 modelId=self.model_id,
                 contentType='application/json',
@@ -53,7 +53,7 @@ class NovaLiteAllergenReasoner:
                     'messages': [
                         {
                             'role': 'user',
-                            'content': prompt
+                            'content': [{'text': prompt}]  # Must be array of content blocks
                         }
                     ],
                     'inferenceConfig': {
@@ -92,39 +92,52 @@ class NovaLiteAllergenReasoner:
         user_allergens: List[str],
         extracted_ingredients: Optional[List[str]]
     ) -> str:
-        """Build detailed prompt for Nova 2 Lite"""
+        """Build detailed prompt for Nova 2 Lite with empathetic messaging"""
         
-        prompt = f"""You are SafeBite AI, an expert food allergen detection system.
+        allergens_list = ', '.join(user_allergens)
+        
+        prompt = f"""You are a caring food safety assistant helping someone with food allergies stay safe while dining out.
 
-**Task:** Analyze this dish for potential allergens.
-
-**Dish Information:**
+**Dish to analyze:**
 - Name: {dish_name}
 - Description: {dish_description}
-{f"- Extracted Ingredients: {', '.join(extracted_ingredients)}" if extracted_ingredients else ""}
+{f"- Known Ingredients: {', '.join(extracted_ingredients)}" if extracted_ingredients else ""}
 
-**User's Allergens:** {', '.join(user_allergens)}
+**CRITICAL: This person is ONLY allergic to: {allergens_list}**
 
-**Your Job:**
-1. Identify if this dish contains ANY of the user's allergens
-2. Consider HIDDEN allergens (e.g., butter in vegetables, flour in breading, fish sauce in Asian dishes)
-3. Assess cross-contamination risks
-4. Provide confidence score (0-100)
+**Your task:**
+1. ONLY check if this dish contains the allergens listed above: {allergens_list}
+2. DO NOT flag other allergens that the user is NOT allergic to
+3. Think about hidden ingredients that might contain {allergens_list}
+4. Consider cross-contamination risks ONLY for {allergens_list}
+
+**VERY IMPORTANT RULES:**
+- ONLY include allergens from this list in "detected_allergens": {allergens_list}
+- If the dish contains nuts but user is NOT allergic to nuts, do NOT flag it
+- If the dish contains shellfish but user is NOT allergic to shellfish, do NOT flag it
+- ONLY flag allergens the user specifically told you they are allergic to
+- The "detected_allergens" array should ONLY contain items from: [{allergens_list}]
+
+**Write the "reasoning" in a warm, caring, conversational tone like you're talking to a friend:**
+- If SAFE: Be encouraging! The dish doesn't contain {allergens_list}
+- If CAUTION: Be helpful and caring. There might be {allergens_list} hidden
+- If UNSAFE: Be clear but kind. The dish contains {allergens_list}
 
 **Return ONLY valid JSON:**
 {{
-    "detected_allergens": ["peanuts", "milk"],
-    "confidence": 95,
-    "hidden_ingredients": ["butter used in cooking", "possible flour in batter"],
-    "reasoning": "Pad Thai explicitly contains peanuts. Likely cooked in oil that may have peanut traces.",
-    "safety_level": "unsafe",
-    "ingredient_interactions": ["noodles fried in shared oil"]
+    "detected_allergens": [],
+    "confidence": 85,
+    "hidden_ingredients": ["list of typical ingredients"],
+    "reasoning": "Your friendly message here",
+    "safety_level": "safe"
 }}
 
-**Safety Levels:**
-- "safe" - No allergens detected, high confidence
-- "caution" - Possible allergen presence or cross-contamination
-- "unsafe" - Confirmed allergen detected
+**Safety Levels (based ONLY on {allergens_list}):**
+- "safe" - No {allergens_list} detected, looks good to eat!
+- "caution" - Might contain {allergens_list}, worth double-checking with staff
+- "unsafe" - Contains confirmed {allergens_list}, skip this one
+
+Remember: ONLY flag {allergens_list}. Ignore all other allergens.
 
 Analyze now:"""
         
@@ -186,7 +199,7 @@ Respond now:"""
                 contentType='application/json',
                 accept='application/json',
                 body=json.dumps({
-                    'messages': [{'role': 'user', 'content': prompt}],
+                    'messages': [{'role': 'user', 'content': [{'text': prompt}]}],
                     'inferenceConfig': {'temperature': 0.2, 'maxTokens': 200}
                 })
             )
@@ -207,3 +220,90 @@ Respond now:"""
         except Exception as e:
             logger.error(f"Hidden ingredient inference failed: {str(e)}")
             return []
+    
+    async def analyze_food_photo(
+        self,
+        image_bytes: bytes,
+        user_allergens: List[str]
+    ) -> Dict:
+        """
+        Analyze a food photo (not a menu) using Nova's vision capabilities
+        Identifies the food and potential allergens
+        """
+        try:
+            import base64
+            
+            # Encode image to base64
+            image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+            
+            # Determine image type
+            if image_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+                media_type = 'image/png'
+            elif image_bytes[:2] == b'\xff\xd8':
+                media_type = 'image/jpeg'
+            else:
+                media_type = 'image/jpeg'  # Default
+            
+            prompt = f"""Look at this food image and identify:
+1. What food/dish is this?
+2. What are the likely ingredients?
+3. Check for these allergens: {', '.join(user_allergens)}
+
+Return JSON:
+{{
+    "food_name": "name of the food",
+    "description": "brief description",
+    "likely_ingredients": ["ingredient1", "ingredient2"],
+    "detected_allergens": ["allergen1"] or [],
+    "confidence": 0-100
+}}
+
+Respond with ONLY the JSON:"""
+
+            logger.info("Calling Nova for food photo analysis...")
+            
+            # Call Nova with image
+            response = self.bedrock.invoke_model(
+                modelId='us.amazon.nova-lite-v1:0',
+                contentType='application/json',
+                accept='application/json',
+                body=json.dumps({
+                    'messages': [{
+                        'role': 'user',
+                        'content': [
+                            {
+                                'image': {
+                                    'format': media_type.split('/')[1],
+                                    'source': {'bytes': image_base64}
+                                }
+                            },
+                            {'text': prompt}
+                        ]
+                    }],
+                    'inferenceConfig': {'temperature': 0.3, 'maxTokens': 500}
+                })
+            )
+            
+            response_body = json.loads(response['body'].read())
+            ai_text = response_body['output']['message']['content'][0]['text']
+            
+            # Parse JSON response
+            start = ai_text.find('{')
+            end = ai_text.rfind('}') + 1
+            
+            if start >= 0 and end > start:
+                result = json.loads(ai_text[start:end])
+                logger.info(f"Nova identified food: {result.get('food_name', 'Unknown')}")
+                return result
+            else:
+                return {
+                    'food_name': 'Unknown Food',
+                    'description': ai_text,
+                    'likely_ingredients': [],
+                    'detected_allergens': [],
+                    'confidence': 30
+                }
+                
+        except Exception as e:
+            logger.error(f"Food photo analysis failed: {str(e)}")
+            return None

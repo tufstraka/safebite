@@ -81,18 +81,20 @@ class MenuScanResponse(BaseModel):
     extraction_method: str  # "textract_image" or "textract_pdf"
     ai_summary: str
 
-# COMMON ALLERGENS
+# COMMON ALLERGENS - Keywords for detecting allergens in dish names/descriptions
+# IMPORTANT: Only check for allergens the user has specified they are allergic to
 ALLERGEN_KEYWORDS = {
     "peanuts": ["peanut", "groundnut", "arachis"],
     "tree nuts": ["almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut", "macadamia"],
+    "nuts": ["nut", "almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut", "macadamia", "peanut"],
     "milk": ["milk", "cheese", "cream", "butter", "yogurt", "dairy", "lactose", "whey", "casein"],
-    "eggs": ["egg", "albumin", "mayonnaise"],
-    "wheat": ["wheat", "flour", "bread", "pasta", "gluten"],
-    "soy": ["soy", "tofu", "edamame", "soy sauce"],
-    "fish": ["fish", "salmon", "tuna", "cod", "anchovy"],
-    "shellfish": ["shrimp", "crab", "lobster", "clam", "oyster"],
+    "eggs": ["egg", "albumin", "mayonnaise", "meringue", "aioli", "custard", "hollandaise"],
+    "wheat": ["wheat", "flour", "bread", "pasta", "gluten", "breadcrumb"],
+    "soy": ["soy", "tofu", "edamame", "soy sauce", "soya"],
+    "fish": ["fish", "salmon", "tuna", "cod", "anchovy", "bass", "trout", "halibut"],
+    "shellfish": ["shrimp", "crab", "lobster", "clam", "oyster", "mussel", "scallop", "prawn"],
     "sesame": ["sesame", "tahini"],
-    "gluten": ["gluten", "wheat", "barley", "rye"],
+    "gluten": ["gluten", "wheat", "barley", "rye", "flour"],
     "mustard": ["mustard"],
     "celery": ["celery"]
 }
@@ -113,43 +115,82 @@ async def health_check():
 @app.post("/analyze/image", response_model=MenuScanResponse)
 async def analyze_menu_image(
     file: UploadFile = File(...),
-    allergens: str = Form(...),
+    allergens: str = Form(default=""),  # Made optional with default empty string
     custom_allergens: str = Form(default="")
 ):
     """
     Complete menu analysis pipeline:
-    1. Textract OCR extraction
-    2. Nova 2 Lite allergen reasoning
-    3. Formatted menu output with color coding
+    1. Textract OCR extraction (for menus)
+    2. Nova 2 Lite vision analysis (for food photos)
+    3. Allergen reasoning
+    4. Formatted output with color coding
     """
     try:
-        # Parse allergens
-        user_allergens = [a.strip().lower() for a in allergens.split(",") if a.strip()]
+        # Parse allergens - combine both standard and custom
+        user_allergens = []
+        if allergens:
+            user_allergens.extend([a.strip().lower() for a in allergens.split(",") if a.strip()])
         if custom_allergens:
             user_allergens.extend([a.strip().lower() for a in custom_allergens.split(",") if a.strip()])
         
-        logger.info(f"Analyzing menu for allergens: {user_allergens}")
+        # Require at least one allergen
+        if not user_allergens:
+            raise HTTPException(status_code=400, detail="Please select at least one allergen to check for")
+        
+        logger.info(f"Analyzing for allergens: {user_allergens}")
         
         # Read file
         file_bytes = await file.read()
         file_extension = file.filename.split('.')[-1].lower()
         
-        # Step 1: Extract text with Textract
+        # Determine file type and extract content
+        dishes = []
+        extraction_method = "unknown"
+        
         if file_extension == 'pdf':
+            # PDF: Use PyPDF2
             extraction_result = await textract_extractor.extract_from_pdf(file_bytes)
-            extraction_method = "textract_pdf"
+            extraction_method = "pypdf2"
+            if extraction_result['success']:
+                dishes = extraction_result['dishes']
         else:
+            # Image: Try Textract OCR first
             extraction_result = await textract_extractor.extract_menu_from_image(file_bytes)
-            extraction_method = "textract_image"
+            extraction_method = "textract_ocr"
+            if extraction_result['success']:
+                dishes = extraction_result['dishes']
         
-        if not extraction_result['success']:
-            raise HTTPException(status_code=400, detail=f"OCR failed: {extraction_result.get('error', 'Unknown error')}")
+        # If we got dishes from OCR/PDF, clean them with AI
+        if dishes and len(dishes) > 3:
+            logger.info(f"Cleaning {len(dishes)} extracted dishes with AI...")
+            dishes = await textract_extractor.clean_dishes_with_ai(dishes)
         
-        dishes = extraction_result['dishes']
-        logger.info(f"Textract extracted {len(dishes)} dishes")
-        
+        # If no dishes found from OCR, treat as food photo and use Nova vision
         if not dishes:
-            raise HTTPException(status_code=400, detail="No dishes found in image. Please upload a clear menu photo.")
+            logger.info("No menu dishes found, analyzing as food photo with Nova vision...")
+            extraction_method = "nova_vision"
+            
+            # Use Nova to identify the food in the image
+            food_analysis = await nova_reasoner.analyze_food_photo(
+                image_bytes=file_bytes,
+                user_allergens=user_allergens
+            )
+            
+            if food_analysis and food_analysis.get('food_name'):
+                # Create a single dish entry from the food photo
+                dishes = [{
+                    'name': food_analysis.get('food_name', 'Unknown Food'),
+                    'description': food_analysis.get('description', ''),
+                    'price': 'N/A',
+                    'raw_text': food_analysis.get('description', '')
+                }]
+            else:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Could not identify food in image. Please upload a clear photo of food or a menu."
+                )
+        
+        logger.info(f"Extracted {len(dishes)} items using {extraction_method}")
         
         # Step 2: Analyze each dish with Nova 2 Lite
         analyzed_dishes = []
