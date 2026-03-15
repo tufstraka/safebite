@@ -68,8 +68,8 @@ class NovaLiteAllergenReasoner:
             response_body = json.loads(response['body'].read())
             ai_text = response_body['output']['message']['content'][0]['text']
             
-            # Extract JSON from AI response
-            analysis = self._parse_ai_response(ai_text)
+            # Extract JSON from AI response and validate against user allergens
+            analysis = self._parse_ai_response(ai_text, user_allergens)
             
             logger.info(f"Nova 2 Lite detected {len(analysis.get('detected_allergens', []))} allergens")
             
@@ -143,8 +143,8 @@ Analyze now:"""
         
         return prompt
     
-    def _parse_ai_response(self, ai_text: str) -> Dict:
-        """Parse JSON from AI response"""
+    def _parse_ai_response(self, ai_text: str, user_allergens: List[str] = None) -> Dict:
+        """Parse JSON from AI response and validate allergens"""
         try:
             # Try to extract JSON from response
             start = ai_text.find('{')
@@ -152,7 +152,13 @@ Analyze now:"""
             
             if start >= 0 and end > start:
                 json_str = ai_text[start:end]
-                return json.loads(json_str)
+                result = json.loads(json_str)
+                
+                # Validate allergens if user_allergens provided
+                if user_allergens:
+                    result = self._validate_allergen_response(result, user_allergens)
+                
+                return result
             else:
                 # Fallback parsing
                 return {
@@ -172,6 +178,92 @@ Analyze now:"""
                 'reasoning': ai_text,
                 'safety_level': 'unknown'
             }
+    
+    def _validate_allergen_response(self, result: Dict, user_allergens: List[str]) -> Dict:
+        """
+        CRITICAL: Validate AI response to prevent hallucination
+        
+        1. Ensure detected_allergens only contains user's specified allergens
+        2. Cross-reference hidden_ingredients against user allergens
+        3. Recalculate safety_level based on validated allergens
+        """
+        
+        # Allergen keywords mapping
+        allergen_indicators = {
+            "eggs": ["egg", "eggs", "albumin", "mayonnaise", "mayo", "meringue", "aioli",
+                     "custard", "hollandaise", "brioche", "pasta", "noodles", "cake",
+                     "cookie", "cookies", "brownie", "muffin", "pancake", "waffle"],
+            "milk": ["milk", "cream", "butter", "cheese", "yogurt", "dairy", "whey",
+                     "casein", "lactose", "ghee", "ice cream", "chocolate", "caramel"],
+            "wheat": ["wheat", "flour", "bread", "pasta", "noodles", "breadcrumb",
+                      "breaded", "fried", "battered", "cookie", "cookies", "cake",
+                      "pastry", "pie", "croissant", "muffin", "pancake", "waffle"],
+            "gluten": ["wheat", "flour", "bread", "pasta", "noodles", "breadcrumb",
+                       "breaded", "fried", "battered", "cookie", "cookies", "cake",
+                       "pastry", "barley", "rye", "malt", "soy sauce"],
+            "peanuts": ["peanut", "peanuts", "groundnut", "satay", "pad thai"],
+            "tree nuts": ["almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut",
+                          "macadamia", "praline", "marzipan", "nougat", "pesto"],
+            "nuts": ["nut", "nuts", "almond", "walnut", "cashew", "pistachio", "pecan",
+                     "hazelnut", "macadamia", "peanut", "praline", "marzipan"],
+            "soy": ["soy", "soya", "tofu", "tempeh", "edamame", "miso", "soy sauce", "teriyaki"],
+            "fish": ["fish", "salmon", "tuna", "cod", "anchovy", "bass", "trout", "halibut",
+                     "fish sauce", "worcestershire"],
+            "shellfish": ["shrimp", "prawn", "crab", "lobster", "clam", "oyster", "mussel",
+                          "scallop", "crawfish"],
+            "sesame": ["sesame", "tahini", "hummus"],
+            "mustard": ["mustard", "dijon"],
+            "celery": ["celery", "celeriac"]
+        }
+        
+        user_allergens_lower = [a.lower().strip() for a in user_allergens]
+        
+        # Get AI's response data
+        ai_detected = result.get('detected_allergens', [])
+        hidden_ingredients = result.get('hidden_ingredients', [])
+        
+        # Combine all text for cross-reference
+        all_text = ' '.join(hidden_ingredients).lower()
+        
+        # Step 1: Filter to only user's allergens
+        validated_allergens = []
+        for allergen in ai_detected:
+            allergen_lower = allergen.lower().strip()
+            if allergen_lower in user_allergens_lower:
+                validated_allergens.append(allergen_lower)
+        
+        # Step 2: Cross-reference hidden ingredients
+        for user_allergen in user_allergens_lower:
+            if user_allergen in validated_allergens:
+                continue
+            
+            indicators = allergen_indicators.get(user_allergen, [user_allergen])
+            for indicator in indicators:
+                if indicator.lower() in all_text:
+                    validated_allergens.append(user_allergen)
+                    logger.info(f"Cross-reference found {user_allergen} via '{indicator}' in hidden ingredients")
+                    break
+        
+        # Remove duplicates
+        validated_allergens = list(dict.fromkeys(validated_allergens))
+        
+        # Step 3: Recalculate safety level based on validated allergens
+        if validated_allergens:
+            result['safety_level'] = 'unsafe'
+            result['detected_allergens'] = validated_allergens
+        else:
+            # Only mark as safe if we're confident no user allergens are present
+            if result.get('safety_level') == 'safe':
+                result['safety_level'] = 'safe'
+            elif result.get('safety_level') == 'caution':
+                result['safety_level'] = 'caution'
+            result['detected_allergens'] = []
+        
+        # Log validation
+        if set(ai_detected) != set(validated_allergens):
+            logger.info(f"Allergen validation: AI detected {ai_detected} -> validated to {validated_allergens}")
+        
+        return result
     
     async def infer_hidden_ingredients(
         self,
@@ -229,6 +321,9 @@ Respond now:"""
         """
         Analyze a food photo (not a menu) using Nova's vision capabilities
         Identifies the food and potential allergens
+        
+        CRITICAL: This function validates that detected allergens are ONLY from user's list
+        and cross-references inferred ingredients against user allergens
         """
         try:
             import base64
@@ -244,19 +339,38 @@ Respond now:"""
             else:
                 media_type = 'image/jpeg'  # Default
             
-            prompt = f"""Look at this food image and identify:
-1. What food/dish is this?
-2. What are the likely ingredients?
-3. Check for these allergens: {', '.join(user_allergens)}
+            allergens_list = ', '.join(user_allergens)
+            
+            prompt = f"""Look at this food image and identify what it is.
 
-Return JSON:
+**CRITICAL SAFETY TASK**: This person is allergic to: {allergens_list}
+Their safety depends on accurate analysis.
+
+**Your task:**
+1. Identify what food/dish this is
+2. List ALL likely ingredients (including hidden ones like eggs in baked goods, butter, flour, etc.)
+3. Check if ANY of the likely ingredients contain or are related to: {allergens_list}
+
+**IMPORTANT RULES:**
+- ONLY include allergens from this exact list in "detected_allergens": [{allergens_list}]
+- If you identify an ingredient that contains a user's allergen (e.g., cookies often contain eggs, and user is allergic to eggs), you MUST flag it
+- Be thorough - baked goods often contain eggs, milk, wheat
+- Fried foods often contain wheat (flour)
+- Many sauces contain eggs (mayonnaise, aioli)
+- If there's ANY possibility the food contains {allergens_list}, flag it
+
+**Return JSON:**
 {{
     "food_name": "name of the food",
     "description": "brief description",
-    "likely_ingredients": ["ingredient1", "ingredient2"],
-    "detected_allergens": ["allergen1"] or [],
-    "confidence": 0-100
+    "likely_ingredients": ["ingredient1", "ingredient2", "..."],
+    "detected_allergens": ["ONLY allergens from: {allergens_list}"],
+    "confidence": 0-100,
+    "safety_reasoning": "explanation of why safe or unsafe for this person's specific allergies"
 }}
+
+Remember: If cookies likely contain eggs and user is allergic to eggs, detected_allergens MUST include "eggs".
+If the food likely contains ANY of [{allergens_list}], it MUST be in detected_allergens.
 
 Respond with ONLY the JSON:"""
 
@@ -280,7 +394,7 @@ Respond with ONLY the JSON:"""
                             {'text': prompt}
                         ]
                     }],
-                    'inferenceConfig': {'temperature': 0.3, 'maxTokens': 500}
+                    'inferenceConfig': {'temperature': 0.2, 'maxTokens': 700}  # Lower temp for accuracy
                 })
             )
             
@@ -294,6 +408,10 @@ Respond with ONLY the JSON:"""
             if start >= 0 and end > start:
                 result = json.loads(ai_text[start:end])
                 logger.info(f"Nova identified food: {result.get('food_name', 'Unknown')}")
+                
+                # CRITICAL POST-PROCESSING: Validate and cross-reference allergens
+                result = self._validate_and_cross_reference_allergens(result, user_allergens)
+                
                 return result
             else:
                 return {
@@ -301,9 +419,116 @@ Respond with ONLY the JSON:"""
                     'description': ai_text,
                     'likely_ingredients': [],
                     'detected_allergens': [],
-                    'confidence': 30
+                    'confidence': 30,
+                    'safety_reasoning': 'Could not analyze image properly'
                 }
                 
         except Exception as e:
             logger.error(f"Food photo analysis failed: {str(e)}")
             return None
+    
+    def _validate_and_cross_reference_allergens(
+        self,
+        ai_result: Dict,
+        user_allergens: List[str]
+    ) -> Dict:
+        """
+        CRITICAL: Post-process AI response to prevent hallucination
+        
+        1. Remove any detected allergens NOT in user's list
+        2. Cross-reference inferred ingredients against user allergens
+        3. Add any missed allergens based on ingredient analysis
+        """
+        
+        # Allergen keywords mapping - ingredients that indicate presence of allergens
+        allergen_indicators = {
+            "eggs": ["egg", "eggs", "albumin", "mayonnaise", "mayo", "meringue", "aioli",
+                     "custard", "hollandaise", "béarnaise", "brioche", "challah", "pasta",
+                     "noodles", "cake", "cookie", "cookies", "brownie", "muffin", "pancake",
+                     "waffle", "french toast", "quiche", "soufflé", "ice cream", "gelato"],
+            "milk": ["milk", "cream", "butter", "cheese", "yogurt", "dairy", "whey",
+                     "casein", "lactose", "ghee", "ice cream", "gelato", "chocolate",
+                     "caramel", "custard", "pudding", "béchamel", "alfredo"],
+            "wheat": ["wheat", "flour", "bread", "pasta", "noodles", "breadcrumb",
+                      "breaded", "fried", "battered", "cookie", "cookies", "cake",
+                      "pastry", "pie", "croissant", "muffin", "pancake", "waffle",
+                      "cracker", "cereal", "couscous", "bulgur", "seitan", "soy sauce"],
+            "gluten": ["wheat", "flour", "bread", "pasta", "noodles", "breadcrumb",
+                       "breaded", "fried", "battered", "cookie", "cookies", "cake",
+                       "pastry", "pie", "croissant", "muffin", "barley", "rye", "malt",
+                       "beer", "soy sauce", "seitan"],
+            "peanuts": ["peanut", "peanuts", "groundnut", "arachis", "satay", "pad thai"],
+            "tree nuts": ["almond", "almonds", "walnut", "walnuts", "cashew", "cashews",
+                          "pistachio", "pistachios", "pecan", "pecans", "hazelnut",
+                          "hazelnuts", "macadamia", "brazil nut", "pine nut", "pine nuts",
+                          "praline", "marzipan", "nougat", "pesto"],
+            "nuts": ["nut", "nuts", "almond", "walnut", "cashew", "pistachio", "pecan",
+                     "hazelnut", "macadamia", "peanut", "praline", "marzipan", "nougat"],
+            "soy": ["soy", "soya", "tofu", "tempeh", "edamame", "miso", "soy sauce",
+                    "teriyaki", "tamari"],
+            "fish": ["fish", "salmon", "tuna", "cod", "anchovy", "anchovies", "bass",
+                     "trout", "halibut", "tilapia", "sardine", "sardines", "mackerel",
+                     "fish sauce", "worcestershire"],
+            "shellfish": ["shrimp", "prawn", "prawns", "crab", "lobster", "clam", "clams",
+                          "oyster", "oysters", "mussel", "mussels", "scallop", "scallops",
+                          "crawfish", "crayfish", "langoustine"],
+            "sesame": ["sesame", "tahini", "hummus", "halvah", "gomashio"],
+            "mustard": ["mustard", "dijon"],
+            "celery": ["celery", "celeriac"]
+        }
+        
+        # Normalize user allergens
+        user_allergens_lower = [a.lower().strip() for a in user_allergens]
+        
+        # Get AI's detected allergens and likely ingredients
+        ai_detected = ai_result.get('detected_allergens', [])
+        likely_ingredients = ai_result.get('likely_ingredients', [])
+        food_name = ai_result.get('food_name', '').lower()
+        description = ai_result.get('description', '').lower()
+        
+        # Combine all text for searching
+        all_text = f"{food_name} {description} {' '.join(likely_ingredients)}".lower()
+        
+        # Step 1: Filter AI detected allergens to ONLY include user's allergens
+        validated_allergens = []
+        for allergen in ai_detected:
+            allergen_lower = allergen.lower().strip()
+            if allergen_lower in user_allergens_lower:
+                validated_allergens.append(allergen_lower)
+        
+        # Step 2: Cross-reference ingredients against user allergens
+        # This catches cases where AI identified "eggs" in ingredients but didn't flag it
+        for user_allergen in user_allergens_lower:
+            if user_allergen in validated_allergens:
+                continue  # Already detected
+            
+            # Get indicators for this allergen
+            indicators = allergen_indicators.get(user_allergen, [user_allergen])
+            
+            # Check if any indicator is present in the text
+            for indicator in indicators:
+                if indicator.lower() in all_text:
+                    validated_allergens.append(user_allergen)
+                    logger.info(f"Cross-reference detected {user_allergen} via indicator '{indicator}'")
+                    break
+        
+        # Remove duplicates while preserving order
+        validated_allergens = list(dict.fromkeys(validated_allergens))
+        
+        # Update the result
+        ai_result['detected_allergens'] = validated_allergens
+        
+        # Add validation note if we modified the results
+        original_count = len(ai_detected)
+        final_count = len(validated_allergens)
+        
+        if original_count != final_count or set(ai_detected) != set(validated_allergens):
+            ai_result['validation_applied'] = True
+            ai_result['validation_note'] = (
+                f"Cross-referenced {len(likely_ingredients)} ingredients against "
+                f"user allergens [{', '.join(user_allergens)}]. "
+                f"Found {final_count} relevant allergens."
+            )
+            logger.info(f"Allergen validation: {original_count} AI detected -> {final_count} validated")
+        
+        return ai_result

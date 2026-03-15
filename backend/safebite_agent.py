@@ -224,19 +224,37 @@ Return JSON array: ["ingredient1", "ingredient2", ...]"""
         detected_allergens = []
         all_text = f"{dish_name} {dish_desc} {' '.join(hidden_ingredients)}".lower()
         
-        # Keywords for each allergen type - ONLY used for allergens the user specified
+        # COMPREHENSIVE allergen keywords - includes hidden ingredient indicators
+        # CRITICAL: These catch cases where AI infers ingredients that contain allergens
         allergen_keywords = {
-            "peanuts": ["peanut", "groundnut"],
-            "tree nuts": ["almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut", "macadamia"],
-            "nuts": ["nut", "almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut", "macadamia", "peanut"],
-            "milk": ["milk", "cheese", "cream", "butter", "dairy", "whey", "casein", "lactose"],
-            "eggs": ["egg", "albumin", "mayonnaise", "meringue", "aioli"],
-            "wheat": ["wheat", "flour", "bread", "pasta", "gluten", "breadcrumb"],
-            "soy": ["soy", "tofu", "edamame", "soya"],
-            "fish": ["fish", "salmon", "tuna", "cod", "anchovy", "bass", "trout"],
-            "shellfish": ["shrimp", "crab", "lobster", "clam", "oyster", "mussel", "scallop", "prawn"],
-            "sesame": ["sesame", "tahini"],
-            "gluten": ["gluten", "wheat", "barley", "rye", "flour"]
+            "peanuts": ["peanut", "peanuts", "groundnut", "arachis", "satay", "pad thai", "peanut butter", "peanut oil"],
+            "tree nuts": ["almond", "almonds", "walnut", "walnuts", "cashew", "cashews", "pistachio", "pistachios",
+                          "pecan", "pecans", "hazelnut", "hazelnuts", "macadamia", "brazil nut", "pine nut",
+                          "praline", "marzipan", "nougat", "pesto", "nutella"],
+            "nuts": ["nut", "nuts", "almond", "walnut", "cashew", "pistachio", "pecan", "hazelnut", "macadamia",
+                     "peanut", "praline", "marzipan", "nougat", "pesto", "nutella"],
+            "milk": ["milk", "cheese", "cream", "butter", "dairy", "whey", "casein", "lactose", "yogurt", "ghee",
+                     "ice cream", "gelato", "chocolate", "caramel", "custard", "pudding", "béchamel", "alfredo",
+                     "mozzarella", "parmesan", "cheddar", "ricotta", "mascarpone"],
+            "eggs": ["egg", "eggs", "albumin", "mayonnaise", "mayo", "meringue", "aioli", "custard", "hollandaise",
+                     "brioche", "challah", "pasta", "noodles", "cake", "cookie", "cookies", "brownie", "muffin",
+                     "pancake", "waffle", "french toast", "quiche", "soufflé", "ice cream", "gelato", "batter"],
+            "wheat": ["wheat", "flour", "bread", "pasta", "noodles", "gluten", "breadcrumb", "breaded", "fried",
+                      "battered", "cookie", "cookies", "cake", "pastry", "pie", "croissant", "muffin", "pancake",
+                      "waffle", "cracker", "cereal", "couscous", "bulgur", "seitan", "soy sauce", "tortilla",
+                      "pita", "naan", "baguette", "ciabatta"],
+            "soy": ["soy", "soya", "tofu", "tempeh", "edamame", "miso", "soy sauce", "teriyaki", "tamari", "soybean"],
+            "fish": ["fish", "salmon", "tuna", "cod", "anchovy", "anchovies", "bass", "trout", "halibut", "tilapia",
+                     "sardine", "sardines", "mackerel", "fish sauce", "worcestershire", "caesar dressing"],
+            "shellfish": ["shrimp", "prawn", "prawns", "crab", "lobster", "clam", "clams", "oyster", "oysters",
+                          "mussel", "mussels", "scallop", "scallops", "crawfish", "crayfish", "langoustine",
+                          "calamari", "squid"],
+            "sesame": ["sesame", "tahini", "hummus", "halvah", "gomashio", "sesame oil"],
+            "gluten": ["gluten", "wheat", "flour", "bread", "pasta", "noodles", "breadcrumb", "breaded", "fried",
+                       "battered", "cookie", "cookies", "cake", "pastry", "barley", "rye", "malt", "beer",
+                       "soy sauce", "seitan", "oats"],
+            "mustard": ["mustard", "dijon", "honey mustard"],
+            "celery": ["celery", "celeriac", "celery salt"]
         }
         
         # IMPORTANT: Only check for allergens the user is actually allergic to

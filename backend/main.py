@@ -99,6 +99,96 @@ ALLERGEN_KEYWORDS = {
     "celery": ["celery"]
 }
 
+# Helper function to cross-reference allergens
+def _cross_reference_allergens(
+    detected_allergens: List[str],
+    hidden_ingredients: List[str],
+    dish_name: str,
+    dish_description: str,
+    user_allergens: List[str]
+) -> List[str]:
+    """
+    CRITICAL: Cross-reference detected allergens and hidden ingredients
+    against user's specified allergens to prevent hallucination.
+    
+    This ensures:
+    1. Only user's allergens are flagged
+    2. Hidden ingredients containing user allergens are detected
+    3. No false "safe" results when allergens are present
+    """
+    
+    # Allergen indicators - ingredients that suggest presence of allergens
+    allergen_indicators = {
+        "eggs": ["egg", "eggs", "albumin", "mayonnaise", "mayo", "meringue", "aioli",
+                 "custard", "hollandaise", "brioche", "challah", "pasta", "noodles",
+                 "cake", "cookie", "cookies", "brownie", "muffin", "pancake", "waffle",
+                 "french toast", "quiche", "soufflé", "ice cream", "gelato", "batter"],
+        "milk": ["milk", "cream", "butter", "cheese", "yogurt", "dairy", "whey",
+                 "casein", "lactose", "ghee", "ice cream", "gelato", "chocolate",
+                 "caramel", "custard", "pudding", "béchamel", "alfredo", "mozzarella",
+                 "parmesan", "cheddar", "ricotta", "mascarpone"],
+        "wheat": ["wheat", "flour", "bread", "pasta", "noodles", "breadcrumb",
+                  "breaded", "fried", "battered", "cookie", "cookies", "cake",
+                  "pastry", "pie", "croissant", "muffin", "pancake", "waffle",
+                  "cracker", "cereal", "couscous", "bulgur", "seitan", "soy sauce",
+                  "tortilla", "pita", "naan", "baguette", "ciabatta"],
+        "gluten": ["wheat", "flour", "bread", "pasta", "noodles", "breadcrumb",
+                   "breaded", "fried", "battered", "cookie", "cookies", "cake",
+                   "pastry", "pie", "croissant", "muffin", "barley", "rye", "malt",
+                   "beer", "soy sauce", "seitan", "oats"],
+        "peanuts": ["peanut", "peanuts", "groundnut", "arachis", "satay", "pad thai",
+                    "peanut butter", "peanut oil"],
+        "tree nuts": ["almond", "almonds", "walnut", "walnuts", "cashew", "cashews",
+                      "pistachio", "pistachios", "pecan", "pecans", "hazelnut",
+                      "hazelnuts", "macadamia", "brazil nut", "pine nut", "pine nuts",
+                      "praline", "marzipan", "nougat", "pesto", "nutella"],
+        "nuts": ["nut", "nuts", "almond", "walnut", "cashew", "pistachio", "pecan",
+                 "hazelnut", "macadamia", "peanut", "praline", "marzipan", "nougat",
+                 "pesto", "nutella"],
+        "soy": ["soy", "soya", "tofu", "tempeh", "edamame", "miso", "soy sauce",
+                "teriyaki", "tamari", "soybean"],
+        "fish": ["fish", "salmon", "tuna", "cod", "anchovy", "anchovies", "bass",
+                 "trout", "halibut", "tilapia", "sardine", "sardines", "mackerel",
+                 "fish sauce", "worcestershire", "caesar dressing"],
+        "shellfish": ["shrimp", "prawn", "prawns", "crab", "lobster", "clam", "clams",
+                      "oyster", "oysters", "mussel", "mussels", "scallop", "scallops",
+                      "crawfish", "crayfish", "langoustine", "calamari", "squid"],
+        "sesame": ["sesame", "tahini", "hummus", "halvah", "gomashio", "sesame oil"],
+        "mustard": ["mustard", "dijon", "honey mustard"],
+        "celery": ["celery", "celeriac", "celery salt"]
+    }
+    
+    user_allergens_lower = [a.lower().strip() for a in user_allergens]
+    
+    # Combine all text for searching
+    all_text = f"{dish_name} {dish_description} {' '.join(hidden_ingredients)}".lower()
+    
+    # Start with detected allergens, but filter to only user's allergens
+    validated_allergens = []
+    for allergen in detected_allergens:
+        allergen_lower = allergen.lower().strip()
+        if allergen_lower in user_allergens_lower:
+            validated_allergens.append(allergen_lower)
+    
+    # Cross-reference hidden ingredients and dish text against user allergens
+    for user_allergen in user_allergens_lower:
+        if user_allergen in validated_allergens:
+            continue  # Already detected
+        
+        # Get indicators for this allergen
+        indicators = allergen_indicators.get(user_allergen, [user_allergen])
+        
+        # Check if any indicator is present
+        for indicator in indicators:
+            if indicator.lower() in all_text:
+                validated_allergens.append(user_allergen)
+                logger.info(f"Cross-reference detected '{user_allergen}' via indicator '{indicator}' in {dish_name}")
+                break
+    
+    # Remove duplicates while preserving order
+    return list(dict.fromkeys(validated_allergens))
+
+
 @app.get("/health")
 async def health_check():
     return {
@@ -177,16 +267,59 @@ async def analyze_menu_image(
             )
             
             if food_analysis and food_analysis.get('food_name'):
-                # Create a single dish entry from the food photo
-                dishes = [{
-                    'name': food_analysis.get('food_name', 'Unknown Food'),
-                    'description': food_analysis.get('description', ''),
-                    'price': 'N/A',
-                    'raw_text': food_analysis.get('description', '')
-                }]
+                # CRITICAL: For food photos, we already have allergen analysis from vision
+                # Use the detected allergens and likely ingredients directly
+                detected_allergens = food_analysis.get('detected_allergens', [])
+                likely_ingredients = food_analysis.get('likely_ingredients', [])
+                
+                # Determine safety level based on detected allergens
+                if detected_allergens:
+                    safety_level = 'unsafe'
+                    safety_score = 10
+                    color_code = 'red'
+                else:
+                    safety_level = 'safe'
+                    safety_score = 90
+                    color_code = 'green'
+                
+                # Create analyzed dish directly (skip redundant analysis)
+                analyzed_dish = DishAnalysis(
+                    name=food_analysis.get('food_name', 'Unknown Food'),
+                    description=food_analysis.get('description', ''),
+                    price='N/A',
+                    safety_score=safety_score,
+                    safety_level=safety_level,
+                    detected_allergens=detected_allergens,
+                    confidence=food_analysis.get('confidence', 70),
+                    hidden_ingredients=likely_ingredients,
+                    reasoning=food_analysis.get('safety_reasoning',
+                        f"Analyzed food photo. {'Contains ' + ', '.join(detected_allergens) + ' which you are allergic to.' if detected_allergens else 'No allergens from your list detected.'}"),
+                    color_code=color_code
+                )
+                
+                # Return directly for food photo analysis
+                safe_dishes = [analyzed_dish] if color_code == 'green' else []
+                caution_dishes = [analyzed_dish] if color_code == 'yellow' else []
+                unsafe_dishes = [analyzed_dish] if color_code == 'red' else []
+                
+                ai_summary = (
+                    f"Analyzed food photo: {food_analysis.get('food_name', 'Unknown')}. "
+                    f"{'⚠️ UNSAFE - Contains: ' + ', '.join(detected_allergens) if detected_allergens else '✅ SAFE - No allergens from your list detected.'}"
+                )
+                
+                return MenuScanResponse(
+                    restaurant_name="Food Photo Analysis",
+                    total_dishes=1,
+                    safe_dishes=safe_dishes,
+                    caution_dishes=caution_dishes,
+                    unsafe_dishes=unsafe_dishes,
+                    analysis_timestamp=datetime.now(timezone.utc).isoformat(),
+                    extraction_method=extraction_method,
+                    ai_summary=ai_summary
+                )
             else:
                 raise HTTPException(
-                    status_code=400, 
+                    status_code=400,
                     detail="Could not identify food in image. Please upload a clear photo of food or a menu."
                 )
         
@@ -216,16 +349,30 @@ async def analyze_menu_image(
                 confidence = ai_analysis.get('confidence', 50)
                 safety_level = ai_analysis.get('safety_level', 'unknown')
                 
-                # Calculate safety score
-                if safety_level == 'safe':
+                # CRITICAL: Cross-reference hidden ingredients with user allergens
+                # This catches cases where AI missed allergens in hidden ingredients
+                detected = _cross_reference_allergens(
+                    detected_allergens=detected,
+                    hidden_ingredients=hidden_ingredients,
+                    dish_name=dish['name'],
+                    dish_description=dish.get('description', ''),
+                    user_allergens=user_allergens
+                )
+                
+                # Recalculate safety level based on validated allergens
+                if detected:
+                    safety_level = 'unsafe'
+                    safety_score = 10
+                    color_code = 'red'
+                elif safety_level == 'safe':
                     safety_score = 90
                     color_code = 'green'
                 elif safety_level == 'caution':
                     safety_score = 50
                     color_code = 'yellow'
-                else:  # unsafe or unknown
-                    safety_score = 10 if safety_level == 'unsafe' else 50
-                    color_code = 'red' if safety_level == 'unsafe' else 'yellow'
+                else:  # unknown
+                    safety_score = 50
+                    color_code = 'yellow'
                 
                 analyzed_dish = DishAnalysis(
                     name=dish['name'],

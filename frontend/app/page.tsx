@@ -35,6 +35,21 @@ export default function Home() {
   const [unknownPage, setUnknownPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
+  // Helper to truncate long filenames for better mobile UX
+  const truncateFilename = (filename: string, maxLength: number = 25): string => {
+    if (!filename || filename.length <= maxLength) return filename;
+    
+    // Get file extension
+    const lastDot = filename.lastIndexOf('.');
+    const ext = lastDot > 0 ? filename.slice(lastDot) : '';
+    const nameWithoutExt = lastDot > 0 ? filename.slice(0, lastDot) : filename;
+    
+    // Calculate how much of the name we can show
+    const availableLength = maxLength - ext.length - 3; // 3 for "..."
+    if (availableLength <= 0) return filename.slice(0, maxLength - 3) + '...';
+    
+    return nameWithoutExt.slice(0, availableLength) + '...' + ext;
+  };
 
   // Pagination helper
   const [showFeedbackWidget, setShowFeedbackWidget] = useState(true);
@@ -479,10 +494,12 @@ export default function Home() {
               {menuFile ? (
                 <div className="border-2 border-emerald-500 bg-emerald-100 rounded-xl p-6">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <CheckCircle className="w-10 h-10 text-emerald-500 flex-shrink-0" />
-                      <div>
-                        <p className="text-gray-900 font-medium">{menuFile.name}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-gray-900 font-medium truncate" title={menuFile.name}>
+                          {truncateFilename(menuFile.name, isMobile ? 20 : 35)}
+                        </p>
                         <p className="text-gray-600 text-sm mt-1">{(menuFile.size / 1024 / 1024).toFixed(2)} MB</p>
                       </div>
                     </div>
@@ -961,12 +978,14 @@ export default function Home() {
                 <div className="space-y-3">
                   {scanHistory.map((scan: any) => (
                     <div key={scan.id} className="border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-400 transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-bold text-gray-900">{scan.filename}</p>
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-gray-900 truncate" title={scan.filename}>
+                            {truncateFilename(scan.filename, isMobile ? 18 : 30)}
+                          </p>
                           <p className="text-xs text-gray-500">{new Date(scan.timestamp).toLocaleString()}</p>
                         </div>
-                        <span className="text-sm font-semibold text-gray-700">{scan.results.total} dishes</span>
+                        <span className="text-sm font-semibold text-gray-700 flex-shrink-0">{scan.results.total} dishes</span>
                       </div>
                       <div className="flex gap-2 text-sm mb-2">
                         <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-semibold">✓ {scan.results.safe}</span>
@@ -1025,3 +1044,4 @@ export default function Home() {
     </div>
   );
 }
+

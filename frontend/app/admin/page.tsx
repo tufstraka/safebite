@@ -3,6 +3,20 @@
 import { useEffect, useState } from 'react';
 import AuthGuard from '../components/AuthGuard';
 
+// Helper to truncate long filenames
+const truncateFilename = (filename: string, maxLength: number = 25): string => {
+  if (!filename || filename.length <= maxLength) return filename;
+  
+  const lastDot = filename.lastIndexOf('.');
+  const ext = lastDot > 0 ? filename.slice(lastDot) : '';
+  const nameWithoutExt = lastDot > 0 ? filename.slice(0, lastDot) : filename;
+  
+  const availableLength = maxLength - ext.length - 3;
+  if (availableLength <= 0) return filename.slice(0, maxLength - 3) + '...';
+  
+  return nameWithoutExt.slice(0, availableLength) + '...' + ext;
+};
+
 interface AdminStats {
   total_scans: number;
   total_dishes: number;
@@ -255,9 +269,11 @@ export default function AdminPage() {
             <div className="space-y-3">
               {stats.recent_activity.map((scan) => (
                 <div key={scan.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-emerald-400 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900">{scan.filename}</p>
+                  <div className="flex justify-between items-start mb-2 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 truncate" title={scan.filename}>
+                        {truncateFilename(scan.filename, 25)}
+                      </p>
                       <p className="text-sm text-gray-600">
                         {new Date(scan.timestamp).toLocaleString('en-US', {
                           month: 'short',
