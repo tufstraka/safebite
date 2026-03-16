@@ -1,4 +1,4 @@
-name: Deploy SafeBite (Webhook)
+name: Deploy SafeBite
 
 on:
   push:
@@ -8,46 +8,37 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Trigger deployment webhook
         env:
           WEBHOOK_SECRET: safebite-deploy-secret-2026
           WEBHOOK_URL: https://safebite.locsafe.org/webhook
         run: |
-          # Get commit message (escape special chars)
           COMMIT_MSG=$(git log -1 --pretty=%B | head -1 | sed 's/"/\\"/g')
-          
-          # Create simple payload
-          PAYLOAD=$(cat <<EOF
-          {
-            "ref": "refs/heads/main",
-            "pusher": {
-              "name": "${{ github.actor }}"
-            },
-            "head_commit": {
-              "message": "$COMMIT_MSG"
-            }
-          }
-          EOF
-          )
-          
-          # Calculate signature
+
+          PAYLOAD=$(printf '{"ref":"refs/heads/main","pusher":{"name":"%s"},"head_commit":{"message":"%s"}}' \
+            "${{ github.actor }}" "$COMMIT_MSG")
+
           SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | sed 's/^.* //')
-          
-          # Send webhook
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+
+          HTTP_CODE=$(curl -s -o /tmp/webhook_response.txt -w "%{http_code}" \
             -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "X-Hub-Signature-256: sha256=$SIGNATURE" \
             -d "$PAYLOAD")
-          
+
+          echo "Response: $(cat /tmp/webhook_response.txt)"
+
           if [ "$HTTP_CODE" = "200" ]; then
             echo "✅ Webhook accepted! Deployment started."
           else
-            echo "❌ Webhook failed with code: $HTTP_CODE"
+            echo "❌ Webhook failed with HTTP $HTTP_CODE"
             exit 1
           fi
-          
+
           echo "⏳ Deployment running on server..."
-          echo "🌐 Check: https://safebite.locsafe.org"
+          echo "🌐 https://safebite.locsafe.org"
