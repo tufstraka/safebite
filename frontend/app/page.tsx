@@ -619,22 +619,25 @@ export default function Home() {
         ) : (
           // Results
           <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">{results.restaurant_name}</h2>
-                  <p className="text-gray-700 text-sm font-medium">{results.total_dishes} items • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
-                </div>
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
+              {/* Header with restaurant name */}
+              <div className="mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{results.restaurant_name}</h2>
+                <p className="text-gray-700 text-xs sm:text-sm font-medium">{results.total_dishes} items • {[...selectedAllergens, ...customAllergens].join(', ')}</p>
+              </div>
+              
+              {/* Action buttons - stacked on mobile, row on desktop */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4">
                 <button
                   onClick={() => { setResults(null); setMenuFile(null); setSelectedAllergens([]); setCustomAllergens([]); }}
-                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-base font-semibold hover:bg-gray-200 transition-colors"
+                  className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
                 >
-                  try another
+                  🔄 try another
                 </button>
                 <button
                   onClick={playVoiceSummary}
                   disabled={voiceLoading || isPlayingVoice}
-                  className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm font-semibold hover:bg-purple-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-purple-500 text-white rounded-lg text-sm font-semibold hover:bg-purple-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {voiceLoading ? (
                     <>
@@ -649,15 +652,52 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => {
-                    const text = `SafeBite Scan: ${results.safe_dishes.length} safe, ${results.unsafe_dishes.length} unsafe, ${results.caution_dishes.length} unknown`;
+                    // Build detailed share text with dish names
+                    let shareText = `🍽️ SafeBite Menu Scan Results\n`;
+                    shareText += `📍 ${results.restaurant_name}\n\n`;
+                    
+                    if (results.safe_dishes.length > 0) {
+                      shareText += `✅ Safe to eat (${results.safe_dishes.length}):\n`;
+                      results.safe_dishes.slice(0, 5).forEach((dish: any) => {
+                        shareText += `  • ${dish.name}\n`;
+                      });
+                      if (results.safe_dishes.length > 5) {
+                        shareText += `  ... and ${results.safe_dishes.length - 5} more\n`;
+                      }
+                      shareText += `\n`;
+                    }
+                    
+                    if (results.caution_dishes.length > 0) {
+                      shareText += `⚠️ Check these (${results.caution_dishes.length}):\n`;
+                      results.caution_dishes.slice(0, 3).forEach((dish: any) => {
+                        shareText += `  • ${dish.name}\n`;
+                      });
+                      if (results.caution_dishes.length > 3) {
+                        shareText += `  ... and ${results.caution_dishes.length - 3} more\n`;
+                      }
+                      shareText += `\n`;
+                    }
+                    
+                    if (results.unsafe_dishes.length > 0) {
+                      shareText += `🚫 Avoid (${results.unsafe_dishes.length}):\n`;
+                      results.unsafe_dishes.slice(0, 3).forEach((dish: any) => {
+                        shareText += `  • ${dish.name}\n`;
+                      });
+                      if (results.unsafe_dishes.length > 3) {
+                        shareText += `  ... and ${results.unsafe_dishes.length - 3} more\n`;
+                      }
+                    }
+                    
+                    shareText += `\n🔍 Allergens checked: ${[...selectedAllergens, ...customAllergens].join(', ')}`;
+                    
                     if (navigator.share) {
-                      navigator.share({ text, title: 'SafeBite Results' });
+                      navigator.share({ text: shareText, title: 'SafeBite Results' });
                     } else {
-                      navigator.clipboard.writeText(text);
-                      alert('Results copied!');
+                      navigator.clipboard.writeText(shareText);
+                      setToast({ message: 'Results copied to clipboard!', type: 'success' });
                     }
                   }}
-                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                  className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors"
                 >
                   📤 share
                 </button>
@@ -665,18 +705,18 @@ export default function Home() {
 
 
 
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-emerald-50 p-6 rounded-2xl shadow-sm border-2 border-emerald-400">
-                  <div className="text-4xl font-black text-emerald-700">{results.safe_dishes.length}</div>
-                  <div className="text-sm font-bold text-emerald-800">safe ✓</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+                <div className="bg-emerald-50 p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border-2 border-emerald-400">
+                  <div className="text-2xl sm:text-4xl font-black text-emerald-700">{results.safe_dishes.length}</div>
+                  <div className="text-xs sm:text-sm font-bold text-emerald-800">safe ✓</div>
                 </div>
-                <div className="bg-amber-50 p-6 rounded-2xl shadow-sm border-2 border-amber-400">
-                  <div className="text-4xl font-black text-amber-700">{results.caution_dishes.length}</div>
-                  <div className="text-sm font-bold text-amber-800">check these</div>
+                <div className="bg-amber-50 p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border-2 border-amber-400">
+                  <div className="text-2xl sm:text-4xl font-black text-amber-700">{results.caution_dishes.length}</div>
+                  <div className="text-xs sm:text-sm font-bold text-amber-800">check</div>
                 </div>
-                <div className="bg-red-50 p-6 rounded-2xl shadow-sm border-2 border-red-400">
-                  <div className="text-4xl font-black text-red-700">{results.unsafe_dishes.length}</div>
-                  <div className="text-sm font-bold text-red-800">skip ✗</div>
+                <div className="bg-red-50 p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border-2 border-red-400">
+                  <div className="text-2xl sm:text-4xl font-black text-red-700">{results.unsafe_dishes.length}</div>
+                  <div className="text-xs sm:text-sm font-bold text-red-800">skip ✗</div>
                 </div>
               </div>
 
@@ -686,12 +726,12 @@ export default function Home() {
 
             {/* Summary */}
             {results.ai_summary && (
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 mb-6 border-2 border-purple-400 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">✨</span>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-black text-purple-900 mb-2">Summary</h3>
-                    <p className="text-purple-800 font-medium">{results.ai_summary}</p>
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 border-2 border-purple-400 shadow-sm">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <span className="text-xl sm:text-2xl">✨</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-black text-purple-900 mb-2">Summary</h3>
+                    <p className="text-purple-800 font-medium text-sm sm:text-base break-words">{results.ai_summary}</p>
                     <p className="text-purple-600 text-xs mt-2">
                       Scanned: {results.analysis_timestamp}
                     </p>
@@ -701,29 +741,29 @@ export default function Home() {
             )}
 
             {/* Safe */}
-                {results.safe_dishes.length > 0 && (
-              <div className="bg-white rounded-xl p-6 border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+            {results.safe_dishes.length > 0 && (
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
                   Good to Go
                 </h3>
                 <div className="space-y-3">
                   {paginate(results.safe_dishes, safePage).items.map((dish: any, idx: number) => (
-                    <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-gray-300">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
-                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-gray-900 rounded-full text-xs font-bold flex items-center gap-1`}>
+                    <div key={idx} className="p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm bg-gray-100 border border-gray-300">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                        <h4 className="text-gray-900 font-semibold text-sm sm:text-base break-words">{dish.name}</h4>
+                        <div className={`px-2 sm:px-3 py-1 ${getSafetyColor(dish.safety_level)} text-gray-900 rounded-full text-xs font-bold flex items-center gap-1 w-fit flex-shrink-0`}>
                           {getSafetyIcon(dish.safety_level)}
                           {dish.safety_score}%
                         </div>
                       </div>
-                      <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
+                      <p className="text-gray-600 text-xs sm:text-sm mb-2 break-words">{dish.description}</p>
                       {dish.price && dish.price !== 'N/A' && (
-                        <p className="text-gray-700 text-sm font-semibold mb-2">{dish.price}</p>
+                        <p className="text-gray-700 text-xs sm:text-sm font-semibold mb-2">{dish.price}</p>
                       )}
                       {dish.reasoning && (
-                        <div className="bg-emerald-100 rounded-lg p-3 mb-2 border border-emerald-300">
-                          <p className="text-emerald-800 text-sm font-medium">
+                        <div className="bg-emerald-100 rounded-lg p-2 sm:p-3 mb-2 border border-emerald-300">
+                          <p className="text-emerald-800 text-xs sm:text-sm font-medium break-words">
                             <span className="font-bold">💡 Why safe:</span> {dish.reasoning}
                           </p>
                         </div>
@@ -742,23 +782,23 @@ export default function Home() {
                 </div>
                 {/* Safe Pagination */}
                 {paginate(results.safe_dishes, safePage).totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-center items-center gap-2 sm:gap-4 mt-4 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => setSafePage(p => Math.max(1, p - 1))}
                       disabled={safePage === 1}
-                      className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-200 transition-colors"
+                      className="px-3 sm:px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-200 transition-colors"
                     >
-                      ← prev
+                      ←
                     </button>
-                    <span className="text-sm text-gray-600 font-medium">
+                    <span className="text-xs sm:text-sm text-gray-600 font-medium">
                       {safePage} / {paginate(results.safe_dishes, safePage).totalPages}
                     </span>
                     <button
                       onClick={() => setSafePage(p => Math.min(paginate(results.safe_dishes, safePage).totalPages, p + 1))}
                       disabled={safePage === paginate(results.safe_dishes, safePage).totalPages}
-                      className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-200 transition-colors"
+                      className="px-3 sm:px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-200 transition-colors"
                     >
-                      next →
+                      →
                     </button>
                   </div>
                 )}
@@ -767,24 +807,24 @@ export default function Home() {
 
             {/* Unknown - Check These */}
             {results.caution_dishes.length > 0 && (
-              <div className="bg-white rounded-xl p-6 border border-gray-200 mt-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5 text-amber-600" />
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 mt-4 sm:mt-6">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
                   Check These
                 </h3>
                 <div className="space-y-3">
                   {paginate(results.caution_dishes, unknownPage).items.map((dish: any, idx: number) => (
-                    <div key={idx} className="p-6 rounded-2xl shadow-sm bg-gray-100 border border-amber-400">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
-                        <div className={`px-3 py-1 ${getSafetyColor(dish.safety_level)} text-gray-900 rounded-full text-xs font-bold flex items-center gap-1`}>
+                    <div key={idx} className="p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm bg-gray-100 border border-amber-400">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                        <h4 className="text-gray-900 font-semibold text-sm sm:text-base break-words">{dish.name}</h4>
+                        <div className={`px-2 sm:px-3 py-1 ${getSafetyColor(dish.safety_level)} text-gray-900 rounded-full text-xs font-bold flex items-center gap-1 w-fit flex-shrink-0`}>
                           {getSafetyIcon(dish.safety_level)}
                           {dish.safety_score}%
                         </div>
                       </div>
-                      <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
+                      <p className="text-gray-600 text-xs sm:text-sm mb-2 break-words">{dish.description}</p>
                       {dish.price && dish.price !== 'N/A' && (
-                        <p className="text-gray-700 text-sm font-semibold mb-2">{dish.price}</p>
+                        <p className="text-gray-700 text-xs sm:text-sm font-semibold mb-2">{dish.price}</p>
                       )}
                       {dish.detected_allergens && dish.detected_allergens.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-2">
@@ -796,8 +836,8 @@ export default function Home() {
                         </div>
                       )}
                       {dish.reasoning && (
-                        <div className="bg-amber-100 rounded-lg p-3 mb-2 border border-amber-300">
-                          <p className="text-amber-800 text-sm font-medium">
+                        <div className="bg-amber-100 rounded-lg p-2 sm:p-3 mb-2 border border-amber-300">
+                          <p className="text-amber-800 text-xs sm:text-sm font-medium break-words">
                             <span className="font-bold">⚠️ Note:</span> {dish.reasoning}
                           </p>
                         </div>
@@ -816,23 +856,23 @@ export default function Home() {
                 </div>
                 {/* Unknown Pagination */}
                 {paginate(results.caution_dishes, unknownPage).totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-center items-center gap-2 sm:gap-4 mt-4 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => setUnknownPage(p => Math.max(1, p - 1))}
                       disabled={unknownPage === 1}
-                      className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-200 transition-colors"
+                      className="px-3 sm:px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-200 transition-colors"
                     >
-                      ← prev
+                      ←
                     </button>
-                    <span className="text-sm text-gray-600 font-medium">
+                    <span className="text-xs sm:text-sm text-gray-600 font-medium">
                       {unknownPage} / {paginate(results.caution_dishes, unknownPage).totalPages}
                     </span>
                     <button
                       onClick={() => setUnknownPage(p => Math.min(paginate(results.caution_dishes, unknownPage).totalPages, p + 1))}
                       disabled={unknownPage === paginate(results.caution_dishes, unknownPage).totalPages}
-                      className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-200 transition-colors"
+                      className="px-3 sm:px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-200 transition-colors"
                     >
-                      next →
+                      →
                     </button>
                   </div>
                 )}
@@ -841,24 +881,24 @@ export default function Home() {
 
             {/* Unsafe */}
             {results.unsafe_dishes.length > 0 && (
-              <div className="bg-white rounded-xl p-6 border border-gray-200 mt-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <XCircle className="w-5 h-5 text-red-600" />
+              <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 mt-4 sm:mt-6">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                   ⛔ Skip These
                 </h3>
                 <div className="space-y-3">
                   {paginate(results.unsafe_dishes, unsafePage).items.map((dish: any, idx: number) => (
-                    <div key={idx} className="p-6 rounded-2xl shadow-sm bg-red-50 border-2 border-red-400">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-gray-900 font-semibold">{dish.name}</h4>
-                        <div className={`px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold flex items-center gap-1`}>
+                    <div key={idx} className="p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm bg-red-50 border-2 border-red-400">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                        <h4 className="text-gray-900 font-semibold text-sm sm:text-base break-words">{dish.name}</h4>
+                        <div className={`px-2 sm:px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold flex items-center gap-1 w-fit flex-shrink-0`}>
                           {getSafetyIcon(dish.safety_level)}
                           UNSAFE
                         </div>
                       </div>
-                      <p className="text-gray-600 text-sm mb-2">{dish.description}</p>
+                      <p className="text-gray-600 text-xs sm:text-sm mb-2 break-words">{dish.description}</p>
                       {dish.price && dish.price !== 'N/A' && (
-                        <p className="text-gray-700 text-sm font-semibold mb-2">{dish.price}</p>
+                        <p className="text-gray-700 text-xs sm:text-sm font-semibold mb-2">{dish.price}</p>
                       )}
                       {dish.detected_allergens && dish.detected_allergens.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-2">
@@ -870,8 +910,8 @@ export default function Home() {
                         </div>
                       )}
                       {dish.reasoning && (
-                        <div className="bg-red-100 rounded-lg p-3 mb-2 border border-red-300">
-                          <p className="text-red-800 text-sm font-medium">
+                        <div className="bg-red-100 rounded-lg p-2 sm:p-3 mb-2 border border-red-300">
+                          <p className="text-red-800 text-xs sm:text-sm font-medium break-words">
                             <span className="font-bold">🚫 Warning:</span> {dish.reasoning}
                           </p>
                         </div>
@@ -891,23 +931,23 @@ export default function Home() {
                 </div>
                 {/* Unsafe Pagination */}
                 {paginate(results.unsafe_dishes, unsafePage).totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-center items-center gap-2 sm:gap-4 mt-4 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => setUnsafePage(p => Math.max(1, p - 1))}
                       disabled={unsafePage === 1}
-                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-200 transition-colors"
+                      className="px-3 sm:px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-200 transition-colors"
                     >
-                      ← prev
+                      ←
                     </button>
-                    <span className="text-sm text-gray-600 font-medium">
+                    <span className="text-xs sm:text-sm text-gray-600 font-medium">
                       {unsafePage} / {paginate(results.unsafe_dishes, unsafePage).totalPages}
                     </span>
                     <button
                       onClick={() => setUnsafePage(p => Math.min(paginate(results.unsafe_dishes, unsafePage).totalPages, p + 1))}
                       disabled={unsafePage === paginate(results.unsafe_dishes, unsafePage).totalPages}
-                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-200 transition-colors"
+                      className="px-3 sm:px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-200 transition-colors"
                     >
-                      next →
+                      →
                     </button>
                   </div>
                 )}
