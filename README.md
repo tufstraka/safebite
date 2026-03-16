@@ -2,12 +2,6 @@
 
 **AI-Powered Restaurant Menu Safety Scanner for Food Allergies**
 
-[![Built for Amazon Nova Hackathon](https://img.shields.io/badge/Built%20for-Amazon%20Nova%20Hackathon%202026-orange)](https://amazonnovahackathon.devpost.com/)
-[![Category](https://img.shields.io/badge/Category-Multimodal%20Understanding-blue)](https://amazonnovahackathon.devpost.com/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-
-**🌐 Live Demo:** [http://44.207.1.126/](http://44.207.1.126/)
-
 ---
 
 ## 📋 Table of Contents
@@ -494,34 +488,6 @@ curl -X POST http://localhost:8000/analyze/image \
 | **PDF Menu + Custom** | Upload PDF, add "MSG" | Flags dishes with MSG |
 
 ---
-
-## 🏆 For Hackathon Judges
-
-### What Makes This Special
-
-| Aspect | Details |
-|--------|---------|
-| **Real Problem, Real Impact** | 32M Americans with food allergies, life-threatening if wrong, no good automated solution exists |
-| **AI That Actually Reasons** | Not just keyword matching - understands recipes and cooking, catches hidden allergens humans miss |
-| **Production Ready** | Real Nova API calls (verified), $41/year for 100K scans, deployed and accessible |
-| **Honest Implementation** | Transparent about what's live vs planned, clear cost analysis |
-
-### Verification
-
-**Check logs for Nova API calls:**
-```bash
-sudo journalctl -u price-intelligence-api -f | grep "Nova"
-```
-
-**You'll see:**
-```
-INFO:main:Calling Nova Pro for image analysis...
-INFO:main:Nova Pro extracted 3 items successfully
-INFO:main:Nova 2 Lite inferred for 'Birthday Cake': flour, butter, milk...
-```
-
----
-
 ## 🗺️ Roadmap
 
 ### Phase 1 (Complete) ✅
