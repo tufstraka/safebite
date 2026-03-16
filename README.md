@@ -6,7 +6,7 @@
 
 **AI-powered food safety, built for people who can't afford mistakes.**
 
-Scan any food label. Detect allergens instantly. Know what's safe — before you eat it.
+Scan a food label, a restaurant menu, or a dish — detect allergens instantly. Know what's safe before you eat it.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-safebite.locsafe.org-black?style=for-the-badge)](https://safebite.locsafe.org)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
@@ -18,18 +18,18 @@ Scan any food label. Detect allergens instantly. Know what's safe — before you
 
 ## What is SafeBite?
 
-SafeBite is an AI-powered food label scanner that helps people with dietary restrictions, allergies, and health conditions instantly understand what's in their food.
+SafeBite is an AI-powered food safety scanner for people with dietary restrictions, allergies, and health conditions. It understands what's in your food — whether that's a packaged product label, a restaurant menu, or an actual dish in front of you.
 
-Point your camera at any food product. SafeBite reads the label, identifies allergens, cross-references ingredients, and tells you whether it's safe — in seconds.
+Point your camera at anything food-related. SafeBite reads it, identifies allergens, cross-references ingredients, and tells you whether it's safe — in seconds.
 
-**No more squinting at tiny print. No more guessing. No more risk.**
+**Packaged food. Restaurant menus. Real dishes. SafeBite handles all of it.**
 
 ---
 
 ## Features
 
-- **📸 Instant Label Scanning** — Point, scan, done. Works on any packaging.
-- **🧠 AI Allergen Detection** — Identifies the 14 major allergens + custom restrictions
+- **📸 Multi-Source Scanning** — Food labels, restaurant menus, and actual dishes — one tool for all of it
+- **🧠 AI Allergen Detection** — Identifies the 14 major allergens + custom dietary restrictions
 - **🔍 Cross-Reference Validation** — Catches hidden allergens in ingredient aliases and derivatives
 - **🗣️ Voice Mode** — Audio readout via Amazon Nova Sonic for eyes-free use
 - **🔎 Semantic Search** — Find products and ingredients using natural language
@@ -160,7 +160,7 @@ GET /health
 }
 ```
 
-### Scan a Food Label
+### Scan a Food Label, Menu, or Dish
 ```
 POST /analyze
 Content-Type: multipart/form-data
