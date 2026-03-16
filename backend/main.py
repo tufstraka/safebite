@@ -282,9 +282,16 @@ async def analyze_menu_image(
                     safety_score = 90
                     color_code = 'green'
                 
+                # Create empathetic fallback reasoning if not provided
+                food_name = food_analysis.get('food_name', 'Unknown Food')
+                if detected_allergens:
+                    fallback_reasoning = f"I'd skip this one - it looks like it contains {', '.join(detected_allergens)} which you're allergic to. Better safe than sorry! 💪"
+                else:
+                    fallback_reasoning = f"This {food_name.lower()} looks good for you! I didn't spot any of your allergens in there. Enjoy! 🎉"
+                
                 # Create analyzed dish directly (skip redundant analysis)
                 analyzed_dish = DishAnalysis(
-                    name=food_analysis.get('food_name', 'Unknown Food'),
+                    name=food_name,
                     description=food_analysis.get('description', ''),
                     price='N/A',
                     safety_score=safety_score,
@@ -292,8 +299,7 @@ async def analyze_menu_image(
                     detected_allergens=detected_allergens,
                     confidence=food_analysis.get('confidence', 70),
                     hidden_ingredients=likely_ingredients,
-                    reasoning=food_analysis.get('safety_reasoning',
-                        f"Analyzed food photo. {'Contains ' + ', '.join(detected_allergens) + ' which you are allergic to.' if detected_allergens else 'No allergens from your list detected.'}"),
+                    reasoning=food_analysis.get('safety_reasoning', fallback_reasoning),
                     color_code=color_code
                 )
                 
@@ -302,10 +308,11 @@ async def analyze_menu_image(
                 caution_dishes = [analyzed_dish] if color_code == 'yellow' else []
                 unsafe_dishes = [analyzed_dish] if color_code == 'red' else []
                 
-                ai_summary = (
-                    f"Analyzed food photo: {food_analysis.get('food_name', 'Unknown')}. "
-                    f"{'⚠️ UNSAFE - Contains: ' + ', '.join(detected_allergens) if detected_allergens else '✅ SAFE - No allergens from your list detected.'}"
-                )
+                # Create empathetic summary
+                if detected_allergens:
+                    ai_summary = f"Heads up! This {food_name.lower()} contains {', '.join(detected_allergens)} - I'd recommend skipping this one. Stay safe! 🛡️"
+                else:
+                    ai_summary = f"Great news! This {food_name.lower()} looks safe for you - no allergens from your list detected. Dig in! ✨"
                 
                 return MenuScanResponse(
                     restaurant_name="Food Photo Analysis",

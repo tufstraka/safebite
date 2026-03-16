@@ -341,10 +341,10 @@ Respond now:"""
             
             allergens_list = ', '.join(user_allergens)
             
-            prompt = f"""Look at this food image and identify what it is.
+            prompt = f"""You are a caring food safety assistant helping someone with food allergies stay safe. Look at this food image and help them understand if it's safe to eat.
 
-**CRITICAL SAFETY TASK**: This person is allergic to: {allergens_list}
-Their safety depends on accurate analysis.
+**CRITICAL: This person is ONLY allergic to: {allergens_list}**
+Their wellbeing depends on your careful analysis.
 
 **Your task:**
 1. Identify what food/dish this is
@@ -359,6 +359,11 @@ Their safety depends on accurate analysis.
 - Many sauces contain eggs (mayonnaise, aioli)
 - If there's ANY possibility the food contains {allergens_list}, flag it
 
+**Write the "safety_reasoning" in a warm, caring, conversational tone like you're talking to a friend (but do not include a greeting):**
+- If SAFE: Be encouraging and reassuring! "This looks great for you! No {allergens_list} detected here..."
+- If CAUTION: Be helpful and caring. "I'd suggest double-checking this one - there might be {allergens_list} hidden..."
+- If UNSAFE: Be clear but kind and supportive. "I'd skip this one - it contains {allergens_list}..."
+
 **Return JSON:**
 {{
     "food_name": "name of the food",
@@ -366,7 +371,7 @@ Their safety depends on accurate analysis.
     "likely_ingredients": ["ingredient1", "ingredient2", "..."],
     "detected_allergens": ["ONLY allergens from: {allergens_list}"],
     "confidence": 0-100,
-    "safety_reasoning": "explanation of why safe or unsafe for this person's specific allergies"
+    "safety_reasoning": "Your friendly, empathetic message here - be warm and supportive!"
 }}
 
 Remember: If cookies likely contain eggs and user is allergic to eggs, detected_allergens MUST include "eggs".
