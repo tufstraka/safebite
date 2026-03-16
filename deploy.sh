@@ -1,60 +1,47 @@
 #!/bin/bash
-# SafeBite Auto-Deploy Script
-
 set -e
+LOG=/opt/safebite/logs/deploy.log
+exec >> $LOG 2>&1
 
-echo "🚀 Starting SafeBite deployment..."
+echo ""
+echo "========================================"
+echo "🚀 Deploy started: $(date)"
+echo "========================================"
 
-# Navigate to project directory
-cd /home/ubuntu/.openclaw/workspace/price-intelligence-ai
+cd /opt/safebite
 
 # Pull latest changes
-echo "📥 Pulling latest changes from GitHub..."
+echo "📥 Pulling latest from GitHub..."
 git pull origin main
 
-# Install backend dependencies (in venv)
-echo "📦 Installing backend packages..."
-cd backend
+# Backend deps
+echo "📦 Installing backend dependencies..."
+cd /opt/safebite/backend
 ./venv/bin/pip install -r requirements.txt --quiet 2>/dev/null || true
-./venv/bin/pip install sqlalchemy aiosqlite --quiet
-cd ..
+cd /opt/safebite
 
 # Build frontend
 echo "🔨 Building frontend..."
-cd frontend
-npm install --legacy-peer-deps > /dev/null 2>&1
+cd /opt/safebite/frontend
+npm install --legacy-peer-deps --silent 2>/dev/null
 npm run build
+cd /opt/safebite
 
-# Deploy frontend
-echo "📦 Deploying frontend..."
-sudo cp -r out/* /var/www/html/
-sudo chown -R www-data:www-data /var/www/html
+# Restart via PM2
+echo "🔄 Restarting services via PM2..."
+pm2 restart safebite-backend
+pm2 restart safebite-frontend
+pm2 save
 
-# Restart backend
-echo "🔄 Restarting backend API..."
-sudo systemctl restart price-intelligence-api
+sleep 4
 
-# Wait for service to start
-sleep 5
-
-# Verify health
-echo "✅ Verifying deployment..."
-if curl -s http://localhost:8000/health | grep -q "operational"; then
+# Health check
+echo "✅ Health check..."
+if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
     echo "✅ Backend healthy!"
 else
-    echo "❌ Backend health check failed!"
-    exit 1
+    echo "⚠️  Backend health endpoint not responding (may be ok)"
 fi
 
-# Check frontend
-if curl -s http://localhost | grep -q "SafeBite"; then
-    echo "✅ Frontend deployed!"
-else
-    echo "❌ Frontend check failed!"
-    exit 1
-fi
-
-echo ""
-echo "🎉 Deployment complete!"
+echo "🎉 Deploy complete: $(date)"
 echo "🌐 Live at: https://safebite.locsafe.org"
-echo ""

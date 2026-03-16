@@ -1,0 +1,22 @@
+safebite.locsafe.org {
+    encode gzip
+    tls keithkadima@gmail.com
+
+    handle_path /demo/* {
+        root * /opt/safebite/public
+        file_server
+    }
+
+    handle /webhook {
+        reverse_proxy localhost:9000
+    }
+
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy localhost:8000
+    }
+
+    handle {
+        reverse_proxy localhost:3000
+    }
+}
