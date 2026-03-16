@@ -35,7 +35,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="SafeBite AI API - Nova Powered",
     description="AI Menu Safety Scanner with AWS Textract + Nova 2 Lite + Nova Sonic + Embeddings + Agentic AI",
-    version="3.0.0"
+    version="3.0.0",
+    root_path="/api"
 )
 
 # CORS
